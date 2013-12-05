@@ -1,0 +1,130 @@
+<!DOCTYPE HTML> 
+<html lang="en"> 
+<head>
+<title>PeerJS Broadcast Example</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
+<meta http-equiv="Content-Language" content="en-us"> 
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.js"></script> 
+<script type="text/javascript" src="../../node_modules/peerjs/dist/peer.js"></script>
+<script>
+
+  peer = new Peer({
+    host: 'localhost',
+    port: 9000,
+    debug: 3,
+    logFunction: function(){
+      var copy = Array.prototype.slice.call(arguments).join(' ');
+      $('.log').append(copy + '<br>');
+    },
+    cacheSize: 10,
+    firstViewSize: 3,
+    l: 4,
+    gossipPeriod: 25000
+  });
+
+  peer.on('open', function(id){
+    $('pid').text(id);
+  });
+
+  peer.on('getRandomView', function(size){});
+  
+
+//  // Show local peer's ID
+//  gpeer.peer.on('open', function(id){
+//    $(pid').text(id);
+//  });
+//  
+//  // Await connections from others
+  peer.on('connection', handleConnection);
+
+  // Handle connections from remote peers
+  function handleConnection(c){
+    c.on('data', function(data){
+      $('.log').append('I RECIEVED THE NEXT MESSAGE <br><br>');
+      $('.log').append('PEER: ' + c.peer + '<br>');
+      $('.log').append('SAYS:' + data + '<br>');
+    });
+  }
+
+  $(document).ready(function() {
+    // Get a random view from the PeerServer
+//    $('#get-view').click(function(){
+//      var size = parseInt($('#view-size').val());
+//      util.log('CURRENT VIEW');
+//      peer.getRandomView(size);
+//    });
+//
+//    $('#make-connections').click(function(){
+//      if(peer.localView.length !== 0){
+//        for(var i = 0; i < peer.localView.length; i += 1){
+//	  (function(peer_id){
+//            var c = peer.connect(peer_id);
+//	    c.on('open', function(){
+//              c.send("hello");
+//            });
+//	    c.on('error', function(err) { alert(err); });
+//	  })(peer.localView[i]);
+//         }
+//       }else{
+//         $('.log').append('THE LOCAL VIEW IS EMPTY');
+//       }
+//    });
+//
+    $('#browsers').text(navigator.userAgent);
+  });
+// Make sure things clean up properly.
+
+window.onunload = window.onbeforeunload = function(e) {
+  if (!!peer && !peer.destroyed) {
+      peer.destroy();
+    }
+};
+
+</script>
+<style>
+  #helloworld {
+    font-weight: 600;
+    font-size: 30px;
+    padding: 20px;
+    background-color: #4dace2;
+    border: 1px solid #0C6BA1;
+    max-width: 600px;
+  }
+  #browsers {
+    font-weight: 600;
+  }
+  .warning {
+    max-width: 600px;
+    padding: 20px;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    font-size: 18px;
+  }
+  .browserinfo {
+    padding: 20px;
+    border: 1px solid #ccc;
+    background-color: #f8f8f8;
+  }
+  a {
+    font-weight: 600;
+  }
+</style>
+</head> 
+ 
+<body> 
+  <div id="helloworld">
+    Local Peer ID :: <span id="pid"></span><br>
+    <input class="button" type="button" value="Get random view from PeerServer" id="get-view">
+    <br>
+    <input class="button" type="button" value="Make connections" id="make-connections">
+    <br>
+    <input class="button" type="button" value="Send message to peers in view" id="send-msg"><br>
+  </div>
+  <div class="warning browser">
+    <div class="important">
+    </div>
+  </div>
+  <div class="log" style="color:#FF7500;text-shadow:none;padding:15px;"><strong>Connection status</strong>:<br></div>
+</body> 
+</html> 
