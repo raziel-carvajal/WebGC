@@ -1,0 +1,85 @@
+<!DOCTYPE HTML> 
+<html lang="en"> 
+<head>
+<title>PeerJS Broadcast Example</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
+<meta http-equiv="Content-Language" content="en-us"> 
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.js"></script> 
+<script type="text/javascript" src="../bower_components/peerjs/peer.js"></script>
+<script type="text/javascript" src="../lib/peerjs-gossip.js"></script>
+
+<script>
+
+  peer = new GossipPeer({
+    host: 'localhost',
+    port: 9000,
+    logFunction: function(){
+      var copy = Array.prototype.slice.call(arguments).join(' ');
+      $('.log').append(copy + '<br>');
+    },
+    cacheSize: 10,
+    firstViewSize: 3,
+    l: 4,
+    gossipPeriod: 25000,
+    bootable: true
+  });
+
+  $(document).ready(function() {
+    $('#browsers').text(navigator.userAgent);
+  });
+// Make sure things clean up properly.
+
+window.onunload = window.onbeforeunload = function(e) {
+  if (!!peer && !peer.destroyed) {
+      peer.destroy();
+    }
+};
+
+</script>
+<style>
+  #helloworld {
+    font-weight: 600;
+    font-size: 30px;
+    padding: 20px;
+    background-color: #4dace2;
+    border: 1px solid #0C6BA1;
+    max-width: 600px;
+  }
+  #browsers {
+    font-weight: 600;
+  }
+  .warning {
+    max-width: 600px;
+    padding: 20px;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    font-size: 18px;
+  }
+  .browserinfo {
+    padding: 20px;
+    border: 1px solid #ccc;
+    background-color: #f8f8f8;
+  }
+  a {
+    font-weight: 600;
+  }
+</style>
+</head> 
+ 
+<body> 
+  <div id="helloworld">
+    Local Peer ID :: <span id="pid"></span><br>
+    <input class="button" type="button" value="Get random view from PeerServer" id="get-view">
+    <br>
+    <input class="button" type="button" value="Make connections" id="make-connections">
+    <br>
+    <input class="button" type="button" value="Send message to peers in view" id="send-msg"><br>
+  </div>
+  <div class="warning browser">
+    <div class="important">
+    </div>
+  </div>
+  <div class="log" style="color:#FF7500;text-shadow:none;padding:15px;"><strong>Connection status</strong>:<br></div>
+</body> 
+</html> 
