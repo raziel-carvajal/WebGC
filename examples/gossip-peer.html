@@ -11,70 +11,37 @@
 
 <script>
 
-  peer = new GossipPeer({
-    host: 'localhost',
-    port: 9000,
-    debug: 3,
-    logFunction: function(){
-      var copy = Array.prototype.slice.call(arguments).join(' ');
-      $('.log').append(copy + '<br>');
-    },
-    cacheSize: 10,
-    firstViewSize: 3,
-    l: 4,
-    gossipPeriod: 25000
-  });
+peer = new GossipPeer({
+  host: 'localhost',
+  port: 9000,
+  debug: 3,
+  logFunction: function(){
+    var copy = Array.prototype.slice.call(arguments).join(' ');
+    $('.log').append(copy + '<br>');
+  },
+  cacheSize: 10,
+  firstViewSize: 3,
+  l: 5,
+  gossipPeriod: 25000,
+  bootable: false
+});
 
-//  gpeer.peer.on('open', function(id){
-//    $('pid').text(id);
-//  });
-
-//  // Show local peer's ID
-//  gpeer.peer.on('open', function(id){
-//    $(pid').text(id);
-//  });
-//  
-//  // Await connections from others
-//  peer.on('connection', handleConnection);
-//
-//  // Handle connections from remote peers
-//  function handleConnection(c){
-//      $('.log').append('Connections number :: ' + Object.keys(peer.connections).length + '<br>' );
-//      c.on('data', function(data){
-//        $('.log').append('I RECIEVED THE NEXT MESSAGE <br><br>');
-//        $('.log').append('PEER: ' + c.peer + '<br>');
-//        $('.log').append('SAYS:' + data + '<br>');
-//      });
-//  }
+peer.on('open', function(id){
+  $('#pid').text(id);
+  if(!peer.options.bootable){
+    $('.log').append('Request first view to server... <br>');
+    peer.emit('randomView');
+  }
+  else{
+    $('.log').append('I am a bootable peer <br>');
+  }
+});
 
   $(document).ready(function() {
-    // Get a random view from the PeerServer
-//    $('#get-view').click(function(){
-//      var size = parseInt($('#view-size').val());
-//      util.log('CURRENT VIEW');
-//      peer.getRandomView(size);
-//    });
-//
-//    $('#make-connections').click(function(){
-//      if(peer.localView.length !== 0){
-//        for(var i = 0; i < peer.localView.length; i += 1){
-//	  (function(peer_id){
-//            var c = peer.connect(peer_id);
-//	    c.on('open', function(){
-//              c.send("hello");
-//            });
-//	    c.on('error', function(err) { alert(err); });
-//	  })(peer.localView[i]);
-//         }
-//       }else{
-//         $('.log').append('THE LOCAL VIEW IS EMPTY');
-//       }
-//    });
-//
     $('#browsers').text(navigator.userAgent);
   });
+  
 // Make sure things clean up properly.
-
 window.onunload = window.onbeforeunload = function(e) {
   if (!!peer && !peer.destroyed) {
       peer.destroy();

@@ -11,19 +11,31 @@
 
 <script>
 
-  peer = new GossipPeer({
-    host: 'localhost',
-    port: 9000,
-    logFunction: function(){
-      var copy = Array.prototype.slice.call(arguments).join(' ');
-      $('.log').append(copy + '<br>');
-    },
-    cacheSize: 10,
-    firstViewSize: 3,
-    l: 4,
-    gossipPeriod: 25000,
-    bootable: true
-  });
+peer = new GossipPeer({
+  host: 'localhost',
+  port: 9000,
+  debug: 3,
+  logFunction: function(){
+    var copy = Array.prototype.slice.call(arguments).join(' ');
+    $('.log').append(copy + '<br>');
+  },
+  cacheSize: 10,
+  firstViewSize: 3,
+  l: 5,
+  gossipPeriod: 25000,
+  bootable: true
+});
+
+peer.on('open', function(id){
+  $('#pid').text(id);
+  if(!peer.options.bootable){
+    $('.log').append('Request first view to server... <br>');
+    peer.emit('randomView');
+  }
+  else{
+    $('.log').append('I am a bootable peer <br>');
+  }
+});
 
   $(document).ready(function() {
     $('#browsers').text(navigator.userAgent);
