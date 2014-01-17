@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>PeerJS Broadcast Example</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Language" content="en-us" />
+<script type="text/javascript" src="../bower_components/jquery/jquery.js">
+//
+</script>
+<script type="text/javascript" src="../bower_components/peerjs/peer.js">
+//
+</script>
+<script type="text/javascript" src="../lib/peerjs-gossip.js">
+//
+</script>
+</head>
+  <body>
+    <!--Settings of the PeerServer-->
+    <ip id="peerserver-ip"></ip>
+    <port id="peerserver-port"></port>
+    <!--Settings for the gossip algorithm-->
+    <cache id="cache-size"></cache>
+    <view id="first-view-size"></view>
+    <l-p id="l-parameter"></l-p>
+    <period id="gossip-period"></period>
+    <!--A bootable peer is needed for bootstraping the P2P communication-->
+    <bootable id="bootable"></bootable>
+    <script type="text/javascript" src="../lib/bootstrap-test.js">
+    //
+    </script>
+  </body>
+</html>
