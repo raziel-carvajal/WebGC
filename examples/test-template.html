@@ -3,31 +3,27 @@
 <html lang="en">
 <head>
 <title>PeerJS Broadcast Example</title>
+
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta http-equiv="Content-Language" content="en-us" />
-<script type="text/javascript" src="../bower_components/jquery/jquery.js">
-//
-</script>
-<script type="text/javascript" src="../bower_components/peerjs/peer.js">
-//
-</script>
-<script type="text/javascript" src="../lib/peerjs-gossip.js">
-//
-</script>
+
+<script type="text/javascript" src="../bower_components/jquery/jquery.js"></script>
+<script type="text/javascript" src="../bower_components/peerjs/peer.js"></script>
+<script type="text/javascript" src="../lib/peerjs-gossip.js"></script>
+
 </head>
+
   <body>
   <!--Settings of the PeerServer-->
-  <ip id="peerserver-ip">localhost</ip>
-  <port id="peerserver-port">9000</port>
+  <ip id="peerserver-ip">#ip</ip>
+  <port id="peerserver-port">#po</port>
   <!--Settings for the gossip algorithm-->
-  <cache id="cache-size">9</cache>
-  <view id="first-view-size">5</view>
-  <l-p id="l-parameter">4</l-p>
-  <period id="gossip-period">15000</period>
-  <!--A bootable peer is needed for bootstraping the P2P communication-->
-  <bootable id="bootable">false</bootable>
-  <script type="text/javascript" src="../lib/bootstrap-test.js">
-  //
-  </script>
+  <cache id="cache-size">#ca</cache>
+  <view id="first-view-size">#vi</view>
+  <l-p id="l-parameter">#lp</l-p>
+  <period id="gossip-period">#pe</period>
+
+  <script type="text/javascript" src="../lib/bootstrap-test.js"></script>
+
   </body>
 </html>
