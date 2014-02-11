@@ -17,14 +17,17 @@
 </head>
 
   <body>
-  <!--Settings of the PeerServer-->
-  <ip id="peerserver-ip">#ip</ip>
-  <port id="peerserver-port">#po</port>
-  <!--Settings for the gossip algorithm-->
-  <cache id="cache-size">#ca</cache>
-  <view id="first-view-size">#vi</view>
-  <l-p id="l-parameter">#lp</l-p>
-  <period id="gossip-period">#pe</period>
+  <!-- PeerServer settings -->
+  <ip id="peerserver-ip">localhost</ip>
+  <port id="peerserver-port">9000</port>
+  
+  <!-- Gossip settings -->
+  <!-- RPS Service -->
+  <selection id="sel-pol">random</selection>
+  <view id="view-size">10</view>
+  <healing id="healing">3</healing>
+  <swap id="swap">2</swap>
+  <period id="gossip-period">20000</period>
 
   <script type="text/javascript" src="../lib/bootstrap-test.js"></script>
 
