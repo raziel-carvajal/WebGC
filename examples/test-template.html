@@ -9,27 +9,27 @@
 
 <script type="text/javascript" src="../bower_components/jquery/jquery.js"></script>
 <script type="text/javascript" src="../bower_components/peerjs/peer.js"></script>
-<script type="text/javascript" src="../lib/gossip-util.js"></script>
-<script type="text/javascript" src="../lib/cyclon.js"></script>
-<script type="text/javascript" src="../lib/peerjs-gossip.js"></script>
+<script type="text/javascript" src="../lib/utils/gossip-util.js"></script>
+<script type="text/javascript" src="../lib/gossip-based-algos/peer-sampling.js"></script>
+<script type="text/javascript" src="../lib/lunchers/peerjs-gossip.js"></script>
 
 
 </head>
 
   <body>
   <!-- PeerServer settings -->
-  <ip id="peerserver-ip">localhost</ip>
-  <port id="peerserver-port">9000</port>
+  <ip id="peerserver-ip">#ip</ip>
+  <port id="peerserver-port">#po</port>
   
   <!-- Gossip settings -->
   <!-- RPS Service -->
-  <selection id="sel-pol">random</selection>
-  <view id="view-size">10</view>
-  <healing id="healing">3</healing>
-  <swap id="swap">2</swap>
-  <period id="gossip-period">20000</period>
+  <selection id="sel-pol">#se</selection>
+  <view id="view-size">#vi</view>
+  <healing id="healing">#hp</healing>
+  <swap id="swap">#sp</swap>
+  <period id="gossip-period">#pe</period>
 
-  <script type="text/javascript" src="../lib/bootstrap-test.js"></script>
+  <script type="text/javascript" src="../lib/lunchers/bootstrap-test.js"></script>
 
   </body>
 </html>
