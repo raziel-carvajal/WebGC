@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>PeerJS Broadcast Example</title>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Language" content="en-us" />
+
+<script type="text/javascript" src="../bower_components/jquery/jquery.js"></script>
+<script type="text/javascript" src="../bower_components/peerjs/peer.js"></script>
+<script type="text/javascript" src="../lib/utils/gossip-util.js"></script>
+<script type="text/javascript" src="../lib/gossip-based-algos/vicinity.js"></script>
+<script type="text/javascript" src="../lib/lunchers/clustering-luncher.js"></script>
+
+
+</head>
+
+  <body>
+  <!-- PeerServer settings -->
+  <ip id="peerserver-ip">#ip</ip>
+  <port id="peerserver-port">#po</port>
+  
+  <!-- Gossip settings -->
+  <!-- Vicinity  -->
+  <selection id="sel-pol">#se</selection>
+  <view id="view-size">#vi</view>
+  <healing id="healing">#hp</healing>
+  <swap id="swap">#sp</swap>
+  <period id="gossip-period">#pe</period>
+
+  <script type="text/javascript" src="../lib/lunchers/bootstrap-test.js"></script>
+
+  </body>
+</html>
+
