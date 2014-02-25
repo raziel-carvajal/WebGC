@@ -1,36 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE HTML>
-<html lang="en">
 <head>
-<title>PeerJS Broadcast Example</title>
-
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta http-equiv="Content-Language" content="en-us" />
-
-<script type="text/javascript" src="../bower_components/jquery/jquery.js"></script>
-<script type="text/javascript" src="../bower_components/peerjs/peer.js"></script>
-<script type="text/javascript" src="../lib/utils/gossip-util.js"></script>
-<script type="text/javascript" src="../lib/gossip-based-algos/vicinity.js"></script>
-<script type="text/javascript" src="../lib/lunchers/clustering-luncher.js"></script>
-
-
+  <script type="text/javascript" src="../bower_components/jquery/jquery.js"></script>
+  <script type="text/javascript" src="../bower_components/peerjs/peer.js"></script>
+  <script type="text/javascript" src="../lib/utils/gossip-util.js"></script>
+  <script type="text/javascript" src="../lib/utils/dumb-proximity-func.js"></script>
+  <script type="text/javascript" src="../lib/gossip-based-algos/cyclon.js"></script>
+  <script type="text/javascript" src="../lib/gossip-based-algos/vicinity.js"></script>
+  <script type="text/javascript" src="../lib/lunchers/clustering-luncher.js"></script>
 </head>
 
-  <body>
+<body>
   <!-- PeerServer settings -->
   <ip id="peerserver-ip">#ip</ip>
   <port id="peerserver-port">#po</port>
-  
-  <!-- Gossip settings -->
-  <!-- Vicinity  -->
-  <selection id="sel-pol">#se</selection>
-  <view id="view-size">#vi</view>
-  <healing id="healing">#hp</healing>
-  <swap id="swap">#sp</swap>
+  <!-- General settings -->
+  <propPush id="push">#push</propPush>
+  <propPull id="pull">#pull</propPull>
   <period id="gossip-period">#pe</period>
-
+  <!-- Vicinity settings -->
+  <view id="vicinity-view">#vi-vi</view>
+  <gossipL id="vicinity-length">#vi-l</gossipL>
+  <simVal id="prox-val">#vi-val</simVal>
+  <selPol id="vicinity-sel">#vi-sel</selPol>
+  <!-- Cyclon settings -->
+  <view id="cyclon-view">#cy-vi</view>
+  <gossipL id="cyclon-length">#cy-l</gossipL>
   <script type="text/javascript" src="../lib/lunchers/bootstrap-test.js"></script>
+</body>
 
-  </body>
 </html>
-
