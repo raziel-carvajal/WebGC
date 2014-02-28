@@ -15,17 +15,17 @@
   <ip id="peerserver-ip">#ip</ip>
   <port id="peerserver-port">#po</port>
   <!-- General settings -->
-  <propPush id="push">#push</propPush>
-  <propPull id="pull">#pull</propPull>
-  <period id="gossip-period">#pe</period>
+  <propPush id="push">#push</propPush>          <!-- boolean -->
+  <propPull id="pull">#pull</propPull>          <!-- boolean -->
+  <period id="gossip-period">#pe</period>       <!-- in milliseconds -->
   <!-- Vicinity settings -->
-  <view id="vicinity-view">#vi-vi</view>
-  <gossipL id="vicinity-length">#vi-l</gossipL>
-  <simVal id="prox-val">#vi-val</simVal>
-  <selPol id="vicinity-sel">#vi-sel</selPol>
+  <view id="vicinity-view">#vi-vi</view>        <!-- integer -->
+  <gossipL id="vicinity-length">#vi-l</gossipL> <!-- integer -->
+  <simVal id="prox-val">#pv</simVal>            <!-- up to similarity function -->
+  <selPol id="vicinity-sel">#vi-sel</selPol>    <!-- random OR biased OR agr-biased -->
   <!-- Cyclon settings -->
-  <view id="cyclon-view">#cy-vi</view>
-  <gossipL id="cyclon-length">#cy-l</gossipL>
+  <view id="cyclon-view">#cy-vi</view>          <!-- integer -->
+  <gossipL id="cyclon-length">#cy-l</gossipL>   <!-- integer -->
   <script type="text/javascript" src="../lib/lunchers/clustering-luncher.js"></script>
 </body>
 
