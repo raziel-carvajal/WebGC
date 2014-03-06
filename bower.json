@@ -1,9 +1,7 @@
 {
   "name": "peerjs-gossip",
   "version": "0.0.0",
-  "authors": [
-    "raziel <raziel.carvajal-gomez@inria.fr>"
-  ],
+  "authors": [ "raziel <raziel.carvajal-gomez@inria.fr>" ],
   "description": "This project extend PeerJS with gossip-based functionalities",
   "main": "dist/peerjs-gossip.js",
   "license": "MIT",
@@ -13,11 +11,9 @@
     "node_modules",
     "bower_components",
     "test",
-    "tests"
-  ],
+    "tests"],
   "dependencies": {
     "peerjs": "https://github.com/peers/bower-peerjs.git",
     "jsdoc3": "git://github.com/jsdoc3/jsdoc.git",
-    "jquery": "git://github.com/jquery/jquery.git"
-  }
+    "jquery": "git://github.com/jquery/jquery.git"}
 }

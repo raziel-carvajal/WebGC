@@ -14,14 +14,14 @@
   <ip id="peerserver-ip">#ip</ip>
   <port id="peerserver-port">#po</port>
   <!-- General settings -->
-  <propPush id="push">#push</propPush>
-  <propPull id="pull">#pull</propPull>
-  <period id="gossip-period">#pe</period>
+  <propPush id="push">#push</propPush>    <!-- boolean -->
+  <propPull id="pull">#pull</propPull>    <!-- boolean -->
+  <period id="gossip-period">#pe</period> <!-- integer (in milliseconds)-->
   <!-- RPS Service -->
   <selection id="sel-pol">#se</selection> <!-- random OR oldest -->
-  <view id="view-size">#vi</view>
-  <healing id="healing">#hp</healing>
-  <swap id="swap">#sp</swap>
-  <script type="text/javascript" src="../lib/lunchers/rps-luncher.js"></script>
+  <view id="view-size">#vi</view>         <!-- integer -->
+  <healing id="healing">#hp</healing>     <!-- integer -->
+  <swap id="swap">#sp</swap>              <!-- integer -->
+  <script type="text/javascript" src="../lib/launchers/rps-launcher.js"></script>
 </body>
 </html>

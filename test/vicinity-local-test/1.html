@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HTML>
+<head>
+  <script type="text/javascript" src="../../bower_components/jquery/jquery.js"></script>
+  <script type="text/javascript" src="../../bower_components/peerjs/peer.js"></script>
+  <script type="text/javascript" src="../../lib/utils/gossip-util.js"></script>
+  <script type="text/javascript" src="../../lib/utils/dumb-proximity-func.js"></script>
+  <script type="text/javascript" src="../../lib/gossip-based-algos/cyclon.js"></script>
+  <script type="text/javascript" src="../../lib/gossip-based-algos/vicinity.js"></script>
+  <script type="text/javascript" src="../../lib/executors/clustering-executor.js"></script>
+</head>
+
+<body>
+  <!-- PeerServer settings -->
+  <ip id="peerserver-ip">localhost</ip>
+  <port id="peerserver-port">9001</port>
+  <!-- General settings -->
+  <propPush id="push">true</propPush>          <!-- boolean -->
+  <propPull id="pull">true</propPull>          <!-- boolean -->
+  <period id="gossip-period">10000</period>       <!-- in milliseconds -->
+  <!-- Vicinity settings -->
+  <view id="vicinity-view">10</view>        <!-- integer -->
+  <gossipL id="vicinity-length">5</gossipL> <!-- integer -->
+  <simVal id="prox-val">1</simVal>            <!-- up to similarity function -->
+  <selPol id="vicinity-sel">biased</selPol>    <!-- random OR biased OR agr-biased -->
+  <!-- Cyclon settings -->
+  <view id="cyclon-view">10</view>          <!-- integer -->
+  <gossipL id="cyclon-length">5</gossipL>   <!-- integer -->
+  <script type="text/javascript" src="../../lib/launchers/clustering-launcher.js"></script>
+</body>
+
+</html>

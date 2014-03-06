@@ -1,0 +1,4 @@
+# GossipPeer
+
+## Installation
+  bower install
