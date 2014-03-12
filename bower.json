@@ -14,6 +14,6 @@
     "tests"],
   "dependencies": {
     "peerjs": "https://github.com/peers/bower-peerjs.git",
-    "jsdoc3": "git://github.com/jsdoc3/jsdoc.git",
-    "jquery": "git://github.com/jquery/jquery.git"}
+    "jsdoc3": "https://github.com/jsdoc3/jsdoc.git",
+    "jquery": "https://github.com/jquery/jquery.git"}
 }
