@@ -54,7 +54,7 @@ serverDir=$3
 testDir=$4
 origin=`pwd`
 simLim=3
-chromeStr="--enable-logging --log-level=0 --user-data-dir="
+chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --user-data-dir="
 
 cd $testDir
 testDir=`pwd`
@@ -62,15 +62,6 @@ peersDir="peers"
 mkdir $peersDir
 cd $peersDir
 declare -a chromePids
-
-for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
-  peerDir="peer_$COUNTER"
-  mkdir $peerDir
-  "$chromeCommand" $chromeStr$peerDir &>/dev/null &
-  chromePids[$COUNTER]=$!
-  sleep 3
-  kill -9 ${chromePids[$COUNTER]}
-done
 
 cd $serverDir
 cd serverjs-gossip/examples
