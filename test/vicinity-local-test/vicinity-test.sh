@@ -37,10 +37,10 @@
 #===============================================================================
 
 opSysStr=`uname`
-if [ $opSysStr == "Linux" ] ; then
+if [ $opSysStr = "Linux" ] ; then
   chromeCommand="google-chrome"
 else
-  if [ $opSysStr == "Darwin" ] ; then
+  if [ $opSysStr = "Darwin" ] ; then
     chromeCommand="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
   else
     echo -e "The operating system is not recognized\nEnd of the execution"
