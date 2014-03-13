@@ -41,7 +41,7 @@ if [ $opSysStr = "Linux" ] ; then
   chromeCommand="google-chrome"
 else
   if [ $opSysStr = "Darwin" ] ; then
-    chromeCommand="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
+    chromeCommand="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
   else
     echo -e "The operating system is not recognized\nEnd of the execution"
     exit 1
@@ -66,7 +66,7 @@ declare -a chromePids
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   peerDir="peer_$COUNTER"
   mkdir $peerDir
-  $chromeCommand $chromeStr$peerDir &>/dev/null &
+  "$chromeCommand" $chromeStr$peerDir &>/dev/null &
   chromePids[$COUNTER]=$!
   sleep 3
   kill -9 ${chromePids[$COUNTER]}
@@ -82,7 +82,7 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   peerDir="peer_$COUNTER"
   i=$(( $COUNTER % $simLim ))
   htmFile=$i".html"
-  $chromeCommand $chromeStr$testDir/$peersDir/$peerDir $htmFile &>/dev/null &
+  "$chromeCommand" $chromeStr$testDir/$peersDir/$peerDir $htmFile &>/dev/null &
   chromePids[$COUNTER]=$!
 done
 
