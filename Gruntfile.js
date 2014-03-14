@@ -9,8 +9,7 @@ module.exports = function(grunt) {
       },
       build: {
         src: [ // This minize was written just for testing uglify
-          'lib/launchers/rps-launcher.js',
-          'lib/launchers/clustering-launcher.js'
+          'lib/**/*.js'
         ],
         dest: 'dist/<%= pkg.name %>.min.js'
       }
@@ -19,34 +18,24 @@ module.exports = function(grunt) {
       options: {
         log: './logs/<%= pkg.name %>.log'
       },
-      files: [
-        'lib/launchers/*.js',
-        'lib/gossip-based-algos/*.js',
-        'lib/utils/*.js',
-        'lib/executors/*.js'
-      ]
+      files: [ 'lib/**/*.js' ]
+    },
+    shell: {
+      vicinityLocalTest: {
+        options: { stdout: true, stderr: true },
+        command: [
+          'cd test/vicinity-local-test',
+          './vicinity-test.sh'
+        ].join('&&')
+      }
     }
-//    copy: {
-//      main: {
-//        files: [
-//	        {expand: true, cwd: 'lib', src: '*', dest: 'dist/'}
-//	      ]
-//      }
-//    },
-//    karma: {
-//      unit: {
-//        configFile: 'karma.conf.js'
-//      }
-//    }
   });
 
   // Load the plugin that provides the "uglify" task.
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-linter');
-//  grunt.loadNpmTasks('grunt-karma');
+  grunt.loadNpmTasks('grunt-shell');
 
   // Default task(s).
-  grunt.registerTask('default', ['uglify', 'linter']);
-//  grunt.registerTask('default', ['uglify', 'copy']);
-//  grunt.registerTask('test', ['karma']);
+  grunt.registerTask('default', ['uglify', 'linter', 'shell']);
 };

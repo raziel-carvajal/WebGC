@@ -36,6 +36,14 @@
 #      REVISION:  ---
 #===============================================================================
 
+peers=12
+exeTime=300
+serverDir="/home/raziel/Documents/repositories/brow2brow"
+testDir="output"
+origin=`pwd`
+simLim=3
+chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --user-data-dir="
+
 opSysStr=`uname`
 if [ $opSysStr = "Linux" ] ; then
   chromeCommand="google-chrome"
@@ -47,14 +55,9 @@ else
     exit 1
   fi
 fi
-
-peers=$1
-exeTime=$2
-serverDir=$3
-testDir=$4
-origin=`pwd`
-simLim=3
-chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --user-data-dir="
+echo "Your operating system is: $opSysStr"
+rm -fr $testDir
+mkdir $testDir
 
 cd $testDir
 testDir=`pwd`
@@ -63,11 +66,14 @@ mkdir $peersDir
 cd $peersDir
 declare -a chromePids
 
+echo "Launching PeerServer..."
 cd $serverDir
 cd serverjs-gossip/examples
 node server.js 9001 4 >/dev/null &
 nodePid=$!
+echo -e "\tDONE"
 
+echo "Launching instances of Chrome (one of them represents one peer)..."
 cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   peerDir="peer_$COUNTER"
@@ -76,8 +82,9 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   "$chromeCommand" $chromeStr$testDir/$peersDir/$peerDir $htmFile &>/dev/null &
   chromePids[$COUNTER]=$!
 done
+echo -e "\tDONE"
 
-echo "Waiting..."
+echo "Waiting till the time of the experiment expires..."
 sleep $exeTime
 kill -9 $nodePid
 echo -e "\tDONE"
@@ -87,6 +94,7 @@ resultsDir="results"
 mkdir $resultsDir
 cd $resultsDir
 
+echo "Parsing results..."
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   kill -9 ${chromePids[$COUNTER]}
   peerDir="peer_$COUNTER"
@@ -94,5 +102,6 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   mv ../$peersDir/$peerDir/chrome_debug.log $peerDir
   cat $peerDir/chrome_debug.log | sed -n '/{*}/p' | sed 's/.*{\(.*\)}.*/\1/' >$peerDir/log
 done
-
+echo -e "\tDONE"
 echo "END OF THE EXECUTION"
+echo "You can find the results of the test at test/vicinity-local-test/output/results"
