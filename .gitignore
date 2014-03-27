@@ -3,3 +3,5 @@ dist
 node_modules
 logs
 test/vicinity-local-test/output
+test/multi-protocols-test/output
+test/multi-protocols-test/peer_*
