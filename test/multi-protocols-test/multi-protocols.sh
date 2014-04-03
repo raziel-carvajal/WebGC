@@ -52,7 +52,7 @@ declare -a chromePids
 
 echo "Launching PeerServer..."
 cd $serverDir
-cd serverjs-gossip/examples
+cd examples
 node server.js 9000 4 >/dev/null &
 nodePid=$!
 echo -e "\tDONE"

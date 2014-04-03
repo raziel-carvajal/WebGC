@@ -26,7 +26,7 @@ ideally, N contains two peers with preference 0 and two peers of preference 1 (b
 distribution of preferences for these 15 peers).
 
 ## Test Execution
-In the current directory, the script ```multi-protocols.sh``` lunches the test scenario 
+The script ```peerjs-gossip/test/multi-protocols-test/multi-protocols.sh``` lunches the test scenario 
 described before (see section [Test Scenario](#test-scenario)). This script is going to
 open some windows of the Chrome browser and each window will be considered as one peer,
 then each peer P performs the Vicinity protocol in order to find wich are the most 
@@ -41,25 +41,23 @@ and here it is a description of each option:
 
 - ```<peers>```: Number of peers in the test (integer)
 - ```<execution-time>```: Duration (in seconds) of the test (integer)
-- ```<serverjs-gossip-dir>```: Directory of the project ServerJS-Gossip project
+- ```<serverjs-gossip-dir>```: Directory of the ServerJS-Gossip project
 
 ### Example of the Script Execution
 Follow the next steps:
 
 1. ```cd <PATH>/peerjs-gossip/test/vicinity-local-test```
-    - Where ```<PEERJS>``` is the path of the folder that contains 
-    the peerjs-gossip project.
+    - Where ```<PATH>``` is the directory that contains both projects, PeerJS-Gossip and
+    ServerJS-Gossip.
 
-- ```./vicinity-test.sh 15 300 <SERVERJS> /tmp/VicinityTest```
-    - Where ```<SERVERJS>``` is the path of the folder that contains the 
-    serverjs-gossip project.
+- ```./multi-protocols.sh 10 180 <PATH>/serverjs-gossip```
 
-This example emulates an overlay of 15 peers, where each peer perfoms the Vicinity
-protocol during 5 minutes (300 seconds) following the scenario described in section
+This example emulates an overlay of 10 peers, where each peer perfoms the Vicinity
+protocol during 3 minutes (180 seconds) following the scenario described in section
 [Test Scenario](#test-scenario). When the script finishes with its execution, the
-folder ```/tmp/VicinityTest``` is going to contain the results of each peer in the 
-```results``` folder. In this folder of results, there is one folder per peer that
-contains an output file called ```log```. The log file contains the different 
-neighboors that Vicinity found on each iteration.
+folder ```peerjs-gossip/test/multi-protocols-test/output``` is going to contain the 
+results of each peer in the ```results``` folder. In this folder of results, there
+is one folder per peer containing an output file called ```log```. The log file 
+contains the different neighboors that Vicinity found on each iteration.
 
-> **NOTE:** During the execution of the script some windows alerts will appear, PLEASE, do not perform any action with these events AND do not close any window of Chrome, because each window represents a peer.
+> **NOTE:** During the execution of the script do not close any window of Chrome, because each window represents a peer.

@@ -8,6 +8,7 @@ of gossip-based protocols. Thanks to PeerJS-Gossip, users can enrich their appli
 # Installation Instructions
 In order to test this library you must obtain the ServerJS-Gossip project as follows:
 
+
 - Fork the project ServerJS-Gossip through the next command: ``` git clone               
   git+ssh://<user>@scm.gforge.inria.fr//gitroot/serverjs-gossip/serverjs-gossip.git  ```
   the ``` <user> ``` tag must be replaced with your user's name.
@@ -53,4 +54,4 @@ The Coordinator is a sub-object of PeerJS, so, users can use the primitives ```P
 ``` http://peerjs.com/docs/#api ```
 
 # Code Documentation
-You can find the documentation of each object in this library at the folder ``peerjs-gossip/doc ```
+You can find the documentation of each object in this library at the folder ```peerjs-gossip/doc ```
