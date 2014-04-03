@@ -22,7 +22,7 @@
 
 peers=$1
 exeTime=$2
-serverDir="/home/raziel/Documents/repositories/brow2brow"
+serverDir=$3
 testDir="output"
 origin=`pwd`
 
