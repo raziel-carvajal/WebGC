@@ -60,4 +60,8 @@ results of each peer in the ```results``` folder. In this folder of results, the
 is one folder per peer containing an output file called ```log```. The log file 
 contains the different neighboors that Vicinity found on each iteration.
 
+In the file ```peerjs-gossip/test/multi-protocols-test/multi-protocol.html``` you can
+find an instance of the Coordinator object which orchestrate the protocols for having the
+clustering example.
+
 > **NOTE:** During the execution of the script do not close any window of Chrome, because each window represents a peer.

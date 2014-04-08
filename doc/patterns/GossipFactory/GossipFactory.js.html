@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: GossipFactory.js</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Source: GossipFactory.js</h1>
+    
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>/**
+* @module lib/patterns */
+(function(exports){
+  /**
+  * @class GossipFactory
+  * @classdesc This class implements a factory that creates instances of gossip-based protocols. The 
+  * creation of each protocol is performed via an object that contains the configuration of the protocol,
+  * this object is called configuration object.
+  * @author Raziel Carvajal Gomez &lt;raziel.carvajal-gomez@inria.fr> */  
+  function GossipFactory(){
+    this.inventory = {};
+  }
+  /**
+  * @method checkProperties
+  * @desc This method verifies if the properties in a configuration object have a the right type and the
+  * valid value for each property.
+  * @param {Object} opts - Configuration object of a gossip protocol. */ 
+  GossipFactory.prototype.checkProperties = function(opts){
+    if( typeof opts.iD !== 'string' )
+      throw "Object's ID must be a string";
+    if( typeof opts.data === 'undefined' )
+      throw 'The local data could be defined';
+    if( typeof opts.viewSize !== 'number' || opts.viewSize &lt; 1 )
+      throw "Protocol's size view is not valid";
+    if( typeof opts.gossipLength !== 'number' || opts.gossipLength &lt; 1 )
+      throw "Protocol's message size is not valid";
+    if( typeof opts.periodTime !== 'number' || opts.periodTime &lt; 2000 )
+      throw "Protocol's periodicity is not valid";
+    if( typeof opts.propagationPolicy.push !== 'boolean' )
+      throw 'Propagation policy (push) is not boolean';
+    if( typeof opts.propagationPolicy.pull !== 'boolean' )
+      throw 'Propagation policy (pull) is not boolean';
+    if( typeof opts.dependencies !== 'undefined' ){
+      if( typeof opts.dependencies !== 'object' && typeof opts.dependencies.length !== 'number')
+        throw "Objects' dependencies aren't an array";
+    }else{
+      console.log("Object's properites hasn't dependencies");
+    }
+  };
+  /**
+  * @method createProtocol
+  * @desc This method creates an instance of a gossip protocol, this protocol is described by the
+  * parameter opts. The reference of every gossip protocol will be kept in the GossipFactory.inventory
+  * property of the factory.
+  * @param {Object} opts - Configuration object of a gossip protocol. */
+  GossipFactory.prototype.createProtocol = function(opts){
+    try{
+      var protocol;
+      if( typeof opts.object !== 'string' )
+        throw "Object's name must be a string";
+      var constructor = exports[opts.object];
+      if( typeof constructor === 'undefined' )
+        throw 'Object does not exist in the library of the system';
+      gossipUtil.extendProperties(opts, constructor.defaultOpts);
+      this.checkProperties(opts);
+      protocol = new constructor(opts);
+      if( !this.inventory.hasOwnProperty(opts.iD) )
+        this.inventory[protocol.iD] = protocol;
+      else
+        throw "The Object's identifier (" + opts.iD + ") already exists";
+    }catch(e){
+      console.log("Gossip-based protocol wasn't created\n\t" + e);
+    }
+  };
+  /**
+  * @method setDependencies
+  * @desc In some cases, there are gossip protocols that have dependencies amog them. This method
+  * reads the property dependencies in the configuration object and establishes those dependencies. For
+  * this method, a dependency is to share the property of one gossip protocol with another gossip protocol.*/ 
+  GossipFactory.prototype.setDependencies = function(){
+    var keys = Object.keys(this.inventory);
+    var i, obj, deps, j, extObj, extAt, locAt;
+    for( i = 0; i &lt; keys.length; i++ ){
+      obj = this.inventory[ keys[i] ];
+      deps = obj.dependencies;
+      if( typeof deps !== 'undefined' ){
+        // TODO To add exceptions per member of each dependency
+        for( j = 0; j &lt; deps.length; j++ ){
+          if( deps[j].hasOwnProperty('objectId') ){
+            extObj = this.inventory[ deps[j].objectId ];
+            extAt = deps[j].externalAtt;
+            locAt = deps[j].localAtt;
+            obj[ locAt ] = extObj[ extAt ];
+          }
+          if( deps[j].hasOwnProperty('externalObj') ){
+            // TODO Code for finding a link among the objects in the Factory
+            // , in a dinamically way, must be written here!!
+          }
+        }
+      }
+    }
+  };
+
+  GossipFactory.prototype.verifyAttributes = function(){
+    // TODO this code must check every entry of each dependencie
+  };
+
+  exports.GossipFactory = GossipFactory;
+})(this);
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="patterns.html">lib/patterns</a></li></ul><h3>Classes</h3><ul><li><a href="GossipFactory.html">GossipFactory</a></li></ul><h3>Global</h3><ul><li><a href="global.html#checkProperties">checkProperties</a></li><li><a href="global.html#createProtocol">createProtocol</a></li><li><a href="global.html#setDependencies">setDependencies</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Tue Apr 08 2014 11:00:39 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

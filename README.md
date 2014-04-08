@@ -18,6 +18,7 @@ Once you are done with ServerJS-Gossip, verify that Google Chrome (at least vers
 on your machine.
 
 Get the PeerJS-Gossip project as follows:
+
 - Fork the project PeerJS-Gossip with the next command: ``` git clone 
   git+ssh://<user>@scm.gforge.inria.fr//gitroot/peerjs-gossip/peerjs-gossip.git  ``` the 
   ``` <user> ``` tag must be replaced with your user's name.
@@ -25,15 +26,6 @@ Get the PeerJS-Gossip project as follows:
 - Type ``` npm install ```
 - Type ``` bower install ```
 - You are done with the installation
-
-# Examples
-In this section you can find a set of examples that shows how PeerJS-Gossip copes with the different
-implementations of gossip-based algorithms.
-
-## Clustering Algorithm Example
-Refer to the README.md file in the folder ``` peerjs-gossip/test/multi-protocols-test ``` in order to lunch 
-an example of PeerJS-Gossip in your machine. This example will show you how a gossip-based algorithm is used
-for building clusters of peers.
 
 # PeerJS-Gossip API
 Users can improve their applications with the set of methods that PeerJS-Gossip offers through its objects.
@@ -52,6 +44,15 @@ API.
 The Coordinator is a sub-object of PeerJS, so, users can use the primitives ```PeerJS.send()``` and 
 ```PeerJS.receive()```. Refer to the PeerJS API reference for more details at 
 ``` http://peerjs.com/docs/#api ```
+
+# Examples
+In this section you can find a set of examples that shows how PeerJS-Gossip copes with the different
+implementations of gossip-based algorithms.
+
+## Clustering Algorithm Example
+Refer to the README.md file in the folder ``` peerjs-gossip/test/multi-protocols-test ``` in order to lunch 
+an example of PeerJS-Gossip in your machine. This example will show you how a gossip-based algorithm is used
+for building clusters of peers.
 
 # Code Documentation
 You can find the documentation of each object in this library at the folder ```peerjs-gossip/doc ```

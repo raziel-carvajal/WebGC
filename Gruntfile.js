@@ -9,7 +9,14 @@ module.exports = function(grunt) {
       },
       build: {
         src: [ // This minize was written just for testing uglify
-          'lib/**/*.js'
+          'lib/utils/dumb-proximity-func.js',
+          'lib/utils/gossip-util.js',
+          'lib/apis/GossipProtocol.js',
+          'lib/patterns/GossipFactory.js',
+          'lib/algorithms/Cyclon.js',
+          'lib/algorithms/Vicinity.js',
+          'lib/algorithms/RandomPeerSampling.js',
+          'lib/controllers/Coordinator.js'
         ],
         dest: 'dist/<%= pkg.name %>.min.js'
       }

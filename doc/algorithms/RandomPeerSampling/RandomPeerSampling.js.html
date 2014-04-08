@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: RandomPeerSampling.js</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Source: RandomPeerSampling.js</h1>
+    
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>/** 
+ * @module lib/algorithms */
+(function(exports){
+  /**
+  * @class SamplingService
+  * @classdesc This class implements the Random Peer Sampling (RPS) service. 
+  * The local view is basically a set of ID's, each ID identifies a remote 
+  * peer.The implementation of the view GossipProtocol.view is an object 
+  * where the ID of a remote peer is a key and each key points to an 
+  * {@link Item} that contains an age field (timestamp) and a data field 
+  * (application dependent).
+  * @param {Object} options - Object that contains a valid configuration of
+  * the gossip-based protocol.
+  * @author Raziel Carvajal &lt;raziel.carvajal-gomez@inria.fr>*/
+  function SamplingService(options){
+    SamplingService.call(this, options);
+    /** Peer selection policy, there are two possible values for this 
+    * parameter: 'random' OR 'oldest' */
+    this.selectionPolicy = options.selectionPolicy;
+    // Healing parameter of the RPS service
+    this.H = options.H;
+    // Swapped parameter of the RPS service
+    this.S = options.S;
+    this.inVandNonReturned = {};
+  }
+  /**
+  * @desc This object represents the configuration by default of this protocol. During the
+  * instantiation of this object (via the Factory object) if the options are not defined
+  * the default configuration will be taken into account. 
+  * @property {Object} defaultOpts - Default configuration of this gossip-based protocol.
+  * @default */
+  SamplingService.defaultOpts = {
+    data: '?',
+    viewSize: 10,
+    gossipLength: 5,
+    periodTime: 10000,
+    propagationPolicy: { push: true, pull: true },
+    selectionPolicy: 'random', // random OR oldest
+    H: '?',
+    S: '?'
+  };
+  util.inherits(SamplingService, GossipProtocol);
+  /** 
+  * @method initialize
+  * @desc See method GossipProtocol.initilize() for more information.*/
+  SamplingService.prototype.initialize = function(keys){
+    if( keys.length !== 0 ){
+      for( var i = 0; i &lt; keys.length; i += 1 ){
+        this.view[ keys[i] ] = gossipUtil.newItem(0, '?');
+        this.inVandNonReturned[ keys[i] ] = 1;
+      }
+    }
+  };
+  /**
+  * @method selectPeer
+  * @desc See method GossipProtocol.selectPeer() for more information. Additionally, 
+  * the selection of the peer identifier is performed in a randomly way or taking into account 
+  * the oldest one. */
+  SamplingService.prototype.selectPeer = function(){
+    var peer; var keys = Object.keys(this.inVandNonReturned);
+    if( keys.length === 0 ){
+      console.log('WARNING: The quality of returned samples is no longer reliable');
+      peer = gossipUtil.getRandomKey(this.view);
+    }else{
+      switch( this.selectionPolicy ){
+        case 'random':
+          peer = keys[0];
+        break;
+        case 'oldest':
+          peer = gossipUtil.getOldestKey(this.view);
+        break;
+        default:
+          console.log('ERROR: The selection policy is not recognized');
+        peer = keys[0];
+        break;
+      }
+      delete this.inVandNonReturned[peer];
+    }
+    return peer;
+  };
+  /** 
+  * @method permuteView
+  * @desc This method changes, in a randomly way, the order of the view GossipProtocol.view */
+  SamplingService.prototype.permuteView = function(){
+    var keys = Object.keys(this.view);
+    if( keys.length === 0 || keys.length === 1 )
+      return;
+    else{
+      var tmpDic = {}, permutation = {}, tmpAr = [], i, key;
+      for( i = 0; i &lt; keys.length; i++ )
+        tmpDic[ keys[i] ] = 1;
+      for( i = 0; i &lt; keys.length; i++){
+        tmpAr = Object.keys(tmpDic);
+        key = tmpAr[ Math.floor(Math.random() * tmpAr.length) ];
+        permutation[key] = this.view[key];
+        delete tmpDic[key]; delete this.view[key];
+      }
+      var keysP = Object.keys(permutation);
+      for( i = 0; i &lt; keysP.length; i++ )
+        this.view[ keysP[i] ] = permutation[ keysP[i] ];
+    }
+  };
+  /**
+  * @method moveOldest
+  * @desc This method changes the order of the view GossipProtocol.view, moving the oldest 
+  * SamplingService.H items (according to their timestamp) at the end of the view. */ 
+  SamplingService.prototype.moveOldest = function(){
+    if( Object.keys(this.view).length > this.H && this.H > 0 ){
+      var oldests = [], oldestKey, i;
+      for( i = 0; i &lt; this.H; i++ ){
+        oldestKey = gossipUtil.getOldestKey(this.view);
+        oldests[i] = { key: oldestKey, value: this.view[oldestKey] };
+        delete this.view[oldestKey];
+      }
+      oldests.sort( function(a,b){ return (a.value.age - b.value.age); } );
+      for( i = 0; i &lt; oldests.length; i++ )
+        this.view[ oldests[i].key ] = oldests[i].value;
+    }
+  };
+  /**
+  * @method selectItemsToKeep
+  * @desc See method GossipProtocol.selectItemsToKeep() for more information. */
+  SamplingService.prototype.selectItemsToKeep = function(thisId, rcvCache){
+    var i, keys = Object.keys(rcvCache);
+    for( i = 0; i &lt; keys.length; i++ ){
+      if( keys[i] in this.view ){
+        if( rcvCache[ keys[i] ].age &lt; this.view[ keys[i] ].age )
+          this.view[ keys[i] ] = rcvCache[ keys[i] ];
+      }
+      else
+        this.view[ keys[i] ] = rcvCache[ keys[i] ];
+    }
+    var oldest, toRemove;
+    toRemove = Math.min(this.H, Object.keys(this.view).length - this.viewSize);
+    for( i = 0; i &lt; toRemove; i++ ){
+      oldest = gossipUtil.getOldestKey(this.view);
+      delete this.view[oldest];
+    }
+    toRemove = Math.min(this.S, Object.keys(this.view).length - this.viewSize);
+    keys = Object.keys(this.view);
+    for( i = 0; i &lt; toRemove; i++ )
+      delete this.view[ keys[i] ];
+    keys = Object.keys(this.view);
+    if( keys.length > this.viewSize )
+      gossipUtil.removeRandomly(keys.length - this.viewSize, this.view);
+    // Queue update
+    keys = Object.keys(this.inVandNonReturned);
+    for( i = 0; i &lt; keys.length; i++ ){
+      if( !(keys[i] in this.view) )
+        delete this.inVandNonReturned[ key[i] ];
+    }
+    keys = Object.keys(this.view);
+    for( i = 0; i &lt; keys.length; i++ ){
+      if( !(keys[i] in this.inVandNonReturned) )
+        this.inVandNonReturned[ keys[i] ] = 1;
+    }
+  };
+  /**
+  * @method getItemsToSend
+  * @desc See method GossipProtocol.getItemsToSend() for more information. */
+  SamplingService.prototype.getItemsToSend = function(thisId, dstPeer, thread){
+    var buffer = {}; buffer[thisId] = gossipUtil.newItem(0, this.data);
+    this.permuteView();
+    this.moveOldest();
+    var ii = Math.floor(this.viewSize / 2) - 1;
+    var keys = Object.keys(this.view);
+    if( keys.length >= ii ){
+      for( var i = 0; i &lt; ii; i++ )
+        buffer[ keys[i] ] = this.view[ keys[i] ];
+    }
+    return buffer;
+  };
+  /** 
+  * @method increaseAge
+  * @desc See method GossipProtocol.increaseAge() for more information. */
+  SamplingService.prototype.increaseAge = function(){
+    var keys = Object.keys(this.view);
+    for( var i = 0; i &lt; keys.length; i++ )
+      this.view[ keys[i] ].age += 1;
+  };
+  /** 
+  * @method getLog
+  * @desc See method GossipProtocol.getLog() for more information. */
+  SamplingService.prototype.getLog = function(){
+    var trace = '['; var limit;
+    var keys = Object.keys(this.view);
+    if( keys.length === 0 )
+      trace += ']';
+    else{
+      limit = keys.length - 1;
+      for(var i = 0; i &lt; limit; i += 1)
+      trace += '(' + keys[i] + ', ' + this.view[ keys[i] ].age + '), ';
+      trace += '(' + keys[limit] + ', ' + this.view[ keys[limit] ].age + ')]';
+    }
+    return trace;
+  };
+
+  exports.SamplingService = SamplingService;
+
+})(this);
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="algorithms.html">lib/algorithms</a></li></ul><h3>Classes</h3><ul><li><a href="SamplingService.html">SamplingService</a></li></ul><h3>Global</h3><ul><li><a href="global.html#getItemsToSend">getItemsToSend</a></li><li><a href="global.html#getLog">getLog</a></li><li><a href="global.html#increaseAge">increaseAge</a></li><li><a href="global.html#initialize">initialize</a></li><li><a href="global.html#moveOldest">moveOldest</a></li><li><a href="global.html#permuteView">permuteView</a></li><li><a href="global.html#selectItemsToKeep">selectItemsToKeep</a></li><li><a href="global.html#selectPeer">selectPeer</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Tue Apr 08 2014 11:00:28 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

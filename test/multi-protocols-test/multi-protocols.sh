@@ -25,6 +25,7 @@ exeTime=$2
 serverDir=$3
 testDir="output"
 origin=`pwd`
+simLim=3
 
 chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --user-data-dir="
 
@@ -61,8 +62,9 @@ echo "Launching instances of Chrome (one of them represents one peer)..."
 cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   peerDir="peer_$COUNTER"
+  data=$(( $COUNTER % $simLim ))
   htmlFile=$peerDir".html"
-  cat "multi-protocol.html" >$htmlFile
+  cat "multi-protocol.html" | sed -r "s/#D/$data/;" >$htmlFile
   "$chromeCommand" $chromeStr$testDir/$peersDir/$peerDir $htmlFile &>/dev/null &
   chromePids[$COUNTER]=$!
 done
