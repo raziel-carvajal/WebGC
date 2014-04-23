@@ -51,12 +51,12 @@ mkdir $peersDir
 cd $peersDir
 declare -a chromePids
 
-echo "Launching PeerServer..."
-cd $serverDir
-cd examples
-node server.js 9000 4 >/dev/null &
-nodePid=$!
-echo -e "\tDONE"
+#echo "Launching PeerServer..."
+#cd $serverDir
+#cd examples
+#node server.js 9000 4 >/dev/null &
+#nodePid=$!
+#echo -e "\tDONE"
 
 echo "Launching instances of Chrome (one of them represents one peer)..."
 cd $origin
@@ -72,7 +72,7 @@ echo -e "\tDONE"
 
 echo "Waiting till the time of the experiment expires..."
 sleep $exeTime
-kill -9 $nodePid
+#kill -9 $nodePid
 echo -e "\tDONE"
 
 cd $testDir
