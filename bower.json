@@ -16,8 +16,7 @@
     "tests"
   ],
   "dependencies": {
-    "peerjs": "https://github.com/peers/bower-peerjs.git",
-    "jquery": "https://github.com/jquery/jquery.git"
+    "peerjs": "https://github.com/peers/bower-peerjs.git"
   },
   "devDependencies": {
     "requirejs": "~2.1.11",
