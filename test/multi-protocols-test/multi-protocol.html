@@ -1,22 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE HTML>
 <head>
-<!--
-  <script type="text/javascript" src="../../bower_components/jquery/dist/jquery.js"></script>
   <script type="text/javascript" src="../../bower_components/peerjs/peer.js"></script> 
--->
   <script type="text/javascript" src="../../bower_components/log4javascript/log4javascript.js"></script>
-<!-- <script type="text/javascript" src="../../dist/peerjs-gossip.min.js"></script> -->
+  <script type="text/javascript" src="../../dist/peerjs-gossip.min.js"></script>
 </head>
 
 <body>
+  <peerId id="peerId">#P</peerId>
   <data id="data">#D</data>
-  <!--
   <script type="text/javascript" src="../../lib/conf_objs/conf-obj-clustering.js"></script>
-  -->
   <script type="text/javascript">
-    var logger = log4javascript.getDefaultLogger();
-    //var coord = new Coordinator(configurationObj);
+    var coord = new Coordinator(configurationObj);
   </script>
 </body>
 

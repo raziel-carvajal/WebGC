@@ -51,12 +51,12 @@ mkdir $peersDir
 cd $peersDir
 declare -a chromePids
 
-#echo "Launching PeerServer..."
-#cd $serverDir
-#cd examples
-#node server.js 9000 4 >/dev/null &
-#nodePid=$!
-#echo -e "\tDONE"
+echo "Launching PeerServer..."
+cd $serverDir
+cd examples
+node server.js 9000 4 >~/tmp/server.out &
+nodePid=$!
+echo -e "\tDONE"
 
 echo "Launching instances of Chrome (one of them represents one peer)..."
 cd $origin
@@ -64,7 +64,7 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   peerDir="peer_$COUNTER"
   data=$(( $COUNTER % $simLim ))
   htmlFile=$peerDir".html"
-  cat "multi-protocol.html" | sed -r "s/#D/$data/;" >$htmlFile
+  cat "multi-protocol.html" | sed -r "s/#D/$data/;s/#P/$peerDir/;" >$htmlFile
   "$chromeCommand" $chromeStr$testDir/$peersDir/$peerDir $htmlFile &>/dev/null &
   chromePids[$COUNTER]=$!
 done
@@ -72,7 +72,7 @@ echo -e "\tDONE"
 
 echo "Waiting till the time of the experiment expires..."
 sleep $exeTime
-#kill -9 $nodePid
+kill -9 $nodePid
 echo -e "\tDONE"
 
 cd $testDir
@@ -83,11 +83,11 @@ cd $resultsDir
 echo "Parsing results..."
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   kill -9 ${chromePids[$COUNTER]}
-  peerDir="peer_$COUNTER"
-  mkdir $peerDir
-  mv ../$peersDir/$peerDir/chrome_debug.log $peerDir
-  cat $peerDir/chrome_debug.log | sed -n '/{*}/p' | sed 's/.*{\(.*\)}.*/\1/' >$peerDir/log
+#  peerDir="peer_$COUNTER"
+#  mkdir $peerDir
+#  mv ../$peersDir/$peerDir/chrome_debug.log $peerDir
+#  cat $peerDir/chrome_debug.log | sed -n '/{*}/p' | sed 's/.*{\(.*\)}.*/\1/' >$peerDir/log
 done
 echo -e "\tDONE"
 echo "END OF THE EXECUTION"
-echo "You can find the results of the test at test/vicinity-local-test/output/results"
+#echo "You can find the results of the test at test/vicinity-local-test/output/results"
