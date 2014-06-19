@@ -21,6 +21,7 @@
   "devDependencies": {
     "requirejs": "~2.1.11",
     "jsdoc3": "~3.2.2",
-    "log4javascript": "~1.4.9"
+    "log4javascript": "~1.4.9",
+    "cytoscape": "~2.2.9"
   }
 }

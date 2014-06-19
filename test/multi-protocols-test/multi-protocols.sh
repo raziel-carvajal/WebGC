@@ -58,6 +58,8 @@ node server.js 9000 4 >~/tmp/server.out &
 nodePid=$!
 echo -e "\tDONE"
 
+sleep 10
+
 echo "Launching instances of Chrome (one of them represents one peer)..."
 cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
