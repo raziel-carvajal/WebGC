@@ -41,7 +41,7 @@ else
   fi
 fi
 echo "Your operating system is: $opSysStr"
-rm -fr $testDir "peer_*"
+rm -fr $testDir "peer_*" "plotter"
 mkdir $testDir
 
 cd $testDir
@@ -51,17 +51,31 @@ mkdir $peersDir
 cd $peersDir
 declare -a chromePids
 
-echo "Launching PeerServer..."
 cd $serverDir
-cd examples
+cd lib
+echo "Launching LoggingServer..."
+node LoggingServer.js 9001 >~/tmp/log.out &
+logServerPid=$!
+echo -e "\tDONE"
+
+cd ../examples
+echo "Launching PeerServer..."
 node server.js 9000 4 >~/tmp/server.out &
 nodePid=$!
 echo -e "\tDONE"
 
+cd $origin
+echo "Launching plotter..."
+mkdir plotter
+"$chromeCommand" $chromeStr"plotter" graph.html &>/dev/null &
+plotterPid=$!
+echo -e "\tDONE"
+
+echo "Waiting the announcement of the plotter..."
 sleep 10
+echo -e "\tDONE"
 
 echo "Launching instances of Chrome (one of them represents one peer)..."
-cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   peerDir="peer_$COUNTER"
   data=$(( $COUNTER % $simLim ))
@@ -74,7 +88,7 @@ echo -e "\tDONE"
 
 echo "Waiting till the time of the experiment expires..."
 sleep $exeTime
-kill -9 $nodePid
+kill -9 $logServerPid $nodePid $plotterPid
 echo -e "\tDONE"
 
 cd $testDir
