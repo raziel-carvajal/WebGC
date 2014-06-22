@@ -64,6 +64,8 @@ node server.js 9000 4 >~/tmp/server.out &
 nodePid=$!
 echo -e "\tDONE"
 
+sleep 5
+
 cd $origin
 echo "Launching plotter..."
 mkdir plotter
