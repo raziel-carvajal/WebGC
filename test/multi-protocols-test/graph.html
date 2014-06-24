@@ -1,14 +1,35 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html>
   <head>
+    <meta charset=utf-8 />
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
     <script type="text/javascript" src="../../bower_components/peerjs/peer.js"></script>
+    <script type="text/javascript" src="../../bower_components/cytoscape/dist/cytoscape.js"></script>
+    <script type="text/javascript" src="../../bower_components/log4javascript/log4javascript.js"></script>
+    <script type="text/javascript" src="../../lib/utils/gossip-util.js"></script>
     <script type="text/javascript" src="../../lib/utils/Plotter.js"></script>
     <script type="text/javascript" src="../../lib//conf_objs/PlotterConf.js"></script>
   </head>
   <title>Plotter</title>
   <body>
-    <script type="text/javascript">
-      var plotter = new Plotter(plotterOpts);
+    <script>
+      $(document).ready(function(){
+        var plotter = new Plotter( plotterOpts );
+      });
     </script>
+    <style>
+      body { 
+        font: 14px helvetica neue, helvetica, arial, sans-serif;
+      }
+      #cy {
+        height: 100%;
+        width: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+    </style>
+    <div id="cy"></div>
   </body>
   
   </html>

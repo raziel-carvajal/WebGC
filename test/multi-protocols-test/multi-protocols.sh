@@ -27,7 +27,8 @@ testDir="output"
 origin=`pwd`
 simLim=3
 
-chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --user-data-dir="
+#chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --user-data-dir="
+chromeStr="--no-default-browser-check --no-first-run --disable-popup-blocking --user-data-dir="
 
 opSysStr=`uname`
 if [ $opSysStr = "Linux" ] ; then
@@ -58,24 +59,26 @@ node LoggingServer.js 9001 >~/tmp/log.out &
 logServerPid=$!
 echo -e "\tDONE"
 
+sleep 5
+
 cd ../examples
 echo "Launching PeerServer..."
 node server.js 9000 4 >~/tmp/server.out &
 nodePid=$!
 echo -e "\tDONE"
 
+echo "Waiting the announcement of the plotter..."
 sleep 5
+echo -e "\tDONE"
 
 cd $origin
 echo "Launching plotter..."
 mkdir plotter
-"$chromeCommand" $chromeStr"plotter" graph.html &>/dev/null &
+"$chromeCommand" $chromeStr"plotter" graph.html >/dev/null &
 plotterPid=$!
 echo -e "\tDONE"
 
-echo "Waiting the announcement of the plotter..."
-sleep 10
-echo -e "\tDONE"
+sleep 5
 
 echo "Launching instances of Chrome (one of them represents one peer)..."
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
@@ -83,7 +86,7 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   data=$(( $COUNTER % $simLim ))
   htmlFile=$peerDir".html"
   cat "multi-protocol.html" | sed -r "s/#D/$data/;s/#P/$peerDir/;" >$htmlFile
-  "$chromeCommand" $chromeStr$testDir/$peersDir/$peerDir $htmlFile &>/dev/null &
+  "$chromeCommand" $chromeStr$testDir/$peersDir/$peerDir $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
 done
 echo -e "\tDONE"
