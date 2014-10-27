@@ -85,7 +85,7 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   peerDir="peer_$COUNTER"
   data=$(( $COUNTER % $simLim ))
   htmlFile=$peerDir".html"
-  cat "multi-protocol.html" | sed -r "s/#D/$data/;s/#P/$peerDir/;" >$htmlFile
+  cat "multi-protocol.html" | sed "s/#D/$data/;s/#P/$peerDir/;" >$htmlFile
   "$chromeCommand" $chromeStr$testDir/$peersDir/$peerDir $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
 done
