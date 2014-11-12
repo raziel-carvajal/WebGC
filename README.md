@@ -7,7 +7,8 @@ implementation and management of gossip-based protocols. Thanks to WebGC, users 
 enrich their applications with the benefits (and constrains) of a P2P-gossip communication.
 
 # Installation Instructions
-Be sure that NodeJS, Bower, Git and NPM are installed in your machine. In order to test this 
+Be sure that [NodeJS](http://nodejs.org/), [Bower](http://bower.io/), [Git](http://git-scm.com/)
+ and [NPM](https://www.npmjs.org/) are installed in your machine. In order to test this 
 library you must obtain the PeerJS-Server Gossip project as follows:
 
 - Fork the project PeerJS-Server Gossip through the next command: ``` git clone               
