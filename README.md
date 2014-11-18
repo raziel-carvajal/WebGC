@@ -51,3 +51,6 @@ This project uses [JSDoc](https://github.com/jsdoc3/jsdoc) to create the documen
 found at the ```lib``` directory. In order to generate a new documentation you must install JSDoc
 through [Bower](http://bower.io/). **NOTE** dependencies for development are written in the file
 ```bower.json``` but there is not any task for the generation at ```Gruntfile.js```
+
+#Compatibility
+This project is compatible with Linux based systems (tested in Ubuntu 14.10) and MacOS (OS X Yosemite version 10.10), the web browser Chrome (version 38 or higher) must be installed too. Do not hesitate to report any issue, comment, experience with the project or question to <mailto:raziel.carvajal-gomez@inria.fr>
