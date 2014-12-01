@@ -214,13 +214,13 @@
   };
 
   Coordinator.prototype.getGraph = function(viewType) {
-    this.log.info('Getting graph with loop 1');
-    var http = new XMLHttpRequest();
     var loop;
     if(viewType === 'clu')
-      loop = this.plotterObj.buildGraph;
+      loop = this.plotterObj.cluLoop;
     else
       loop = this.plotterObj.currentLoop;
+    this.log.info('Getting graph with loop ' + loop);
+    var http = new XMLHttpRequest();
     var url = 'http://' + this.options.host + ':' + this.options.port + '/' + this.options.key + 
       '/' + this.id + '/getGraph?loop=' + loop + '&viewType=' + viewType;
     http.open('get', url, true);
