@@ -12,8 +12,8 @@
 var configurationObj = {
   //peerId: document.getElementById('peerId').innerHTML,
   peerJsOpts: {
-    host: 'localhost',//address of a PeerServer
-    port: 9090,//port of the PeerServer
+    host: '131.254.213.43',//address of a PeerServer
+    port: 3389,//port of the PeerServer
     debug: 3,//Level of the local logging (logs that appears in the console part of each browser)
     logFunction: function(){
       var msg = Array.prototype.slice.call(arguments).join(' ');
@@ -45,7 +45,7 @@ var configurationObj = {
   },
   plotter: true,
   loggingServer: {
-    host: 'localhost',
-    port: 9091
+    host: '131.254.213.43',
+    port: 3388
   }
 };

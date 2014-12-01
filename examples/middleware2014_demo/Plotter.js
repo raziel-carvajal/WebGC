@@ -25,12 +25,14 @@
       });
       var neighbours = view[ keys[i] ];
       for(var j = 0; j < neighbours.length; j++){
-        edges.push({
-          'data': {
-            'source': keys[i],
-            'target': neighbours[j]
-          }
-        });
+        if(neighbours[j] !== ""){
+          edges.push({
+            'data': {
+              'source': keys[i],
+              'target': neighbours[j]
+            }
+          });
+        }
       }
     }
     return { 'nodes': nodes, 'edges': edges };
@@ -67,11 +69,11 @@
     var graphContainer;
     if(viewType === 'clu'){
       this.cluLoop++;
-      graphContainer = 'clu-container'; //<<
+      graphContainer = 'clu-section';
     }
     if(viewType === 'rps'){
       this.currentLoop++;
-      graphContainer = 'graphs';
+      graphContainer = 'rps-section';
     }
     this.logger.info('graphcontainer is ' + graphContainer);
     var input = {

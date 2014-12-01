@@ -19,10 +19,30 @@
 }
 
 .rpsContainer{
-
+  float: left;
+  position: relative;
+  font-family: Arial, sans-serif;
+  border: 3px double #FF7500;
+  width: 48%;
+  margin: 5px AUTO;
+  height: 96%;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-radius: 10px;
 }
 
-.cluContainer{}
+.cluContainer{
+  float: right;
+  position: relative;
+  font-family: Arial, sans-serif;
+  border: 3px double #FF7500;
+  width: 48%;
+  margin: 5px AUTO;
+  height: 96%;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-radius: 10px;
+}
 
 .formContainer{
   float: left;

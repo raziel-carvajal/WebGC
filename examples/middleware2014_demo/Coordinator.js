@@ -39,9 +39,9 @@
      * the function in this event is performed. */
     var self = this;
     this.on('open', function(){ 
-      window.setTimeout( function(){ self.getFirstView(); }, 10000 );
-      window.setInterval( function(){ self.getGraph('rps'); }, 40000);
-      //window.setInterval( function(){ self.getGraph('clu'); }, 40000);
+      window.setTimeout( function(){ self.getFirstView(); }, 5000 );
+      window.setInterval( function(){ self.getGraph('rps'); }, 20000);
+      window.setInterval( function(){ self.getGraph('clu'); }, 20000);
     });
     /**
     * @event Coordinator#connection
@@ -205,8 +205,10 @@
       /** 
       * @fires Coordinator#doActiveThread */
       var data = JSON.parse(http.responseText);
-      self.plotterId = data.plotterId;
-      self.emit('doActiveThread', data.view);
+      if(data.view.length !== 0)
+        self.emit('doActiveThread', data.view);
+      else
+        window.setTimeout( self.getFirstView, 5000 );
     };
     http.send(null);
   };
