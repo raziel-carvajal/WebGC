@@ -25,17 +25,17 @@ var configurationObj = {
     cyclon1: {
       class: 'Cyclon',
       //data: parseInt(document.getElementById('data').innerHTML),
-      viewSize: 10,
-      fanout: 5,
-      periodTimeOut: 10000,
+      viewSize: 2,
+      fanout: 2,
+      periodTimeOut: 5000,
       propagationPolicy: { push: true, pull: true } 
     },
     vicinity1: { 
       class: 'Vicinity',
       //data: parseInt(document.getElementById('data').innerHTML),
-      viewSize: 5,
+      viewSize: 2,
       fanout: 2,
-      periodTimeOut: 10000,
+      periodTimeOut: 5000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'biased', // random OR biased OR agr-biased
       similarityFunction: 'DumbProximityFunc',

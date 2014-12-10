@@ -49,9 +49,9 @@
      * the function in this event is performed. */
     var self = this;
     this.on('open', function(){ 
-      window.setTimeout( function(){ self.getFirstView(); }, 5000 );
-      window.setInterval( function(){ self.getGraph('rps'); }, 40000);
-      window.setInterval( function(){ self.getGraph('clu'); }, 40000);
+      window.setTimeout( function(){ self.getFirstView(); }, 3000 );
+      window.setInterval( function(){ self.getGraph('rps'); }, 6000);
+      window.setInterval( function(){ self.getGraph('clu'); }, 6000);
       window.setInterval( function(){ self.first = 1; }, 21000);
     });
     /**
@@ -80,7 +80,7 @@
         var keys = Object.keys(self.protocols);
         for( var i = 0; i < keys.length; i++ )
           self.doActiveThread( self.protocols[ keys[i] ] );
-      }, 20000 );
+      }, 5000 );
     });
   }
   
