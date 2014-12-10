@@ -147,8 +147,8 @@
   * @description This method performs the active thread of each gossip-based protocol in the 
   * Coordinator.protocols object.*/
   Coordinator.prototype.doActiveThread = function(protocol){
-    //var log = protocol.protoId + '_' + protocol.loop + '_' + this.id + '_' + protocol.getLog();
-    //this.log.info( '{' + log + '}' );
+    var logi = protocol.protoId + '_' + protocol.loop + '_' + this.id + '_' + protocol.getLog();
+    console.info(logi);
     if( this.plotter ){
       var msg = protocol.getPlotInfo(this.id);
       var ref = this.viewsPerProto[protocol.class];
