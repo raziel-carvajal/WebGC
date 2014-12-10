@@ -15,6 +15,16 @@
   function Coordinator(opts){
     if( !(this instanceof Coordinator) ) 
       return new Coordinator(opts);
+    // BEGIN variables for demo at middleware2014
+    this.connectedPeers = {};
+    this.first = 0;
+    this.profile = opts.gossipAlgos.vicinity1.data;
+    this.viewsPerProto = {
+      'Cyclon':{},
+      'Vicinity': {}
+    };
+    console.info('Peers profile: ' + this.profile);
+    // END
     this.log = new Logger(opts.loggingServer);
     this.log.setOutput(opts.peerId, this.constructor.name);
     this.factory = new GossipFactory( {loggingServer: opts.loggingServer, peerId: opts.peerId});
@@ -40,15 +50,21 @@
     var self = this;
     this.on('open', function(){ 
       window.setTimeout( function(){ self.getFirstView(); }, 5000 );
-      window.setInterval( function(){ self.getGraph('rps'); }, 20000);
-      window.setInterval( function(){ self.getGraph('clu'); }, 20000);
+      window.setInterval( function(){ self.getGraph('rps'); }, 40000);
+      window.setInterval( function(){ self.getGraph('clu'); }, 40000);
+      window.setInterval( function(){ self.first = 1; }, 21000);
     });
     /**
     * @event Coordinator#connection
     * @description This event is fired when a remote peer contacts the local peer via 
     * [the method]{@link DataConnection#send}. The actions of this event are linked with 
     * [the method]{@link ClusteringExecutor#handleConnection}. */
-    this.on('connection', function(c){ self.handleConnection(c); });
+    this.on('connection', function(c){ 
+      if(c.label === 'chat')
+        self.handleChatMsg(c);
+      else
+        self.handleConnection(c); 
+    });
     /**
      * @event Coordinator#doActiveThread
      * This event performs the active thread of the gossip protocols in the
@@ -69,7 +85,41 @@
   }
   
   util.inherits(Coordinator, Peer);
-  
+  /**
+  * This function was added for handling chat messages for the Middleware2014 demo*/  
+  Coordinator.prototype.handleChatMsg = function(c){
+    var chatbox = $('<div id="' + c.peer + '" class="connection active"></div>');
+    var header = $('<h1></h1>').html('Chat with <strong>' + c.peer + '</strong>');
+    var messages = $('<div class="messages"><em>Peer connected.</em></div>');
+    chatbox.append(header);
+    chatbox.append(messages);
+    $('#wrap').append(chatbox);
+    // Select connection handler.
+    $('#' + c.peer).click(function() {
+      if ($('#' + c.peer).attr('class').indexOf('active') === -1) {
+        $('#' + c.peer).addClass('active');
+      } else {
+        $('#' + c.peer).removeClass('active');
+      }
+    });
+    $('.filler').hide();
+    $('#connections').append(chatbox);
+    c.on('data', function(data) {
+      console.info('Data received');
+      console.debug(data);
+      messages.append('<div><span class="peer">' + c.peer + '</span>: ' + data + '</div>');
+    });
+    var self = this;
+    c.on('close', function() {
+      alert(c.peer + ' has left the chat.');
+      chatbox.remove();
+      if ($('.connection').length === 0) {
+        $('.filler').show();
+      }
+      delete self.connectedPeers[c.peer];
+    });
+    this.connectedPeers[c.peer] = 1;
+  };
   /**
   * @method handleConnection
   * @description This method performs the passive thread of each gossip-based protocol in the object 
@@ -101,7 +151,9 @@
     //this.log.info( '{' + log + '}' );
     if( this.plotter ){
       var msg = protocol.getPlotInfo(this.id);
-      this.sendToPlotter( msg, protocol.class );
+      var ref = this.viewsPerProto[protocol.class];
+      ref[msg.loop] = msg.view;
+      //this.sendToPlotter( msg, protocol.class );
     }
     protocol.loop++;
     var dstPeer = protocol.selectPeer();
@@ -131,36 +183,36 @@
   * instance, in a clustering protocol two kind of neighbours could be sent: i)
   * the neighbours of the random overlay and ii) the most similar neighbours (
   * peers of a cluster) */ 
-  Coordinator.prototype.sendToPlotter = function(msg, algoType){
-    var http = new XMLHttpRequest();
-    var viewStr = '';
-    for(var i = 0; i < msg.view.length; i++)
-      viewStr += msg.view[i] + '___';
-    var url = 'http://' + this.options.host + ':' + this.options.port + '/viewForPlotter';
-    http.open('post', url, true);
-    http.setRequestHeader('Content-Type', 'application/json');
-    http.send(JSON.stringify({
-      'id': this.id,
-      'data': msg.profile,
-      'loop': msg.loop,
-      'algo': algoType,
-      'view': viewStr
-    }));
-    var self = this;
-    http.onerror = function(e) {
-      self.log.error('Trying to send type view ' + algoType + ' to plotter');
-    };
-    http.onreadystatechange = function() {
-      if (http.readyState !== 4) {
-        return;
-      }
-      if (http.status !== 200) {
-        http.onerror();
-        return;
-      }
-      self.log.info('No errors in sendToPlotter func');
-    };
-  };
+  //Coordinator.prototype.sendToPlotter = function(msg, algoType){
+  //  var http = new XMLHttpRequest();
+  //  var viewStr = '';
+  //  for(var i = 0; i < msg.view.length; i++)
+  //    viewStr += msg.view[i] + '___';
+  //  var url = 'http://' + this.options.host + ':' + this.options.port + '/viewForPlotter';
+  //  http.open('post', url, true);
+  //  http.setRequestHeader('Content-Type', 'application/json');
+  //  http.send(JSON.stringify({
+  //    'id': this.id,
+  //    'data': msg.profile,
+  //    'loop': msg.loop,
+  //    'algo': algoType,
+  //    'view': viewStr
+  //  }));
+  //  var self = this;
+  //  http.onerror = function(e) {
+  //    self.log.error('Trying to send type view ' + algoType + ' to plotter');
+  //  };
+  //  http.onreadystatechange = function() {
+  //    if (http.readyState !== 4) {
+  //      return;
+  //    }
+  //    if (http.status !== 200) {
+  //      http.onerror();
+  //      return;
+  //    }
+  //    self.log.info('No errors in sendToPlotter func');
+  //  };
+  //};
   
   /**
   * @method getPeers
@@ -187,7 +239,7 @@
     var http = new XMLHttpRequest();
     var protocol = this.options.secure ? 'https://' : 'http://';
     var url = protocol + this.options.host + ':' + this.options.port + '/' + this.options.key + 
-      '/' + this.id + '/view';
+      '/' + this.id + '/' + this.profile + '/view';
     http.open('get', url, true);
     var self = this;
     http.onerror = function(e) {
@@ -208,21 +260,17 @@
       if(data.view.length !== 0)
         self.emit('doActiveThread', data.view);
       else
-        window.setTimeout( self.getFirstView, 5000 );
+        window.setTimeout( function(){ self.getFirstView(); }, 5000 );
     };
     http.send(null);
   };
 
   Coordinator.prototype.getGraph = function(viewType) {
-    var loop;
-    if(viewType === 'clu')
-      loop = this.plotterObj.cluLoop;
-    else
-      loop = this.plotterObj.currentLoop;
+    var loop = this.plotterObj.loop;
     this.log.info('Getting graph with loop ' + loop);
     var http = new XMLHttpRequest();
     var url = 'http://' + this.options.host + ':' + this.options.port + '/' + this.options.key + 
-      '/' + this.id + '/getGraph?loop=' + loop + '&viewType=' + viewType;
+      '/' + this.id + '/getGraph';
     http.open('get', url, true);
     var self = this;
     http.onerror = function(e) {
@@ -237,8 +285,14 @@
         return;
       }
       self.log.info('Graph ' + http.responseText + ' for loop ' + loop);
-      var data = JSON.parse(http.responseText);
-      self.plotterObj.buildGraph(viewType, data);
+      var nodes = JSON.parse(http.responseText);
+      var neighbours;
+      if(viewType === 'clu')
+        neighbours = self.viewsPerProto.Vicinity;
+      if(viewType === 'rps')
+        neighbours = self.viewsPerProto.Cyclon;
+      self.plotterObj.buildGraph(viewType, nodes, neighbours[loop]);
+      self.plotterObj.loop++;
     };
     http.send(null);
   };

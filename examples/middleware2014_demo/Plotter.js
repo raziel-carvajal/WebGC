@@ -5,42 +5,66 @@
 (function(exports){
   
   function Plotter(loggingServer, plotterId){
-    this.currentLoop = 0;
-    this.cluLoop = 0;
+    this.loop = 0;
     this.logs = {};
     this.logger = new Logger(loggingServer);
     this.logger.setOutput(plotterId, this.constructor.name);
     this.ref = plotterId;
   }
+
+  Plotter.prototype.getShape = function(i){
+    if(i === '0'){
+      return 'triangle';
+    }else if(i === '1'){
+      return 'ellipse';
+    }else if(i === '2'){
+      return 'octagon';
+    }else if(i === '3'){
+      return 'rectangle';
+    }
+  };
+ 
+  Plotter.prototype.getColor = function(i){
+    if(i === '0'){
+      return '#6FB1FC';
+    }else if(i === '1'){
+      return '#EDA1ED';
+    }else if(i === '2'){
+      return '#86B342';
+    }else if(i === '3'){
+      return '#F5A45D';
+    }
+  };
   
-  Plotter.prototype.getGraphFormat = function(emitter, view){
-    var keys = Object.keys(view);
+  Plotter.prototype.getGraphFormat = function(emitter, peers, view){
+    var keys = Object.keys(peers);
     var nodes = [], edges = [];
-    for(var i = 0; i < keys.length; i++){
+    var i;
+    for(i = 0; i < keys.length; i++){
       nodes.push({
         'data': {
           'id': keys[i],
-          'name': keys[i]
+          'name': keys[i],
+          'profile': this.getShape( peers[ keys[i] ]),
+          'color': this.getColor( peers[ keys[i] ])
         } 
       });
-      var neighbours = view[ keys[i] ];
-      for(var j = 0; j < neighbours.length; j++){
-        if(neighbours[j] !== ""){
-          edges.push({
-            'data': {
-              'source': keys[i],
-              'target': neighbours[j]
-            }
-          });
+    }
+    for(i = 0; i < view.length; i++){
+      edges.push({
+        'data': {
+          'source': emitter,
+          'target': view[i],
+          'color': this.getColor(peers[emitter])
         }
-      }
+      });
     }
     return { 'nodes': nodes, 'edges': edges };
   };
   
-  Plotter.prototype.buildGraph = function(viewType, view){
+  Plotter.prototype.buildGraph = function(viewType, nodes, view){
     this.logger.info('Building graph of type ' + viewType);
-    var eles = this.getGraphFormat(this.ref, view);
+    var eles = this.getGraphFormat(this.ref, nodes, view);
     this.logger.info('For view ' + viewType + ' the elements are ' + JSON.stringify(eles));
     var layoutOpts = {
       name: 'circle',
@@ -54,17 +78,19 @@
       'font-size': 30,
       'content': 'data(name)',
       'text-valign': 'center',
-      'color': 'white',
+      'color': '#fff',
       'text-outline-width': 2,
       'text-outline-color': '#888',
       'width': '60px',
-      'height': '60px'
+      'height': '60px',
+      'shape': 'data(profile)',
+      'background-color': 'data(color)'
     };
     var edgesOpts = {
       'curve-style': 'haystack',
       'opacity': 0.6,
       'width': 12,
-      'line-color': '#A0B3D8'
+      'line-color': 'data(color)'
     };
     var graphContainer;
     if(viewType === 'clu'){

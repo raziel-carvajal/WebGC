@@ -21,6 +21,84 @@
   <script type="text/javascript" src="./confObj.js"></script>
   <script>
     $(document).ready(function(){
+      var gRef = {};
+      $('#connect').click(function() {
+        var peer = gRef.coord;
+        var requestedPeer = $('#rid').val();
+        if(!peer.connectedPeers[requestedPeer]){
+          var c = peer.connect(requestedPeer, {
+            label: 'chat',
+            serialization: 'none',
+            metadata: {message: 'hi i want to chat with you!'}
+          });
+          c.on('open', function() {
+            peer.handleChatMsg(c);
+          });
+          c.on('error', function(err) { alert(err); });
+        }
+        peer.connectedPeers[requestedPeer] = 1;
+      });
+      // Close a connection.
+      $('#close').click(function() {
+        eachActiveConnection(function(c) {
+          c.close();
+        });
+      });
+      // Send a chat message to all active connections.
+      $('#send').submit(function(e) {
+        e.preventDefault();
+        // For each active connection, send the message.
+        var msg = $('#text').val();
+        eachActiveConnection(function(c, $c) {
+          if (c.label === 'chat') {
+            c.send(msg);
+            $c.find('.messages').append('<div><span class="you">You: </span>' + msg + '</div>');
+          }
+        });
+        $('#text').val('');
+        $('#text').focus();
+      });
+      // Goes through each active peer and calls FN on its connections.
+      function eachActiveConnection(fn) {
+        var peer = gRef.coord;
+        var actives = $('.active');
+        var checkedIds = {};
+        actives.each(function() {
+          var peerId = $(this).attr('id');
+          if (!checkedIds[peerId]) {
+            var conns = peer.connections[peerId];
+            for (var i = 0, ii = conns.length; i < ii; i += 1) {
+              var conn = conns[i];
+              fn(conn, $(this));
+            }
+          }
+          checkedIds[peerId] = 1;
+        });
+      }
+// Show browser version
+//$('#browsers').text(navigator.userAgent);
+// Make sure things clean up properly.
+//window.onunload = window.onbeforeunload = function(e) {
+//  if (!!peer && !peer.destroyed) {
+//    peer.destroy();
+//  }
+//};
+      function isFirstGraphDrawn(first){
+        console.debug('isFirstGraphDrawn: ?');
+        if(first === 1){
+          console.debug('isFirstGraphDrawn: YES');
+          document.getElementById('profile').style.color = 'black';
+          document.getElementById('profile').innerHTML = 'Graphs were created!';
+          clearInterval(gRef.pool);
+        }else{
+          console.debug('isFirstGraphDrawn: NO');
+          if(document.getElementById('profile').style.color === 'black'){
+            document.getElementById('profile').style.color = 'white'; 
+          }else{
+            document.getElementById('profile').style.color = 'black';
+          }
+        }
+      }
       $('#start').click( function(){
         var userName = $('#user').val();
         if( userName === '' )
@@ -29,11 +107,16 @@
           $('#start').attr('disabled', 'disabled');
           var listObj = document.getElementById('list'); 
           var index = listObj.selectedIndex; 
-          var pref = parseInt( listObj.options[index].text );
+          //var pref = parseInt( listObj.options[index].text );
           configurationObj['peerId'] = userName;
-          configurationObj.gossipAlgos.cyclon1['data'] = pref;
-          configurationObj.gossipAlgos.vicinity1['data'] = pref;
-          var coord = new Coordinator(configurationObj);
+          configurationObj.gossipAlgos.cyclon1['data'] = index;
+          configurationObj.gossipAlgos.vicinity1['data'] = index;
+          document.getElementById('profile').style.color = 'black';
+          document.getElementById('profile').innerHTML = 'Getting data for plotting...';
+          gRef.pool = window.setInterval(function(){
+            isFirstGraphDrawn(gRef.coord.first);
+            }, 1000);
+          gRef.coord = new Coordinator(configurationObj);
         }
       });
     });
@@ -47,9 +130,18 @@
         Your peer ID: <input type="text" id="user" placeholder="Write your ID, here!">
         Your preference is :
         <select id="list">
-          <option value="v1">1</option><option value="v2">2</option><option value="v3">3</option>
+          <option value="v1">Internet of Things</option>
+          <option value="v2">P2P Systems</option>
+          <option value="v3">Cloud Computing</option>
+          <option value="v4">Big Data</option>
         </select>
-        <input class="button" type="button" value="START" id="start"> 
+        <input class="button" type="button" value="START" id="start">
+        <div id="statusSec" class="status_section">
+          <div id="profile" class="profiile_cls"></div>
+          <div id="info" class="info_cls">
+            <img src="legend.png" alt="" style="width:800px;height:100px;align:middle">
+          </div>
+        </div> 
     </div>
     <div id="graphs" class="graphsContainer">
       <div id="rps-section" class="rpsContainer"></div>
