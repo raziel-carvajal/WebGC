@@ -51,7 +51,7 @@ peersDir="peers"
 mkdir $peersDir
 cd $peersDir
 declare -a chromePids
-
+pwd
 cd $serverDir
 cd lib
 echo "Launching LoggingServer..."
