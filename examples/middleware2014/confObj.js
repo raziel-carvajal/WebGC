@@ -23,12 +23,15 @@ var configurationObj = {
   },
   gossipAlgos: {
     cyclon1: {
-      class: 'Cyclon',
+      class: 'SamplingService',
       //data: parseInt(document.getElementById('data').innerHTML),
       viewSize: 2,
       fanout: 2,
       periodTimeOut: 5000,
-      propagationPolicy: { push: true, pull: true } 
+      propagationPolicy: { push: true, pull: true },
+      selectionPolicy: 'random',
+      H: 0,
+      S: 1
     },
     vicinity1: { 
       class: 'Vicinity',
