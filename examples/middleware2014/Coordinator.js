@@ -19,6 +19,8 @@
     this.connectedPeers = {};
     this.first = 0;
     this.profile = opts.gossipAlgos.vicinity1.data;
+    console.log('Vicinity size' + opts.gossipAlgos.vicinity1.viewSize);
+    console.log('Cyclon size' + opts.gossipAlgos.cyclon1.viewSize);
     this.viewsPerProto = {
       'Cyclon':{},
       'Vicinity': {}
