@@ -1,7 +1,7 @@
 bower_components
 node_modules
 logs
-test/vicinity-local-test/output
-test/multi-protocols-test/output
-test/multi-protocols-test/plotter
-test/multi-protocols-test/peer_*
+examples/vicinity-local-test/output
+examples/multi-protocols-test/output
+examples/multi-protocols-test/plotter
+examples/multi-protocols-test/peer_*
