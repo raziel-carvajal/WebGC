@@ -10,11 +10,9 @@
 * the logs of every gossip peer.
 * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>*/
 var configurationObj = {
-  //peerId: document.getElementById('peerId').innerHTML,
   peerJsOpts: {
-    //host: '131.254.213.43',//address of a PeerServer
-    host: '10.230.6.253',
-    port: 3389,//port of the PeerServer
+    host: '131.254.16.163',
+    port: 3388,//port of the PeerServer
     debug: 3,//Level of the local logging (logs that appears in the console part of each browser)
     logFunction: function(){
       var msg = Array.prototype.slice.call(arguments).join(' ');
@@ -24,15 +22,13 @@ var configurationObj = {
   gossipAlgos: {
     cyclon1: {
       class: 'Cyclon',
-      //data: parseInt(document.getElementById('data').innerHTML),
       viewSize: 2,
       fanout: 2,
       periodTimeOut: 5000,
-      propagationPolicy: { push: true, pull: true } 
+      propagationPolicy: { push: true, pull: true }
     },
     vicinity1: { 
       class: 'Vicinity',
-      //data: parseInt(document.getElementById('data').innerHTML),
       viewSize: 2,
       fanout: 2,
       periodTimeOut: 5000,
@@ -44,9 +40,9 @@ var configurationObj = {
       }
     }
   },
-  plotter: true,
+  plotter: false,
   loggingServer: {
-    host: '131.254.213.43',
-    port: 3388
+    host: '131.254.16.163',
+    port: 3389
   }
 };

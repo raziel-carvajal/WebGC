@@ -13,20 +13,11 @@
   * Peer object is lunched a "get identifier" request is performed.
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Coordinator(opts){
-    if( !(this instanceof Coordinator) ) 
+    if( !(this instanceof Coordinator) )
       return new Coordinator(opts);
-    // BEGIN variables for demo at middleware2014
     this.connectedPeers = {};
     this.first = 0;
     this.profile = opts.gossipAlgos.vicinity1.data;
-    console.log('Vicinity size' + opts.gossipAlgos.vicinity1.viewSize);
-    console.log('Cyclon size' + opts.gossipAlgos.cyclon1.viewSize);
-    this.viewsPerProto = {
-      'Cyclon':{},
-      'Vicinity': {}
-    };
-    console.info('Peers profile: ' + this.profile);
-    // END
     this.log = new Logger(opts.loggingServer);
     this.log.setOutput(opts.peerId, this.constructor.name);
     this.factory = new GossipFactory( {loggingServer: opts.loggingServer, peerId: opts.peerId});
@@ -151,12 +142,6 @@
   Coordinator.prototype.doActiveThread = function(protocol){
     var logi = protocol.protoId + '_' + protocol.loop + '_' + this.id + '_' + protocol.getLog();
     console.info(logi);
-    if( this.plotter ){
-      var msg = protocol.getPlotInfo(this.id);
-      var ref = this.viewsPerProto[protocol.class];
-      ref[msg.loop] = msg.view;
-      //this.sendToPlotter( msg, protocol.class );
-    }
     protocol.loop++;
     var dstPeer = protocol.selectPeer();
     protocol.increaseAge();
@@ -290,10 +275,10 @@
       var nodes = JSON.parse(http.responseText);
       var neighbours;
       if(viewType === 'clu')
-        neighbours = self.viewsPerProto.Vicinity;
+        neighbours = self.protocols.vicinity1;
       if(viewType === 'rps')
-        neighbours = self.viewsPerProto.Cyclon;
-      self.plotterObj.buildGraph(viewType, nodes, neighbours[loop]);
+        neighbours = self.protocols.cyclon1;
+      self.plotterObj.buildGraph(viewType, nodes, neighbours.view);
       self.plotterObj.loop++;
     };
     http.send(null);

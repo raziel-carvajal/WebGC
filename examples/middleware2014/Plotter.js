@@ -50,6 +50,7 @@
         } 
       });
     }
+    console.log(view);
     for(i = 0; i < view.length; i++){
       edges.push({
         'data': {

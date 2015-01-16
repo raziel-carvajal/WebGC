@@ -49,8 +49,9 @@
       var constructor = exports[ opts.class ];
       if( typeof constructor === 'undefined' )
         throw 'Object does not exist in the library of the system';
+      //this extend is made when users missed options in the configuration object
       this.gossipUtil.extendProperties(opts, constructor.defaultOpts);
-      // peerId is the unique identifier for each PeerJS instance
+      //additional options are given for logging proposes
       this.gossipUtil.extendProperties(opts, {peerId: this.peerId, 
         loggingServer: this.loggingServer, protoId: algoId});
       this.checkProperties(opts);
