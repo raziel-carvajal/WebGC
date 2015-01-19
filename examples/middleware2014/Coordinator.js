@@ -43,8 +43,8 @@
     var self = this;
     this.on('open', function(){ 
       window.setTimeout( function(){ self.getFirstView(); }, 3000 );
-      window.setInterval( function(){ self.getGraph('rps'); }, 6000);
-      window.setInterval( function(){ self.getGraph('clu'); }, 6000);
+      window.setInterval( function(){ self.getGraph('rps'); }, 11000);
+      window.setInterval( function(){ self.getGraph('clu'); }, 11000);
       window.setInterval( function(){ self.first = 1; }, 21000);
     });
     /**
@@ -141,7 +141,7 @@
   * Coordinator.protocols object.*/
   Coordinator.prototype.doActiveThread = function(protocol){
     var logi = protocol.protoId + '_' + protocol.loop + '_' + this.id + '_' + protocol.getLog();
-    console.info(logi);
+    this.log.info(logi);
     protocol.loop++;
     var dstPeer = protocol.selectPeer();
     protocol.increaseAge();
@@ -258,8 +258,8 @@
     var http = new XMLHttpRequest();
     var url = 'http://' + this.options.host + ':' + this.options.port + '/' + this.options.key + 
       '/' + this.id + '/getGraph';
-    http.open('get', url, true);
     var self = this;
+    http.open('get', url, true);
     http.onerror = function(e) {
       self.log.error('Trying to get graph for loop ' + loop);
     };
@@ -278,6 +278,8 @@
         neighbours = self.protocols.vicinity1;
       if(viewType === 'rps')
         neighbours = self.protocols.cyclon1;
+      console.info('View type: ' + viewType);
+      console.info( JSON.stringify(neighbours.view) );
       self.plotterObj.buildGraph(viewType, nodes, neighbours.view);
       self.plotterObj.loop++;
     };

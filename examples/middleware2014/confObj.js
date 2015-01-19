@@ -24,14 +24,14 @@ var configurationObj = {
       class: 'Cyclon',
       viewSize: 2,
       fanout: 2,
-      periodTimeOut: 5000,
+      periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true }
     },
     vicinity1: { 
       class: 'Vicinity',
       viewSize: 2,
       fanout: 2,
-      periodTimeOut: 5000,
+      periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'biased', // random OR biased OR agr-biased
       similarityFunction: 'DumbProximityFunc',

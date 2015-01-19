@@ -69,7 +69,7 @@
   * @method setOutput
   * @param {String} id - identifier of the layout
   * @param {String} className - class name of the layout*/
-  Logger.prototype.setOutput = function(id, className){
+  Logger.prototype.setOutput = function(id, class_name){
     if( !this.localConsole ){
       var appender;
       if( this.url )
@@ -78,12 +78,12 @@
         appender =  new log4javascript.BrowserConsoleAppender();
       var layout = new log4javascript.PatternLayout(this.layoutPattern);
       layout.setCustomField('id', id);
-      layout.setCustomField('class', className);
+      layout.setCustomField('class', class_name);
       appender.setLayout(layout);
       this.logger.removeAllAppenders();
       this.logger.addAppender(appender);
     }else{
-      this.header = '[' + id + '] [' + className + '] :: ';
+      this.header = '[' + id + '] [' + class_name + '] :: ';
     }
   };
   /**

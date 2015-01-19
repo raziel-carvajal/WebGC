@@ -50,12 +50,12 @@
         } 
       });
     }
-    console.log(view);
-    for(i = 0; i < view.length; i++){
+    keys = Object.keys(view);
+    for(i = 0; i < keys.length; i++){
       edges.push({
         'data': {
           'source': emitter,
-          'target': view[i],
+          'target': keys[i],
           'color': this.getColor(peers[emitter])
         }
       });
