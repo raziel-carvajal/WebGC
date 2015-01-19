@@ -23,7 +23,6 @@
     "requirejs": "~2.1.11",
     "jsdoc3": "~3.2.2",
     "log4javascript": "~1.4.9",
-    "cytoscape": "https://github.com/cytoscape/cytoscape.js.git"
-//    "cytoscape": "~2.2.9"
+    "cytoscape": "~2.2.9"
   }
 }
