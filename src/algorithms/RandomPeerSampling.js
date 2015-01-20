@@ -34,14 +34,15 @@
   * @property {Object} defaultOpts - Default configuration of this gossip-based protocol.
   * @default */
   SamplingService.defaultOpts = {
+    class: 'SamplingService',
     data: '?',
     viewSize: 10,
     fanout: 5,
     periodTimeOut: 10000,
     propagationPolicy: { push: true, pull: true },
-    selectionPolicy: 'random', // random OR oldest
-    H: '?',
-    S: '?'
+    selectionPolicy: 'oldest',// random OR oldest
+    H: 5,//healer configuration
+    S: 0
   };
   util.inherits(SamplingService, GossipProtocol);
   /** 
