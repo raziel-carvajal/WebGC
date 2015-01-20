@@ -152,7 +152,7 @@
     keys = Object.keys(this.inVandNonReturned);
     for( i = 0; i < keys.length; i++ ){
       if( !(keys[i] in this.view) )
-        delete this.inVandNonReturned[ key[i] ];
+        delete this.inVandNonReturned[ keys[i] ];
     }
     keys = Object.keys(this.view);
     for( i = 0; i < keys.length; i++ ){
