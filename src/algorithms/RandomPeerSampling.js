@@ -50,9 +50,11 @@
   * @desc See method GossipProtocol.initilize() for more information.*/
   SamplingService.prototype.initialize = function(keys){
     if( keys.length !== 0 ){
-      for( var i = 0; i < keys.length; i += 1 ){
+      var i = 0;
+      while(i < this.viewSize && i < keys.length){
         this.view[ keys[i] ] = this.gossipUtil.newItem(0, '?');
         this.inVandNonReturned[ keys[i] ] = 1;
+        i++;
       }
     }
   };

@@ -85,7 +85,7 @@
           newCache[ rcvKeys[i] ] = rcvCache[ rcvKeys[i] ];
       }
       i = 0;
-      while( Object.keys(newCache).length <= this.viewSize && i < currentKeys.length ){
+      while( Object.keys(newCache).length < this.viewSize && i < currentKeys.length ){
         newCache[ currentKeys[i] ] = this.view[ currentKeys[i] ];
         i += 1;
       }
@@ -97,16 +97,20 @@
   * @desc See method GossipProtocol.initialize() for more information.*/
   Cyclon.prototype.initialize = function(keys){
     if( keys.length > 0 ){
-      for( var i in keys )
-        this.view[ keys[i] ] = this.gossipUtil.newItem(0, '?');
+      var i = 0;
+      while(i < this.viewSize && i < keys.length){
+        this.view[keys[i]] = this.gossipUtil.newItem(0, '?');
+        i++;
+      }
     }
   };
   /** 
   * @method increaseAge
   * @desc See method GossipProtocol.increaseAge() for more information.*/
   Cyclon.prototype.increaseAge = function(){
-    for( var key in this.view )
-      this.view[key].age += 1;
+    var keys = Object.keys(this.view);
+    for( var i = 0; i < keys.length; i++ )
+      this.view[i].age++;
   };
   /** 
   * @method setData 

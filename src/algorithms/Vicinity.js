@@ -128,8 +128,11 @@
   * @desc See method GossipProtocol.initialize() for more information. */
   Vicinity.prototype.initialize = function(keys){
     if( keys.length > 0 ){
-      for( var i in keys )
+      var i = 0;
+      while(i < this.viewSize && i < keys.length){
         this.view[ keys[i] ] = this.gossipUtil.newItem(0, '?');
+        i++;
+      }
     }
   };
   /** 
