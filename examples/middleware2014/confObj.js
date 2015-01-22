@@ -32,15 +32,15 @@ var configurationObj = {
 //    },
     cyclon1: {
       class: 'Cyclon',
-      viewSize: 2,
-      fanout: 2,
+      viewSize: 4,
+      fanout: 3,
       periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true }
     },
     vicinity1: { 
       class: 'Vicinity',
-      viewSize: 2,
-      fanout: 2,
+      viewSize: 4,
+      fanout: 3,
       periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'agr-biased', // random OR biased OR agr-biased

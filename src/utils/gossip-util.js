@@ -11,7 +11,7 @@
   * @description This method sets the type of logging server, the local console of the
   * browser or a server that collects every log
   * @param {Object} opts - options of the logging service*/
-  function Logger(opts){
+  function Logger(opts, peerId, objName){
     if( typeof log4javascript !== 'undefined' ){
       this.localConsole = false;
       this.layoutPattern = "[%-5p] %d{yyyy.MM.dd HH:mm:ss} [%-10f{1}] [%-10f{2}] :: %m";
@@ -23,6 +23,7 @@
       this.localConsole = true;
       this.header = '';
     }
+    this.setOutput(peerId, objName);
   }
   /**
   * @description Level INFO of one log, if there is no server the header INFO precedes
@@ -101,7 +102,7 @@
   * algorithm
   * @param {Object} opts - options of the logger */
   function GossipUtil(opts){
-    this.log = new Logger(opts.loggingServer); 
+    this.log = new Logger(opts.loggingServer, opts.peerId, opts.objName);
   }
   /**
   * @method newItem

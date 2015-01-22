@@ -11,10 +11,11 @@
     this.peerId = opts.peerId;
     this.loggingServer = opts.loggingServer;
     this.inventory = {};
-    this.log = new Logger(opts.loggingServer);
-    this.log.setOutput(opts.peerId, this.constructor.name);
-    this.gossipUtil = new GossipUtil({loggingServer: opts.loggingServer});
-    this.gossipUtil.log.setOutput(opts.peerId, this.constructor.name);
+    this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
+    this.gossipUtil = new GossipUtil({
+      loggingServer: opts.loggingServer,
+      peerId: opts.peerId, objName: this.constructor.name
+    });
   }
   /**
   * @method checkProperties

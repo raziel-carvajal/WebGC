@@ -18,8 +18,7 @@
     this.connectedPeers = {};
     this.first = 0;
     this.profile = opts.gossipAlgos.vicinity1.data;
-    this.log = new Logger(opts.loggingServer);
-    this.log.setOutput(opts.peerId, this.constructor.name);
+    this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
     this.factory = new GossipFactory( {loggingServer: opts.loggingServer, peerId: opts.peerId});
     var algosNames = Object.keys(opts.gossipAlgos);
     this.plotter = opts.plotter;
@@ -30,8 +29,11 @@
     }
     this.factory.setDependencies(opts.gossipAlgos);
     this.protocols = this.factory.inventory;
-    this.gossipUtil = new GossipUtil({loggingServer: opts.loggingServer});
-    this.gossipUtil.log.setOutput(opts.peerId, this.constructor.name);
+    this.gossipUtil = new GossipUtil({
+      loggingServer: opts.loggingServer,
+      peerId: opts.peerId,
+      objName: this.constructor.name
+    });
     this.plotterObj = new Plotter(opts.loggingServer, opts.peerId);
     /** 
      * This method fires the constructor of the [Peer]{@link Peer} object. */

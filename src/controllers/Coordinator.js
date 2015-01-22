@@ -15,8 +15,7 @@
   function Coordinator(opts){
     if( !(this instanceof Coordinator) ) 
       return new Coordinator(opts);
-    this.log = new Logger(opts.loggingServer);
-    this.log.setOutput(opts.peerId, this.constructor.name);
+    this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
     this.factory = new GossipFactory( {loggingServer: opts.loggingServer, peerId: opts.peerId});
     var algosNames = Object.keys(opts.gossipAlgos);
     this.plotter = opts.plotter;
@@ -27,15 +26,17 @@
     }
     this.factory.setDependencies(opts.gossipAlgos);
     this.protocols = this.factory.inventory;
-    this.gossipUtil = new GossipUtil({loggingServer: opts.loggingServer});
-    this.gossipUtil.log.setOutput(opts.peerId, this.constructor.name);
+    this.gossipUtil = new GossipUtil({
+      loggingServer: opts.loggingServer,
+      peerId: opts.peerId, objName: this.constructor.name
+    });
     /** 
      * This method fires the constructor of the [Peer]{@link Peer} object. */
     Peer.call(this, opts.peerId, opts.peerJsOpts);
     /** 
-     * @event Coordinator#open
-     * Once the [PeerServe]{@link PeerServer} gives an [id]{@link id} to the local peer
-     * the function in this event is performed. */
+    * @event Coordinator#open
+    * Once the [PeerServe]{@link PeerServer} gives an [id]{@link id} to the local peer
+    * the function in this event is performed. */
     var self = this;
     this.on('open', function(){ 
       window.setTimeout( function(){ self.getFirstView(); }, 10000 );
@@ -47,10 +48,10 @@
     * [the method]{@link ClusteringExecutor#handleConnection}. */
     this.on('connection', function(c){ self.handleConnection(c); });
     /**
-     * @event Coordinator#doActiveThread
-     * This event performs the active thread of the gossip protocols in the
-     * [protocols]{@link Coordinator#protocols} object. This event is linked with [the method]
-     * {@link ClusteringExecutor#doActiveThread}. */
+    * @event Coordinator#doActiveThread
+    * This event performs the active thread of the gossip protocols in the
+    * [protocols]{@link Coordinator#protocols} object. This event is linked with [the method]
+    * {@link ClusteringExecutor#doActiveThread}. */
     this.on('doActiveThread', function(view){
       var i, protocol, keys = Object.keys(self.protocols);
       for( i = 0; i < keys.length; i++ ){
@@ -162,9 +163,9 @@
     return result;
   };
   /**
-   * @method getFirstView
-   * @desc This method gets from a remote PeerServer a set of remote peer identifiers. This 
-   * set of identifiers allows to bootstrap the gossip protocols. */
+  * @method getFirstView
+  * @desc This method gets from a remote PeerServer a set of remote peer identifiers. This 
+  * set of identifiers allows to bootstrap the gossip protocols. */
   Coordinator.prototype.getFirstView = function() {
     var http = new XMLHttpRequest();
     var protocol = this.options.secure ? 'https://' : 'http://';

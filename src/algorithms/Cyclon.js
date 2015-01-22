@@ -11,10 +11,11 @@
   * @param {Object} options - Configuration of the gossip-based protocol.
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Cyclon(opts){
-    this.log = new Logger(opts.loggingServer);
-    this.log.setOutput(opts.peerId, this.constructor.name);
-    this.gossipUtil = new GossipUtil({loggingServer: opts.loggingServer});
-    this.gossipUtil.log.setOutput(opts.peerId, this.constructor.name);
+    this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
+    this.gossipUtil = new GossipUtil({
+      loggingServer: opts.loggingServer,
+      peerId: opts.peerId, objName: this.constructor.name
+    });
     GossipProtocol.call(this, opts);
   }
   /**
@@ -110,7 +111,7 @@
   Cyclon.prototype.increaseAge = function(){
     var keys = Object.keys(this.view);
     for( var i = 0; i < keys.length; i++ )
-      this.view[i].age++;
+      this.view[keys[i]].age++;
   };
   /** 
   * @method setData 
