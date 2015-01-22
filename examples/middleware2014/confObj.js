@@ -20,23 +20,23 @@ var configurationObj = {
     }
   },
   gossipAlgos: {
-//    cyclon1: {
-//      class: 'SamplingService',
-//      viewSize: 2,
-//      fanout: 2,
-//      periodTimeOut: 10000,
-//      propagationPolicy: { push: true, pull: true },
-//      selectionPolicy: 'oldest',
-//      H: 2,
-//      S: 0
-//    },
     cyclon1: {
-      class: 'Cyclon',
+      class: 'SamplingService',
       viewSize: 4,
       fanout: 3,
       periodTimeOut: 10000,
-      propagationPolicy: { push: true, pull: true }
+      propagationPolicy: { push: true, pull: true },
+      selectionPolicy: 'oldest',
+      H: 2,
+      S: 0
     },
+//    cyclon1: {
+//      class: 'Cyclon',
+//      viewSize: 4,
+//      fanout: 3,
+//      periodTimeOut: 10000,
+//      propagationPolicy: { push: true, pull: true }
+//    },
     vicinity1: { 
       class: 'Vicinity',
       viewSize: 4,
