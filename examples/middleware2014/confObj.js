@@ -44,10 +44,12 @@ var configurationObj = {
       periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'agr-biased', // random OR biased OR agr-biased
-      similarityFunction: 'DumbProximityFunc',
       attributes: {
         rpsView: 'cyclon1.view'
-      }
+      },
+      similarityFunctions: [
+        { dumbFunc: 'DumbProximityFunc'}
+      ]
     }
   },
   plotter: false,

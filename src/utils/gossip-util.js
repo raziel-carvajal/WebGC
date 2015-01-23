@@ -1,16 +1,15 @@
 /**
-* @module lib/utils 
-* @const gossipUtil
-* @description This object contains a set of functions that are used by the different
-* implementations of the 
-* gossip protocols.
-* @author Raziel Carvajal Gomez <raziel.carvajal-gomez@inria.fr>*/
+*@module lib/utils 
+*@const gossipUtil
+*@description This object contains a set of functions that are used by the different
+*implementations of the gossip protocols.
+*@author Raziel Carvajal Gomez <raziel.carvajal-gomez@inria.fr>*/
 (function(exports){
   /**
-  * @class Logger
-  * @description This method sets the type of logging server, the local console of the
-  * browser or a server that collects every log
-  * @param {Object} opts - options of the logging service*/
+  *@class Logger
+  *@description This method sets the type of logging server, the local console of the
+  *browser or a server that collects every log
+  *@param {Object} opts - options of the logging service*/
   function Logger(opts, peerId, objName){
     if( typeof log4javascript !== 'undefined' ){
       this.localConsole = false;

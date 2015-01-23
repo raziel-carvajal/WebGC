@@ -9,18 +9,19 @@
   * @param {Integer} value - Preference of the local peer.*/
   function DumbProximityFunc(opts){
     this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
-    if( typeof opts.value !== 'number' || opts.value < 0 )
+    if( typeof opts.profile !== 'number' || opts.profile < 0 )
       throw 'The preference is not valid';
-    else
-      this.proxVal = opts.value;
+    //calling this function initialize the profile of the user (profile propertie in opts)
+    SimilarityFunction.call(this, opts);
   }
+  util.inherits(DumbProximityFunc, SimilarityFunction);
   /**
   * @description This method computes the absolute value of the diference among a and b.
   * @method _eval
   * @param {Integer} a - Preference of the first peer.
   * @param {Integer} b - Preference of the second peer.
   * @returns {Integer} Absolute value of (a - b).*/
-  DumbProximityFunc.prototype._eval = function(a, b){
+  DumbProximityFunc.prototype.compute = function(a, b){
     if( !(typeof a === 'number' && typeof b === 'number') ){
       this.log.warn('ProximityFunc: eval() with non numbers');
       return null;
@@ -34,7 +35,7 @@
   * @param {Integer} n - Number of the most similar items to the local peer.
   * @param {Dictonary} dict - Source where the most similar items are taken.
   * @returns {Dictionary} Subset of [dict]{@link dict}.*/
-  DumbProximityFunc.prototype._getClosestSubdic = function(n, dict){
+  DumbProximityFunc.prototype.getClosestNeighbours = function(n, dict){
     var keys = Object.keys(dict);
     if( n <= 0 || keys.length === 0 )
       return {};
@@ -45,7 +46,7 @@
       if( dict[ keys[i] ].hasOwnProperty('data') && typeof dict[ keys[i] ].data === 'number' )
         values.push({
           k: keys[i],
-          v: this._eval(this.proxVal, dict[ keys[i] ].data)
+          v: this._eval(this.profile, dict[ keys[i] ].data)
         });
       else
         nulls.push( keys[i] );
@@ -63,7 +64,6 @@
       result[key] = dict[key];
       i++;
     }
-    this.log.info('closest neighbours: ' + JSON.stringify(result));
     return result;
   };
   

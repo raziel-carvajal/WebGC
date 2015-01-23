@@ -18,7 +18,8 @@
     });
     GossipProtocol.call(this, opts);
     this.selectionPolicy = opts.selectionPolicy;
-    this.proximityFunc = this.instantiateSimFunc({ value: this.data,
+    //createInstance is defined in class 
+    this.proximityFunc = this.createInstance({ profile: this.data,
       peerId: opts.peerId, loggingServer: opts.loggingServer, 
       nameF: opts.similarityFunction});
     if( this.proximityFunc === 'undefined' ){
@@ -45,25 +46,6 @@
   };
   // the util object belongs to PeerJS
   util.inherits(Vicinity, GossipProtocol);
-  /**
-  * @method instantiateSimFunc
-  * @desc This method creates an instance of the similarity function that Vicinity uses for
-  * the creation of clusters
-  * @param {String} nameF - Class's name of the similarity function. */
-  Vicinity.prototype.instantiateSimFunc = function(opts){
-    var func;
-    try{
-      if( typeof opts.nameF !== 'string' )
-        throw 'The name of the function must be a string';
-      var constructor = exports[opts.nameF];
-      if( typeof constructor === 'undefined' )
-        throw 'Similarity function does not exist in the library of the system';
-      func = new constructor(opts);
-    }catch(e){
-      this.log.error('Similarity function was not instantiaed. ' + e);
-    }
-    return func;
-  };
   /** 
   * @method selectPeer
   * @desc See  method GossipProtocol.selectPeer() for more information. Particularly,
@@ -175,18 +157,18 @@
       limit = cacheKeys.length - 1;
       for( var i = 0; i < limit; i += 1 ){
         neigVal = this.view[ cacheKeys[i] ].data;
-        similarity = this.proximityFunc._eval(this.proximityFunc.proxVal, neigVal);
+        similarity = this.proximityFunc._eval(this.proximityFunc.profile, neigVal);
         cacheTrace += '(' + cacheKeys[i] + ', ' + similarity + ', ' + this.view[ cacheKeys[i] ].age + '), ';
       }
       neigVal = this.view[ cacheKeys[limit] ].data;
-      similarity = this.proximityFunc._eval(this.proximityFunc.proxVal, neigVal);
+      similarity = this.proximityFunc._eval(this.proximityFunc.profile, neigVal);
       cacheTrace += '(' + cacheKeys[limit] + ', ' + similarity + ', ' + this.view[ cacheKeys[limit] ].age + ')]';
     }
-    return this.proximityFunc.proxVal + '_' + cacheTrace;
+    return this.proximityFunc.profile + '_' + cacheTrace;
   };
   /**/
   Vicinity.prototype.getPlotInfo = function(peerId){
-    return {peer: peerId, profile: this.proximityFunc.proxVal, loop: this.loop, view: Object.keys(this.view)};
+    return {peer: peerId, profile: this.proximityFunc.profile, loop: this.loop, view: Object.keys(this.view)};
   };
   exports.Vicinity = Vicinity;
 })(this);
