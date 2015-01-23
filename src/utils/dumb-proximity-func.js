@@ -40,35 +40,30 @@
       return {};
     if( keys.length <= n )
       return dict;
-    var values = [], key, value;
-    for( key in dict ){
-      if( dict[key].hasOwnProperty('data') ){
-        value = this._eval(this.proxVal, dict[key].data);
-      } else{
-        value = null;
-      }
-      values.push( {k: key, v: value} );
+    var values = [], nulls = [], i;
+    for( i = 0; i < keys.length; i++ ){
+      if( dict[ keys[i] ].hasOwnProperty('data') && typeof dict[ keys[i] ].data === 'number' )
+        values.push({
+          k: keys[i],
+          v: this._eval(this.proxVal, dict[ keys[i] ].data)
+        });
+      else
+        nulls.push( keys[i] );
     }
     values.sort( function(a,b){return a.v - b.v;} );
-    var result = {}, nulls = [];
-    for( var i = 0, ii = values.length; i < ii; i += 1 ){
-      key = values[i].k;
-      value = values[i].v;
-      if( value === null )
-        nulls.push(i);
-      else{
-        if( Object.keys(result).length < n )
-          result[key] = dict[key];
-        else
-          break;
-      }
+    var result = {};
+    i = 0;
+    while(i < values.length && i < n){
+      result[ values[i].k ] = dict[ values[i].k ];
+      i++;
     }
-    var indx;
-    while( Object.keys(result).length < n){
-      indx = nulls.pop();
-      key = values[indx].k;
+    var key;
+    while(i < n){
+      key = nulls.pop();
       result[key] = dict[key];
+      i++;
     }
+    this.log.info('closest neighbours: ' + JSON.stringify(result));
     return result;
   };
   
