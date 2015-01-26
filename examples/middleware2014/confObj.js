@@ -23,7 +23,7 @@ var configurationObj = {
     cyclon1: {
       class: 'SamplingService',
       viewSize: 4,
-      fanout: 3,
+      fanout: 2,
       periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'oldest',
@@ -40,16 +40,14 @@ var configurationObj = {
     vicinity1: { 
       class: 'Vicinity',
       viewSize: 4,
-      fanout: 3,
+      fanout: 2,
       periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'agr-biased', // random OR biased OR agr-biased
       attributes: {
         rpsView: 'cyclon1.view'
       },
-      similarityFunctions: [
-        { dumbFunc: 'DumbProximityFunc'}
-      ]
+      similarityFunctions: { dumbFunc: 'DumbProximityFunc'}
     }
   },
   plotter: false,

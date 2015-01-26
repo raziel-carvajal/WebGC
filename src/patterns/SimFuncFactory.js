@@ -7,8 +7,7 @@
     this.logOpts = opts.loggingServer;
     this.peerId = opts.peerId;
   }
-  SimFuncFactory.prototype.getInstances = function(obj, profile){
-    var result;
+  SimFuncFactory.prototype.instantiateFuncs = function(obj, profile){
     try{
       if(obj === 'undefined')
         throw 'Object that describes similarity functions is not defined';
@@ -16,9 +15,9 @@
       if(props.length === 0)
         throw 'At least one similarity function must be declared';
       var constructor, p, opts;
-      result = {};
       for(var i = 0; i < props.length; i++){
         p = props[i];
+        this.log.info('Property: ' + p);
         if(this.inventory.hasOwnProperty(p))
           throw 'Property ' + p + ' was already assinged before';
         constructor = exports[ obj[p] ];
@@ -26,14 +25,14 @@
           throw 'Obect[' + i + '] is not defined in WebGC';
         opts = {
           loggingServer: this.logOpts,
-          peerId: this.peerId
+          peerId: this.peerId,
+          'profile': profile
         };
-        result[p] = new constructor(opts);
+        this.inventory[p] = new constructor(opts);
       }
     }catch(e){
-      this.log.error('During the initialization of similarity functions. ' + e.message);
+      this.log.error('During the initialization of similarity functions. ' + e.message + '. ' + e.name);
     }
-    return result;
   };
   exports.SimFuncFactory = SimFuncFactory;
 })(this);

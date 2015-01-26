@@ -14,17 +14,19 @@
     this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
     this.gossipUtil = new GossipUtil({
       loggingServer: opts.loggingServer,
-      peerId: opts.peerId, objName: this.constructor.name
+      peerId: opts.peerId,
+      objName: this.constructor.name
     });
     GossipProtocol.call(this, opts);
     this.selectionPolicy = opts.selectionPolicy;
     //createInstance is defined in class 
-    this.proximityFunc = this.createInstance({ profile: this.data,
-      peerId: opts.peerId, loggingServer: opts.loggingServer, 
-      nameF: opts.similarityFunction});
+    this.simFunFactory = new SimFuncFactory(opts);
+    this.simFunFactory.instantiateFuncs(opts.similarityFunctions, this.data);
+    var props = Object.keys(this.simFunFactory.inventory);
+    this.proximityFunc = this.simFunFactory.inventory[ props[0] ];
     if( this.proximityFunc === 'undefined' ){
-      this.log.error('A similarity functions is not specified for' + 
-        'Vicinity. The instance of Vicinity will be null.');
+      this.log.error('At least one similarity function must be defined for the ' + 
+        'clustering protocol. The instance of Vicinity will be null.');
       return null;
     }
   }
@@ -82,18 +84,18 @@
         subDict = this.gossipUtil.getRandomSubDict(itmsNum, this.view);
       break;
       case 'biased':
-        subDict = this.proximityFunc._getClosestSubdic(itmsNum, this.view);
+        subDict = this.proximityFunc.getClosestNeighbours(itmsNum, this.view);
       break;
       case 'agr-biased':
         var mergedV = this.gossipUtil.mergeViews(this.view, this.rpsView);
-        subDict = this.proximityFunc._getClosestSubdic(itmsNum, mergedV);
+        subDict = this.proximityFunc.getClosestNeighbours(itmsNum, mergedV);
       break;
       default:
         this.log.error('Unknown peer selection policy');
       break;
     }
     if( thread === 'active' )
-      subDict[thisId] = this.gossipUtil.newItem(0, this.proximityFunc.proxVal);
+      subDict[thisId] = this.gossipUtil.newItem(0, this.data);
     return subDict;
   };
   /**
@@ -104,7 +106,7 @@
     var mergedViews = this.gossipUtil.mergeViews(tmp, this.rpsView);
     if( thisId in mergedViews )
       delete mergedViews[thisId];
-    this.view = this.proximityFunc._getClosestSubdic(this.viewSize, mergedViews);
+    this.view = this.proximityFunc.getClosestNeighbours(this.viewSize, mergedViews);
   };
   /** 
   * @method initialize
@@ -140,7 +142,7 @@
       return iDs;
     else{
       var result = [];
-      for( var i = 0; i < n; i += 1 )
+      for(var i = 0; i < n; i++)
         result.push( iDs[i] );
       return result;
     }
@@ -155,20 +157,20 @@
       cacheTrace += ']';
     else{
       limit = cacheKeys.length - 1;
-      for( var i = 0; i < limit; i += 1 ){
+      for(var i = 0; i < limit; i++){
         neigVal = this.view[ cacheKeys[i] ].data;
-        similarity = this.proximityFunc._eval(this.proximityFunc.profile, neigVal);
+        similarity = this.proximityFunc.compute(this.data, neigVal);
         cacheTrace += '(' + cacheKeys[i] + ', ' + similarity + ', ' + this.view[ cacheKeys[i] ].age + '), ';
       }
       neigVal = this.view[ cacheKeys[limit] ].data;
-      similarity = this.proximityFunc._eval(this.proximityFunc.profile, neigVal);
+      similarity = this.proximityFunc.compute(this.data, neigVal);
       cacheTrace += '(' + cacheKeys[limit] + ', ' + similarity + ', ' + this.view[ cacheKeys[limit] ].age + ')]';
     }
-    return this.proximityFunc.profile + '_' + cacheTrace;
+    return this.data + '_' + cacheTrace;
   };
   /**/
   Vicinity.prototype.getPlotInfo = function(peerId){
-    return {peer: peerId, profile: this.proximityFunc.profile, loop: this.loop, view: Object.keys(this.view)};
+    return { peer: peerId, profile: this.data, loop: this.loop, view: Object.keys(this.view) };
   };
   exports.Vicinity = Vicinity;
 })(this);

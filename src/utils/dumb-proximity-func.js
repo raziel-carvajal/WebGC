@@ -12,7 +12,7 @@
     if( typeof opts.profile !== 'number' || opts.profile < 0 )
       throw 'The preference is not valid';
     //calling this function initialize the profile of the user (profile propertie in opts)
-    SimilarityFunction.call(this, opts);
+    SimilarityFunction.call(this, opts.profile);
   }
   util.inherits(DumbProximityFunc, SimilarityFunction);
   /**
@@ -30,23 +30,23 @@
   };
   /**
   * @description This method gets a subset with the n most similar items to the local peer from
-  * the object dict.
+  * the object view.
   * @method _getClosestSubdic
   * @param {Integer} n - Number of the most similar items to the local peer.
-  * @param {Dictonary} dict - Source where the most similar items are taken.
-  * @returns {Dictionary} Subset of [dict]{@link dict}.*/
-  DumbProximityFunc.prototype.getClosestNeighbours = function(n, dict){
-    var keys = Object.keys(dict);
+  * @param {Dictonary} view - Source where the most similar items are taken.
+  * @returns {Dictionary} Subset of [view]{@link view}.*/
+  DumbProximityFunc.prototype.getClosestNeighbours = function(n, view){
+    var keys = Object.keys(view);
     if( n <= 0 || keys.length === 0 )
       return {};
     if( keys.length <= n )
-      return dict;
+      return view;
     var values = [], nulls = [], i;
     for( i = 0; i < keys.length; i++ ){
-      if( dict[ keys[i] ].hasOwnProperty('data') && typeof dict[ keys[i] ].data === 'number' )
+      if( view[ keys[i] ].hasOwnProperty('data') && typeof view[ keys[i] ].data === 'number' )
         values.push({
           k: keys[i],
-          v: this._eval(this.profile, dict[ keys[i] ].data)
+          v: this.compute(this.profile, view[ keys[i] ].data)
         });
       else
         nulls.push( keys[i] );
@@ -55,13 +55,13 @@
     var result = {};
     i = 0;
     while(i < values.length && i < n){
-      result[ values[i].k ] = dict[ values[i].k ];
+      result[ values[i].k ] = view[ values[i].k ];
       i++;
     }
     var key;
     while(i < n){
       key = nulls.pop();
-      result[key] = dict[key];
+      result[key] = view[key];
       i++;
     }
     return result;
