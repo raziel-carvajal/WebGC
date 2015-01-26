@@ -21,9 +21,12 @@
     this.selectionPolicy = opts.selectionPolicy;
     //createInstance is defined in class 
     this.simFunFactory = new SimFuncFactory(opts);
+    this.log.info('Profile initialization: ' + this.data);
     this.simFunFactory.instantiateFuncs(opts.similarityFunctions, this.data);
     var props = Object.keys(this.simFunFactory.inventory);
     this.proximityFunc = this.simFunFactory.inventory[ props[0] ];
+    console.info('Instance of similarity function');
+    console.log(this.proximityFunc);
     if( this.proximityFunc === 'undefined' ){
       this.log.error('At least one similarity function must be defined for the ' + 
         'clustering protocol. The instance of Vicinity will be null.');
@@ -95,7 +98,7 @@
       break;
     }
     if( thread === 'active' )
-      subDict[thisId] = this.gossipUtil.newItem(0, this.data);
+      subDict[thisId] = this.gossipUtil.newItem(0, this.proximityFunc.profile);
     return subDict;
   };
   /**
@@ -159,18 +162,18 @@
       limit = cacheKeys.length - 1;
       for(var i = 0; i < limit; i++){
         neigVal = this.view[ cacheKeys[i] ].data;
-        similarity = this.proximityFunc.compute(this.data, neigVal);
+        similarity = this.proximityFunc.compute(this.proximityFunc.profile, neigVal);
         cacheTrace += '(' + cacheKeys[i] + ', ' + similarity + ', ' + this.view[ cacheKeys[i] ].age + '), ';
       }
       neigVal = this.view[ cacheKeys[limit] ].data;
-      similarity = this.proximityFunc.compute(this.data, neigVal);
+      similarity = this.proximityFunc.compute(this.proximityFunc.profile, neigVal);
       cacheTrace += '(' + cacheKeys[limit] + ', ' + similarity + ', ' + this.view[ cacheKeys[limit] ].age + ')]';
     }
-    return this.data + '_' + cacheTrace;
+    return this.proximityFunc.profile + '_' + cacheTrace;
   };
   /**/
   Vicinity.prototype.getPlotInfo = function(peerId){
-    return { peer: peerId, profile: this.data, loop: this.loop, view: Object.keys(this.view) };
+    return { peer: peerId, profile: this.proximityFunc.profile, loop: this.loop, view: Object.keys(this.view) };
   };
   exports.Vicinity = Vicinity;
 })(this);

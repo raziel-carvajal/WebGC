@@ -23,7 +23,7 @@ var configurationObj = {
     cyclon1: {
       class: 'SamplingService',
       viewSize: 4,
-      fanout: 2,
+      fanout: 4,
       periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'oldest',
@@ -40,7 +40,7 @@ var configurationObj = {
     vicinity1: { 
       class: 'Vicinity',
       viewSize: 4,
-      fanout: 2,
+      fanout: 4,
       periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'agr-biased', // random OR biased OR agr-biased

@@ -22,6 +22,7 @@
   * @param {Integer} b - Preference of the second peer.
   * @returns {Integer} Absolute value of (a - b).*/
   DumbProximityFunc.prototype.compute = function(a, b){
+    this.log.info('a: ' + a + ' - b: ' + b);
     if( !(typeof a === 'number' && typeof b === 'number') ){
       this.log.warn('ProximityFunc: eval() with non numbers');
       return null;
@@ -64,6 +65,7 @@
       result[key] = view[key];
       i++;
     }
+    this.log.info('View after evaluation: ' + JSON.stringify(result));
     return result;
   };
   
