@@ -70,7 +70,7 @@
   * @description In some cases, there are gossip protocols that have dependencies amog them. This method
   * reads the property dependencies in the configuration object and establishes those dependencies. For
   * this method, a dependency is to share the property of one gossip protocol with another gossip protocol.*/ 
-  GossipFactory.prototype.setDependencies = function(gossipAlgos){
+  GossipFactory.prototype.setDependencies = function(gossipAlgos, simFunCatalogue){
     var keys = Object.keys(gossipAlgos);
     for( var i = 0; i < keys.length; i++ ){
       if( gossipAlgos[ keys[i] ].hasOwnProperty('attributes') ){
@@ -94,14 +94,25 @@
             }else{
               this.log.error('The protocol with id [' + payload + '] was not loaded by the Factory');
             }
-          }else{
+          }else if(container.length === 1){
+            var objSim = simFunCatalogue[ container[0] ];
+            if(objSim !== 'undefined'){
+              this.inventory[ keys[i] ][ attsKeys[j] ] = objSim;
+              this.log.info('Algorithm [' + keys[i] + '] was augmented with the simiilarity function ['+
+                container[0] + ']');
+            }else{
+              this.log.error('There is not property [' + container[0] + '] at the catalogue of '+
+                'similarity functions. The algorithm with ID [' + keys[i] + '] has not assigned '+
+                'any similarity function');
+            }
+          } else{
             this.log.error('The value [' + algoAttStr + '] for the attribute [' + attsKeys[j] + 
               '] has not the right format (separation by a period). As a consecuence, the algorithm ' +
               '[' + keys[i] + '] will have fatal errors during its execution.');
           }
         }
       }else{
-        this.log.info('The algorithm [' + keys[i] + '] has not dependencies ' + 
+        this.log.info('The algorithm [' + keys[i] + '] has not dependencies ' +
           'with others algorithms.');
       }
     }

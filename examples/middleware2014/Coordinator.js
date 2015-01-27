@@ -19,7 +19,17 @@
     this.first = 0;
     this.profile = opts.gossipAlgos.vicinity1.data;
     this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
-    this.factory = new GossipFactory( {loggingServer: opts.loggingServer, peerId: opts.peerId});
+    
+    this.simFunFactory = new SimFuncFactory({
+      loggingServer: opts.loggingServer,
+      peerId: opts.peerId,
+      simFunOpts: opts.similarityFunctions
+    });
+    
+    this.factory = new GossipFactory({
+      loggingServer: opts.loggingServer,
+      peerId: opts.peerId
+    });
     var algosNames = Object.keys(opts.gossipAlgos);
     this.plotter = opts.plotter;
     var algo;

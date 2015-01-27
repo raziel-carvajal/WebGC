@@ -45,14 +45,18 @@ var configurationObj = {
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'biased', // random OR biased OR agr-biased
       attributes: {
-        rpsView: 'cyclon1.view'
-      },
-      similarityFunctions: { dumbFunc: 'DumbProximityFunc'}
+        rpsView: 'cyclon1.view',
+        simFun: 'dumbFunc'
+      }
     }
   },
   plotter: false,
   loggingServer: {
     host: '131.254.213.42',
     port: 9991
+  },
+  similarityFunctions: {
+    functions: { dumbFunc: 'DumbProximityFunc'},
+    usingWebWorkers: false
   }
 };

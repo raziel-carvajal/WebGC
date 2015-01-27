@@ -2,10 +2,15 @@
 *@module src/patterns*/
 (function(exports){
   function SimFuncFactory(opts){
-    this.inventory = {};
+    this.catalogue = {};
     this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
     this.logOpts = opts.loggingServer;
     this.peerId = opts.peerId;
+    this.withWw = false;
+    if(opts.simFunOpts.usingWebWorkers && window.Worker){
+      this.log.info('One WebWorker will be used per similarity function');
+      this.withWw = true;
+    }
   }
   SimFuncFactory.prototype.instantiateFuncs = function(obj, profile){
     try{
@@ -18,7 +23,7 @@
       for(var i = 0; i < props.length; i++){
         p = props[i];
         this.log.info('Property: ' + p);
-        if(this.inventory.hasOwnProperty(p))
+        if(this.catalogue.hasOwnProperty(p))
           throw 'Property ' + p + ' was already assinged before';
         constructor = exports[ obj[p] ];
         if(constructor === 'undefined')
@@ -28,7 +33,7 @@
           peerId: this.peerId,
           'profile': profile
         };
-        this.inventory[p] = new constructor(opts);
+        this.catalogue[p] = new constructor(opts);
       }
     }catch(e){
       this.log.error('During the initialization of similarity functions. ' + e.message + '. ' + e.name);
