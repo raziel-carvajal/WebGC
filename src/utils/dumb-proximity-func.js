@@ -8,7 +8,7 @@
   * this function amog two peers is computing the difference of the preferences of both peers.
   * @param {Integer} value - Preference of the local peer.*/
   function DumbProximityFunc(opts){
-    this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
+    this.log = new Logger(opts.loggingServer, opts.peerId, 'DumbProximityFunc');
     if( typeof opts.profile !== 'number' || opts.profile < 0 )
       throw 'The preference is not valid';
     //calling this function initialize the profile of the user (profile propertie in opts)

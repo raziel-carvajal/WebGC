@@ -46,7 +46,7 @@ var configurationObj = {
       selectionPolicy: 'biased', // random OR biased OR agr-biased
       attributes: {
         rpsView: 'cyclon1.view',
-        simFun: 'dumbFunc'
+        proximityFunc: 'dumbFunc'
       }
     }
   },
@@ -56,7 +56,7 @@ var configurationObj = {
     port: 9991
   },
   similarityFunctions: {
-    functions: { dumbFunc: 'DumbProximityFunc'},
-    usingWebWorkers: false
+    functions: { dumbFunc: 'DumbSimFunc.js'},
+    usingWebWorkers: true
   }
 };

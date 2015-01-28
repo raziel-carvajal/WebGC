@@ -11,10 +11,10 @@
     this.peerId = opts.peerId;
     this.loggingServer = opts.loggingServer;
     this.inventory = {};
-    this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
+    this.log = new Logger(opts.loggingServer, opts.peerId, 'GossipFactory');
     this.gossipUtil = new GossipUtil({
       loggingServer: opts.loggingServer,
-      peerId: opts.peerId, objName: this.constructor.name
+      peerId: opts.peerId, objName: 'GossipFactory'
     });
   }
   /**
@@ -105,8 +105,8 @@
                 'similarity functions. The algorithm with ID [' + keys[i] + '] has not assigned '+
                 'any similarity function');
             }
-          } else{
-            this.log.error('The value [' + algoAttStr + '] for the attribute [' + attsKeys[j] + 
+          }else{
+            this.log.error('The value [' + algoAttStr + '] for the attribute [' + attsKeys[j] +
               '] has not the right format (separation by a period). As a consecuence, the algorithm ' +
               '[' + keys[i] + '] will have fatal errors during its execution.');
           }

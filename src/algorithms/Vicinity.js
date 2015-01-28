@@ -11,27 +11,17 @@
   * @param {Object} options - Configuration of the gossip-based protocol.
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Vicinity(opts){
-    this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
+    this.log = new Logger(opts.loggingServer, opts.peerId, 'Vicinity');
     this.gossipUtil = new GossipUtil({
       loggingServer: opts.loggingServer,
       peerId: opts.peerId,
-      objName: this.constructor.name
+      objName: 'Vicinity'
     });
     GossipProtocol.call(this, opts);
     this.selectionPolicy = opts.selectionPolicy;
-    //createInstance is defined in class 
-    this.simFunFactory = new SimFuncFactory(opts);
-    this.log.info('Profile initialization: ' + this.data);
-    this.simFunFactory.instantiateFuncs(opts.similarityFunctions, this.data);
-    var props = Object.keys(this.simFunFactory.inventory);
-    this.proximityFunc = this.simFunFactory.inventory[ props[0] ];
-    console.info('Instance of similarity function');
-    console.log(this.proximityFunc);
-    if( this.proximityFunc === 'undefined' ){
-      this.log.error('At least one similarity function must be defined for the ' + 
-        'clustering protocol. The instance of Vicinity will be null.');
-      return null;
-    }
+    /**
+    * Property: "this.proximityFunc", is filled by the GossipFactory
+    **/
   }
   /**
   * @desc This object represents the configuration by default of this protocol. During the
@@ -162,11 +152,13 @@
       limit = cacheKeys.length - 1;
       for(var i = 0; i < limit; i++){
         neigVal = this.view[ cacheKeys[i] ].data;
-        similarity = this.proximityFunc.compute(this.proximityFunc.profile, neigVal);
+        similarity = '?';
+        //similarity = this.proximityFunc.compute(this.proximityFunc.profile, neigVal);
         cacheTrace += '(' + cacheKeys[i] + ', ' + similarity + ', ' + this.view[ cacheKeys[i] ].age + '), ';
       }
       neigVal = this.view[ cacheKeys[limit] ].data;
-      similarity = this.proximityFunc.compute(this.proximityFunc.profile, neigVal);
+      similarity = '?';
+      //similarity = this.proximityFunc.compute(this.proximityFunc.profile, neigVal);
       cacheTrace += '(' + cacheKeys[limit] + ', ' + similarity + ', ' + this.view[ cacheKeys[limit] ].age + ')]';
     }
     return this.proximityFunc.profile + '_' + cacheTrace;

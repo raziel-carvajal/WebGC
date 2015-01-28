@@ -18,13 +18,14 @@
     this.connectedPeers = {};
     this.first = 0;
     this.profile = opts.gossipAlgos.vicinity1.data;
-    this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
+    this.log = new Logger(opts.loggingServer, opts.peerId, 'Coordinator');
     
     this.simFunFactory = new SimFuncFactory({
       loggingServer: opts.loggingServer,
       peerId: opts.peerId,
       simFunOpts: opts.similarityFunctions
     });
+    this.simFunFactory.instantiateFuncs(this.profile);
     
     this.factory = new GossipFactory({
       loggingServer: opts.loggingServer,
@@ -37,12 +38,12 @@
       algo = opts.gossipAlgos[ algosNames[i] ];
       this.factory.createProtocol(algo, algosNames[i]);
     }
-    this.factory.setDependencies(opts.gossipAlgos);
+    this.factory.setDependencies(opts.gossipAlgos, this.simFunFactory.catalogue);
     this.protocols = this.factory.inventory;
     this.gossipUtil = new GossipUtil({
       loggingServer: opts.loggingServer,
       peerId: opts.peerId,
-      objName: this.constructor.name
+      objName: 'Coordinator'
     });
     this.plotterObj = new Plotter(opts.loggingServer, opts.peerId);
     /** 
