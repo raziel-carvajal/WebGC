@@ -17,7 +17,7 @@
   util.inherits(DumbProximityFunc, SimilarityFunction);
   /**
   * @description This method computes the absolute value of the diference among a and b.
-  * @method _eval
+  * @method compute
   * @param {Integer} a - Preference of the first peer.
   * @param {Integer} b - Preference of the second peer.
   * @returns {Integer} Absolute value of (a - b).*/

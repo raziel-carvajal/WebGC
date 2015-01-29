@@ -12,8 +12,8 @@
       this.log.info('One WebWorker will be used per similarity function');
       this.withWw = true;
     }else{
-      this.log.error('Functionality with WebWorkers is not used. Instead, the similarity function '+
-        'by default in WebGC  will be initializated');
+      this.log.warn('Functionality with WebWorkers is not used. Instead, the similarity function '+
+        'defined in the configuartion file will be used');
     }
   }
   SimFuncFactory.prototype.instantiateFuncs = function(profile){

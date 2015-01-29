@@ -5,11 +5,13 @@
     this.profile = profile;
     this.noImMsg = 'It is required to provide an implementation for this method';
   }
+  
   SimilarityFunction.prototype.compute = function(a,b){throw this.noImMsg;};
+  
   /**
   * @description This method gets a subset with the n most similar items to the local peer from
   * the object view.
-  * @method _getClosestSubdic
+  * @method getClosestNeighbours
   * @param {Integer} n - Number of the most similar items to the local peer.
   * @param {Dictonary} view - Source where the most similar items are taken.
   * @returns {Dictionary} Subset of [view]{@link view}.*/
@@ -45,5 +47,6 @@
     this.log.info('View after evaluation: ' + JSON.stringify(result));
     return result;
   };
+  
   exp.SimilarityFunction = SimilarityFunction;
 })(this);
