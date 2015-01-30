@@ -3,20 +3,19 @@
 (function(exports){
   /**
   * @class SamplingService
-  * @classdesc This class implements the Random Peer Sampling (RPS) service. 
+  * @description This class implements the Random Peer Sampling (RPS) service. 
   * The local view is basically a set of ID's, each ID identifies a remote 
   * peer.The implementation of the view GossipProtocol.view is an object 
   * where the ID of a remote peer is a key and each key points to an 
   * {@link Item} that contains an age field (timestamp) and a data field 
   * (application dependent).
-  * @param {Object} options - Object that contains a valid configuration of
-  * the gossip-based protocol.
+  * @param {Object} opts - Object with settings of the protocol.
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>*/
   function SamplingService(opts){
-    this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
+    this.log = new Logger(opts.loggingServer, opts.peerId, 'SamplingService');
     this.gossipUtil = new GossipUtil({
       loggingServer: opts.loggingServer,
-      peerId: opts.peerId, objName: this.constructor.name
+      peerId: opts.peerId, objName: 'SamplingService'
     });
     GossipProtocol.call(this, opts);
     /** Peer selection policy, there are two possible values for this 
@@ -29,7 +28,7 @@
     this.inVandNonReturned = {};
   }
   /**
-  * @desc This object represents the configuration by default of this protocol. During the
+  * @description This object represents the configuration by default of this protocol. During the
   * instantiation of this object (via the Factory object) if the options are not defined
   * the default configuration will be taken into account. 
   * @property {Object} defaultOpts - Default configuration of this gossip-based protocol.
@@ -48,7 +47,7 @@
   util.inherits(SamplingService, GossipProtocol);
   /** 
   * @method initialize
-  * @desc See method GossipProtocol.initilize() for more information.*/
+  * @description See method GossipProtocol.initilize() for more information.*/
   SamplingService.prototype.initialize = function(keys){
     if( keys.length !== 0 ){
       var i = 0;
@@ -61,9 +60,8 @@
   };
   /**
   * @method selectPeer
-  * @desc See method GossipProtocol.selectPeer() for more information. Additionally, 
-  * the selection of the peer identifier is performed in a randomly way or taking into account 
-  * the oldest one. */
+  * @description The selection of the peer identifier is performed in a randomly way or taking into account 
+  * the oldest one. See method GossipProtocol.selectPeer() for more information.*/
   SamplingService.prototype.selectPeer = function(){
     var peer; var keys = Object.keys(this.inVandNonReturned);
     if( keys.length === 0 ){
@@ -88,7 +86,7 @@
   };
   /** 
   * @method permuteView
-  * @desc This method changes, in a randomly way, the order of the view GossipProtocol.view */
+  * @description This method changes, in a randomly way, the order of the view GossipProtocol.view */
   SamplingService.prototype.permuteView = function(){
     var keys = Object.keys(this.view);
     if( keys.length === 0 || keys.length === 1 )
@@ -110,7 +108,7 @@
   };
   /**
   * @method moveOldest
-  * @desc This method changes the order of the view GossipProtocol.view, moving the oldest 
+  * @description This method changes the order of the view GossipProtocol.view, moving the oldest 
   * SamplingService.H items (according to their timestamp) at the end of the view. */ 
   SamplingService.prototype.moveOldest = function(){
     if( Object.keys(this.view).length > this.H && this.H > 0 ){
@@ -127,7 +125,7 @@
   };
   /**
   * @method selectItemsToKeep
-  * @desc See method GossipProtocol.selectItemsToKeep() for more information. */
+  * @description See method GossipProtocol.selectItemsToKeep() for more information. */
   SamplingService.prototype.selectItemsToKeep = function(thisId, rcvCache){
     var i, keys = Object.keys(rcvCache);
     for( i = 0; i < keys.length; i++ ){
@@ -165,7 +163,7 @@
   };
   /**
   * @method getItemsToSend
-  * @desc See method GossipProtocol.getItemsToSend() for more information. */
+  * @description See method GossipProtocol.getItemsToSend() for more information. */
   SamplingService.prototype.getItemsToSend = function(thisId, dstPeer, thread){
     var buffer = {}; buffer[thisId] = this.gossipUtil.newItem(0, this.data);
     this.permuteView();
@@ -180,7 +178,7 @@
   };
   /** 
   * @method increaseAge
-  * @desc See method GossipProtocol.increaseAge() for more information. */
+  * @description See method GossipProtocol.increaseAge() for more information. */
   SamplingService.prototype.increaseAge = function(){
     var keys = Object.keys(this.view);
     for( var i = 0; i < keys.length; i++ )
@@ -188,7 +186,7 @@
   };
   /** 
   * @method getLog
-  * @desc See method GossipProtocol.getLog() for more information. */
+  * @description See method GossipProtocol.getLog() for more information. */
   SamplingService.prototype.getLog = function(){
     var trace = '['; var limit;
     var keys = Object.keys(this.view);
@@ -202,7 +200,9 @@
     }
     return trace;
   };
-  /**/
+  /**
+  * @method getPlotInfo
+  * @description See GossipProtocol.getPlotInfo for more information.*/
   SamplingService.prototype.getPlotInfo = function(peerId){
     return {peer: peerId, profile: this.data, loop: this.loop, view: Object.keys(this.view)};
   };

@@ -4,22 +4,23 @@
   /**
   * @class Cyclon
   * @augments GossipProtocol
-  * @classdesc This class implements the goosip-base algorithm Cyclon. The local view is 
+  * @description This class implements the goosip-base algorithm Cyclon. The local view is 
   * basically a set of ID's, each ID identifies a remote peer. Each key in the view 
   * GossipProtocol.view is the ID of a remote peer and each key points 
   * to an object that contains an age field (timestamp) and a data field (application dependent).
-  * @param {Object} options - Configuration of the gossip-based protocol.
+  * @param {Object} opts - Configuration of the gossip-based protocol.
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Cyclon(opts){
-    this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
+    this.log = new Logger(opts.loggingServer, opts.peerId, 'Cyclon');
     this.gossipUtil = new GossipUtil({
       loggingServer: opts.loggingServer,
-      peerId: opts.peerId, objName: this.constructor.name
+      peerId: opts.peerId,
+      objName: 'Cyclon'
     });
     GossipProtocol.call(this, opts);
   }
   /**
-  * @desc This object represents the configuration by default of this protocol. During the
+  * @description This object represents the configuration by default of this protocol. During the
   * instantiation of this object (via the Factory object) if the options are not defined
   * the default configuration will be taken into account. 
   * @property {Object} defaultOpts - Default configuration of this gossip-based protocol.
@@ -34,15 +35,15 @@
   };
   util.inherits(Cyclon, GossipProtocol);
   /** 
-  * @desc See method GossipProtocol.selectPeer() for more information. Particularly,
-  * this method selects the remote peer's identifier with the oldest age.*/
+  * @description This method selects the remote peer's identifier with the oldest age.See method 
+  * GossipProtocol.selectPeer() for more information.*/
   Cyclon.prototype.selectPeer = function(){
     return this.gossipUtil.getOldestKey(this.view);
   };
   /**
   * @method getItemsToSend
-  * @desc See method GossipProtocol.getItemsToSend() for more information. Paricularly,
-  * the selection of peers is performed in a randomly way.*/
+  * @description The selection of peers is performed in a randomly way.See method 
+  * GossipProtocol.getItemsToSend() for more information.*/
   Cyclon.prototype.getItemsToSend = function(thisId, dstPeer, thread){
     var subDict = {};
     switch( thread ){
@@ -62,7 +63,7 @@
   };
   /**
   * @method selectItemsToKeep
-  * @desc See method GossipProtocol.selectItemsToKeep() for more information.*/
+  * @description See method GossipProtocol.selectItemsToKeep() for more information.*/
   Cyclon.prototype.selectItemsToKeep = function(thisId, rcvCache){
     var rcvKeys = Object.keys(rcvCache);
     if( rcvKeys.length === 0 )
@@ -95,7 +96,7 @@
   };
   /** 
   * @method initialize
-  * @desc See method GossipProtocol.initialize() for more information.*/
+  * @description See method GossipProtocol.initialize() for more information.*/
   Cyclon.prototype.initialize = function(keys){
     if( keys.length > 0 ){
       var i = 0;
@@ -107,7 +108,7 @@
   };
   /** 
   * @method increaseAge
-  * @desc See method GossipProtocol.increaseAge() for more information.*/
+  * @description See method GossipProtocol.increaseAge() for more information.*/
   Cyclon.prototype.increaseAge = function(){
     var keys = Object.keys(this.view);
     for( var i = 0; i < keys.length; i++ )
@@ -115,14 +116,13 @@
   };
   /** 
   * @method setData 
-  * @desc This method updates the value of the property 'data' from one item in 
-  * GossipProtocol.view 
+  * @description This method updates the value of of one item in GossipProtocol.view
   * @param {String} key - ID of the item to update.
   * @param {Object} data - New value for the data property*/
   Cyclon.prototype.setData = function(key, data){ this.view[key].data = data; };
   /** 
   * @method getLog
-  * @desc See method GossipProtocol.getLog() for more information.*/
+  * @description See method GossipProtocol.getLog() for more information.*/
   Cyclon.prototype.getLog = function(){
     var cacheTrace = '['; var limit;
     var cacheKeys = Object.keys(this.view);
@@ -136,7 +136,9 @@
     }
     return cacheTrace;
   };
-  /**/
+  /**
+  * @method getPlotInfo
+  * @description See method GossipProtocol.getPlotInfo for more information*/
   Cyclon.prototype.getPlotInfo = function(peerId){ 
     return {peer: peerId, profile: this.data, loop: this.loop, view: Object.keys(this.view)};
   };

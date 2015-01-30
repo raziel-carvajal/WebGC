@@ -1,6 +1,11 @@
 /**
 *@module src/apis*/
 (function(exp){
+  /** 
+  * @class SimilarityFunction
+  * @description "Abstract class" for any implementation of a similarit 
+  * @param profile - Profile of the local peer; this parame
+  * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */ 
   function SimilarityFunction(profile){
     this.profile = profile;
     this.noImMsg = 'It is required to provide an implementation for this method';

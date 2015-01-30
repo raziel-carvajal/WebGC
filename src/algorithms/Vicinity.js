@@ -3,12 +3,12 @@
 (function(exports){
   /**
   * @class Vicinity
-  * @classdesc This class implements the gosip-based algoritm Vicinity. The local view 
+  * @description This class implements the gosip-based algoritm Vicinity. The local view 
   * is basically a set of ID's, each ID identifies a remote peer.The implementation of 
   * the view GossipProtocol.view is a dictionary where the ID of a remote peer is a key and 
   * each key points to an {@link Item} which contains an age field (timestamp) and a 
   * data field (application dependent).
-  * @param {Object} options - Configuration of the gossip-based protocol.
+  * @param {Object} opts - Settings for the protocol.
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Vicinity(opts){
     this.log = new Logger(opts.loggingServer, opts.peerId, 'Vicinity');
@@ -20,11 +20,11 @@
     GossipProtocol.call(this, opts);
     this.selectionPolicy = opts.selectionPolicy;
     /**
-    * Property: "this.proximityFunc", is filled by the GossipFactory
+    * Property: "this.proximityFunc", is filled by the GossipFactory at execution time
     **/
   }
   /**
-  * @desc This object represents the configuration by default of this protocol. During the
+  * @description This object represents the configuration by default of this protocol. During the
   * instantiation of this object (via the Factory object) if the options are not defined
   * the default configuration will be taken into account. 
   * @property {Object} defaultOpts - Default configuration of this gossip-based protocol.
@@ -36,28 +36,24 @@
     fanout: 5,
     periodTimeOut: 10000,
     propagationPolicy: {push: true, pull: true},
-    selectionPolicy: 'biased', // random OR biased OR agr-biased
-    similarityFunction: '?'
+    selectionPolicy: 'biased' // random OR biased OR agr-biased
   };
   // the util object belongs to PeerJS
   util.inherits(Vicinity, GossipProtocol);
   /** 
   * @method selectPeer
-  * @desc See  method GossipProtocol.selectPeer() for more information. Particularly,
-  * this method selects the remote peer's identifier with the oldest age.*/
-  Vicinity.prototype.selectPeer = function(){
-    return this.gossipUtil.getOldestKey(this.view);
-  };
+  * @description This method selects the remote peer's identifier with the oldest age. See method 
+  * GossipProtocol.selectPeer() for more information.*/
+  Vicinity.prototype.selectPeer = function(){ return this.gossipUtil.getOldestKey(this.view); };
   /**
   * @method getItemsToSend
-  * @desc See method GossipProtocol.getItemsToSend() for more information. Particularly,
-  * the selection of items is performed following one of the next cases: i) if 
+  * @description The selection of items is performed following one of the next cases: i) if 
   * selection='random' items from GossipProtocol.view are chosen 
   * in a randomly way, ii) if selection='biased' the most similar 
   * GossipProtocol.fanout items are chosen from GossipProtocol.view
   * and iii) if selection='agr-biased' the most similar 
   * GossipProtocol.fanout items are chosen from the views Vicinity.rpsView and 
-  * GossipProtocol.view */
+  * GossipProtocol.view ;see method GossipProtocol.getItemsToSend() for more information.*/
   Vicinity.prototype.getItemsToSend = function(thisId, dstPeer, thread){
     var subDict = {}, itmsNum;
     switch( thread ){
@@ -93,7 +89,7 @@
   };
   /**
   * @method selectItemsToKeep
-  * @desc See method GossipProtocol.selectItemsToKeep() for more information. */
+  * @description See method GossipProtocol.selectItemsToKeep() for more information. */
   Vicinity.prototype.selectItemsToKeep = function(thisId, rcvCache){
     var tmp = this.gossipUtil.mergeViews(this.view, rcvCache);
     var mergedViews = this.gossipUtil.mergeViews(tmp, this.rpsView);
@@ -103,7 +99,7 @@
   };
   /** 
   * @method initialize
-  * @desc See method GossipProtocol.initialize() for more information. */
+  * @description See method GossipProtocol.initialize() for more information. */
   Vicinity.prototype.initialize = function(keys){
     if( keys.length > 0 ){
       var i = 0;
@@ -115,7 +111,7 @@
   };
   /** 
   * @method increaseAge
-  * @desc See method GossipProtocol.increaseAge() for more information. */
+  * @description See method GossipProtocol.increaseAge() for more information. */
   Vicinity.prototype.increaseAge = function(){
     var keys = Object.keys(this.view);
     for( var i = 0; i < keys.length; i++ )
@@ -123,7 +119,7 @@
   };
   /**
   * @method getSimilarPeerIds
-  * This method gives n peer identifiers from GossipProtocol.view
+  * @description This method gives n peer identifiers from GossipProtocol.view
   * These peers have the higher degree of similarity with the local peer.
   * @param {Integer} n - Number of the required peer IDs.
   * @returns {Array} Array of n peer IDs. */ 
@@ -142,7 +138,7 @@
   };
   /** 
   * @method getLog
-  * @desc See method GossipProtocol.getLog() for more information. */
+  * @description See method GossipProtocol.getLog() for more information. */
   Vicinity.prototype.getLog = function(){
     var cacheTrace = '[', limit, similarity, neigVal;
     var cacheKeys = Object.keys(this.view);
@@ -163,7 +159,8 @@
     }
     return this.proximityFunc.profile + '_' + cacheTrace;
   };
-  /**/
+  /**
+  * @description See method GossipProtocol.getPlotInfo() for more information.*/
   Vicinity.prototype.getPlotInfo = function(peerId){
     return { peer: peerId, profile: this.proximityFunc.profile, loop: this.loop, view: Object.keys(this.view) };
   };
