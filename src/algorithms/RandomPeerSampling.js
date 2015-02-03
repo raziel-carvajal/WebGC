@@ -162,9 +162,9 @@
     }
   };
   /**
-  * @method getItemsToSend
-  * @description See method GossipProtocol.getItemsToSend() for more information. */
-  SamplingService.prototype.getItemsToSend = function(thisId, dstPeer, thread){
+  * @method selectItemsToSend
+  * @description See method GossipProtocol.selectItemsToSend() for more information. */
+  SamplingService.prototype.selectItemsToSend = function(thisId, dstPeer, thread){
     var buffer = {}; buffer[thisId] = this.gossipUtil.newItem(0, this.data);
     this.permuteView();
     this.moveOldest();

@@ -42,7 +42,7 @@
   * parameter opts. The reference of every gossip protocol will be kept in the GossipFactory.inventory
   * property of the factory.
   * @param {Object} opts - Configuration object of a gossip protocol. */
-  GossipFactory.prototype.createProtocol = function(opts, algoId){
+  GossipFactory.prototype.createProtocol = function(opts, algoId, coordi){
     try{
       var protocol;
       if( typeof opts.class !== 'string' )
@@ -56,6 +56,7 @@
       this.gossipUtil.extendProperties(opts, {peerId: this.peerId, 
         loggingServer: this.loggingServer, protoId: algoId});
       this.checkProperties(opts);
+      opts.coordinator = coordi;
       protocol = new constructor(opts);
       if( !this.inventory.hasOwnProperty(algoId) )
         this.inventory[algoId] = protocol;

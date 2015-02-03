@@ -46,15 +46,15 @@
   * GossipProtocol.selectPeer() for more information.*/
   Vicinity.prototype.selectPeer = function(){ return this.gossipUtil.getOldestKey(this.view); };
   /**
-  * @method getItemsToSend
+  * @method selectItemsToSend
   * @description The selection of items is performed following one of the next cases: i) if 
   * selection='random' items from GossipProtocol.view are chosen 
   * in a randomly way, ii) if selection='biased' the most similar 
   * GossipProtocol.fanout items are chosen from GossipProtocol.view
   * and iii) if selection='agr-biased' the most similar 
   * GossipProtocol.fanout items are chosen from the views Vicinity.rpsView and 
-  * GossipProtocol.view ;see method GossipProtocol.getItemsToSend() for more information.*/
-  Vicinity.prototype.getItemsToSend = function(thisId, dstPeer, thread){
+  * GossipProtocol.view ;see method GossipProtocol.selectItemsToSend() for more information.*/
+  Vicinity.prototype.selectItemsToSend = function(thisId, dstPeer, thread){
     var subDict = {}, itmsNum;
     switch( thread ){
       case 'active':

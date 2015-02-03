@@ -2,7 +2,7 @@
   function SimObjForWebWorkers(opts){
     this.log = new Logger(opts.loggingServer, opts.peerId, 'SimObjForWebWorkers');
     this.globalView = {};
-    this.worker = new Worker('../../src/workers/' + opts.workerFile);
+    this.worker = new Worker(opts.workerFile);
     if(this.worker === 'undefined'){
       this.log.error('WebWorker initialization was not performed');
       return null;

@@ -20,6 +20,7 @@
     this.propagationPolicy = opts.propagationPolicy;
     // This attribute is a unique ID for the algorithm
     this.protoId = opts.protoId;
+    this.coordi = opts.coordinator;
     // msgs
     this.nonImpMsg = 'An implementation for this method is required';
   }
@@ -41,12 +42,12 @@
   GossipProtocol.prototype.selectPeer = function(){ throw this.nonImpMsg; };
   /**
   * @description This method selects a subset of GossipProtocol.gossipLength identifiers from GossipProtocol.view
-  * @method getItemsToSend
+  * @method selectItemsToSend
   * @param thisIs:String - The ID of the local peer.
   * @param dstPeer:String - The ID of the remote peer.
   * @param thread:String - Whether the selection is performed in the passive thread or in the active thread.
   * @returns Object - Subset of the local view.*/
-  GossipProtocol.prototype.getItemsToSend = function(thisId, dstPeer, thread){ throw this.nonImpMsg; };
+  GossipProtocol.prototype.selectItemsToSend = function(thisId, dstPeer, thread){ throw this.nonImpMsg; };
   /**
   * @description This method merges the received set of items rcvCache with those in GossipProtocol.view 
   * the size of the view is kept less than or equal to GossipProtocol.viewSize

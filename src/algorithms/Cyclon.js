@@ -41,10 +41,10 @@
     return this.gossipUtil.getOldestKey(this.view);
   };
   /**
-  * @method getItemsToSend
+  * @method selectItemsToSend
   * @description The selection of peers is performed in a randomly way.See method 
-  * GossipProtocol.getItemsToSend() for more information.*/
-  Cyclon.prototype.getItemsToSend = function(thisId, dstPeer, thread){
+  * GossipProtocol.selectItemsToSend() for more information.*/
+  Cyclon.prototype.selectItemsToSend = function(thisId, dstPeer, thread){
     var subDict = {};
     switch( thread ){
       case 'active':
@@ -59,7 +59,8 @@
         this.log.error('Unknown selection policy');
       break;
     }
-    return subDict;
+    var receiver = this.selectPeer();
+    this.coordi.sendTo(receiver, subDict, {id: this.protoId, push: this.propagationPolicy.push});
   };
   /**
   * @method selectItemsToKeep
