@@ -22,6 +22,7 @@
     /**
     * Property: "this.proximityFunc", is filled by the GossipFactory at execution time
     **/
+    this.proximityFunc.cluView = this.view;
   }
   /**
   * @description This object represents the configuration by default of this protocol. During the
@@ -55,7 +56,7 @@
   * GossipProtocol.fanout items are chosen from the views Vicinity.rpsView and 
   * GossipProtocol.view ;see method GossipProtocol.selectItemsToSend() for more information.*/
   Vicinity.prototype.selectItemsToSend = function(thisId, dstPeer, thread){
-    var subDict = {}, itmsNum;
+    var itmsNum, newItem = null;
     switch( thread ){
       case 'active':
         delete this.view[dstPeer];
@@ -68,24 +69,32 @@
         itmsNum = 0;
       break;
     }
+    if(thread === 'active')
+      newItem = this.gossipUtil.newItem(0, this.proximityFunc.profile);
     switch( this.selectionPolicy ){
       case 'random':
-        subDict = this.gossipUtil.getRandomSubDict(itmsNum, this.view);
+        var subDict = this.gossipUtil.getRandomSubDict(itmsNum, this.view);
+        if(newItem !== null)
+          subDict[thisId] = newItem;
+        this.coordi.sendTo(dstPeer, subDict, this.protoId);
       break;
       case 'biased':
-        subDict = this.proximityFunc.getClosestNeighbours(itmsNum, this.view);
+        if(newItem !== null)
+          this.proximityFunc.getClosestNeighbours(itmsNum, this.view, {k: thisId, v: newItem});
+        else
+          this.proximityFunc.getClosestNeighbours(itmsNum, this.view, null);
       break;
       case 'agr-biased':
         var mergedV = this.gossipUtil.mergeViews(this.view, this.rpsView);
-        subDict = this.proximityFunc.getClosestNeighbours(itmsNum, mergedV);
+        if(newItem !== null)
+          this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, {k: thisId, v: newItem});
+        else
+          this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, null);
       break;
       default:
         this.log.error('Unknown peer selection policy');
       break;
     }
-    if( thread === 'active' )
-      subDict[thisId] = this.gossipUtil.newItem(0, this.proximityFunc.profile);
-    return subDict;
   };
   /**
   * @method selectItemsToKeep
@@ -162,7 +171,7 @@
   /**
   * @description See method GossipProtocol.getPlotInfo() for more information.*/
   Vicinity.prototype.getPlotInfo = function(peerId){
-    return { peer: peerId, profile: this.proximityFunc.profile, loop: this.loop, view: Object.keys(this.view) };
+    return { peer: peerId, profile: this.proximityFunc.profile, loop: this.loop, 'view': Object.keys(this.view) };
   };
   exports.Vicinity = Vicinity;
 })(this);

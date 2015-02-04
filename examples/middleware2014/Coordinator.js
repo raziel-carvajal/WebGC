@@ -21,7 +21,7 @@
     this.simFunFactory = new SimFuncFactory({ 
       loggingServer: opts.loggingServer, peerId: opts.peerId, simFunOpts: opts.similarityFunctions
     });
-    this.simFunFactory.instantiateFuncs(this.profile);
+    this.simFunFactory.instantiateFuncs(this.profile, this);
     
     this.factory = new GossipFactory({ loggingServer: opts.loggingServer, peerId: opts.peerId });
     var algosNames = Object.keys(opts.gossipAlgos);
@@ -39,51 +39,13 @@
     /** 
      * This method fires the constructor of the [Peer]{@link Peer} object. */
     Peer.call(this, opts.peerId, opts.peerJsOpts);
-  }
-  
-  util.inherits(Coordinator, Peer);
-  
-  Coordinator.prototype.sendTo = function(receiver, payload, protOps){
-    if(protOps.push){
-      var connection = this.connect(receiver, {label: protOps.id});
-      connection.on('error', function(e){
-        this.log.error('During the view exchange with: ' + receiver + ', in protocol: ' + protOps.id);
-      });
-      connection.on('open', function(){
-        connection.send(payload);
-      });
-    }
-  };
-  
-  Coordinator.prototype.setInternalEvents = function(){
-    var self = this;
-    /**
-    * @event Coordinator#doActiveThread
-    * This event performs the active thread of the gossip protocols in the
-    * [protocols]{@link Coordinator#protocols} object. This event is linked with [the method]
-    * {@link ClusteringExecutor#doActiveThread}. */
-    this.on('doActiveThread', function(view){
-      var i, protocol, keys = Object.keys(self.protocols);
-      for( i = 0; i < keys.length; i++ ){
-        protocol = self.protocols[ keys[i] ];
-        protocol.initialize(view);
-      }
-      window.setInterval( function(){
-        var keys = Object.keys(self.protocols);
-        for( var i = 0; i < keys.length; i++ )
-          self.doActiveThread( self.protocols[ keys[i] ] );
-      }, 5000 );
-    });
-  };
-  
-  Coordinator.prototype.setExternalEvents = function(){
     /** 
     * @event Coordinator#open
     * Once the [PeerServe]{@link PeerServer} gives an [id]{@link id} to the local peer
     * the function in this event is performed. */
     var self = this;
     this.on('open', function(){ 
-      window.setTimeout( function(){ self.getFirstView(); }, 3000 );
+      window.setTimeout( function(){ self.getFirstView(); }, 5000 );
       window.setInterval( function(){ self.getGraph('rps'); }, 11000);
       window.setInterval( function(){ self.getGraph('clu'); }, 11000);
       window.setInterval( function(){ self.first = 1; }, 21000);
@@ -96,6 +58,32 @@
     this.on('connection', function(c){ 
       self.handleConnection(c); 
     });
+  }
+  
+  util.inherits(Coordinator, Peer);
+  
+  Coordinator.prototype.sendTo = function(receiver, payload, protoId){
+    var connection = this.connect(receiver, {label: protoId});
+    connection.on('error', function(e){
+      this.log.error('During the view exchange with: ' + receiver + ', in protocol: ' + protoId);
+    });
+    connection.on('open', function(){
+      connection.send(payload);
+    });
+  };
+  
+  Coordinator.prototype.scheduleActiveThread = function(view){
+    var protocol, keys = Object.keys(this.protocols);
+    for(var i = 0; i < keys.length; i++ ){
+      protocol = this.protocols[ keys[i] ];
+      protocol.initialize(view);
+    }
+    //var self = this;
+    window.setInterval( function(){
+      var keys = Object.keys(this.protocols);
+      for( var i = 0; i < keys.length; i++ )
+        this.doActiveThread( this.protocols[ keys[i] ] );
+    }, 5000 );
   };
   
   /**
@@ -105,14 +93,15 @@
   * @param {DataConnection} connection - This connection allows the exchange of meesages amog peers. */
   Coordinator.prototype.handleConnection = function(connection){
     var protocol = this.protocols[connection.label];
+    var receiver = protocol.selectPeer();
     var self = this;
     connection.on('data', function(data){
       protocol.selectItemsToKeep(self.id, data);
-      if( protocol.propagationPolicy.push )
-        protocol.selectItemsToSend(self.id, connection.peer, 'passive');
+      if(protocol.propagationPolicy.pull)
+        protocol.selectItemsToSend(self.id, receiver, 'passive');
     });
     connection.on('error', function(err){
-      self.log.error('During the reception of a ' + protocol.class + ' message');
+      self.log.error('During the reception of a ' + protocol.protoId + ' message');
     });
   };
   
@@ -124,26 +113,9 @@
     var logi = protocol.protoId + '_' + protocol.loop + '_' + this.id + '_' + protocol.getLog();
     this.log.info(logi);
     protocol.loop++;
-    var dstPeer = protocol.selectPeer();
     protocol.increaseAge();
-    var connection = this.connect(dstPeer, { label: protocol.protoId });
-    var self = this;
-    /** As soon as the connection is ready to send data, this event will be fired. */
-    connection.on('open', function(){
-      var payload = {};
-      if( protocol.propagationPolicy.push )
-        payload = protocol.getItemsToSend(self.id, connection.peer, 'active');
-      connection.send( payload );
-    });
-    /** This event is fired when a response of a remote peer is expected. */
-    connection.on('data', function(data){
-      if( protocol.propagationPolicy.pull )
-        protocol.selectItemsToKeep(self.id, data);
-    });
-    /** This event is fired when there is an error in the connection. */
-    connection.on('error', function(err){
-      self.log.error('During the emition of a ' + protocol.class + ' message. ' + err);
-    });
+    if(protocol.propagationPolicy.push)
+      protocol.selectItemsToSend(this.id, protocol.selectPeer(), 'active');
   };
   
   /**
@@ -191,7 +163,8 @@
       var data = JSON.parse(http.responseText);
       if(data.view.length !== 0){
         self.test();
-        self.emit('doActiveThread', data.view);
+        self.scheduleActiveThread(data.view);
+        //self.emit('doActiveThread', data.view);
       }else
         window.setTimeout( function(){ self.getFirstView(); }, 5000 );
     };

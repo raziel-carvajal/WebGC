@@ -1,48 +1,56 @@
 (function(exports){
   function SimObjForWebWorkers(opts){
     this.log = new Logger(opts.loggingServer, opts.peerId, 'SimObjForWebWorkers');
-    this.globalView = {};
     this.worker = new Worker(opts.workerFile);
     if(this.worker === 'undefined'){
       this.log.error('WebWorker initialization was not performed');
       return null;
     }
-    SimilarityFunction.call(this, opts.profile);
+    SimilarityFunction.call(this, opts);
     //this.worker.onmessage = this.updateGlobalView;
     var self = this;
     this.worker.onmessage = function(event){
-      self.log.info('View received from the worker: ' + event.data);
-      var newView = JSON.parse(event.data);
-      var props = Object.keys(newView);
-      for(var i = 0; i < props.length; i++)
-        self.globalView[ props[i] ] = newView[ props[i] ];
+      var payload = event.data;
+      self.log.info('Obj received from the worker: ' + JSON.stringify(payload));
+      self.applyEvaluation(payload);
     };
   }
+  
   util.inherits(SimObjForWebWorkers, SimilarityFunction);
-  //SimObjForWebWorkers.prototype.updateGlobalView = function(event){
-  //  this.log.info('View received from the worker: ' + event.data);
-  //  var newView = JSON.parse(event.data);
-  //  var props = Object.keys(newView);
-  //  for(var i = 0; i < props.length; i++)
-  //    this.globalView[ props[i] ] = newView[ props[i] ];
-  //};
-  SimObjForWebWorkers.prototype.evaluateInWorker = function(view, profile){
-    var payload = JSON.stringify({'view': view, 'profile': profile});
+  
+  SimObjForWebWorkers.prototype.getClosestNeighbours = function(n, view, newItem, receiver, protoId){
+    var keys = Object.keys(view), r = {};
+    if(newItem !== null)
+      r[newItem.k] = newItem.v;
+    if(n <= 0 || keys.length === 0){
+      this.coordinator.sendTo(receiver, r, protoId);
+      return;
+    }
+    if( keys.length <= n ){
+      for(var i = 0; i < keys.length; i++)
+        r[ keys[i] ] = view[ keys[i] ];
+      this.coordinator.sendTo(receiver, r, protoId);
+      return;
+    }
+    var payload = {
+      'n': n,
+      'view': view,
+      'newItem': newItem,
+      'receiver': receiver,
+      'protoId': protoId,
+      profile: this.profile
+    };
     this.worker.postMessage(payload);
   };
-  SimObjForWebWorkers.prototype.getClosestNeighbours = function(n, view){
-    this.evaluateInWorker(view, this.profile);
-    var keys = Object.keys(view);
-    if(n <= 0 || keys.length === 0)
-      return {};
-    if(keys.length <= n)
-      return view;
+  
+  SimObjForWebWorkers.prototype.applyEvaluation = function(obj){
+    var keys = Object.keys(obj.view);
     var values = [], nulls = [], i;
     for( i = 0; i < keys.length; i++ ){
-      if(this.globalView.hasOwnProperty(keys[i]) && typeof this.globalView[ keys[i] ] === 'number' )
+      if(obj.evaluation.hasOwnProperty(keys[i]) && typeof obj.evaluation[ keys[i] ] === 'number' )
         values.push({
           k: keys[i],
-          v: this.globalView[ keys[i] ]
+          v: obj.evaluation[ keys[i] ]
         });
       else
         nulls.push( keys[i] );
@@ -51,17 +59,18 @@
     var result = {};
     i = 0;
     while(i < values.length && i < n){
-      result[ values[i].k ] = view[ values[i].k ];
+      result[ values[i].k ] = obj.view[ values[i].k ];
       i++;
     }
     var key;
     while(i < n){
       key = nulls.pop();
-      result[key] = view[key];
+      result[key] = obj.view[key];
       i++;
     }
-    this.log.info('View after evaluation: ' + JSON.stringify(result));
-    return result;
+    if(obj.newItem !== null)
+      result[newItem.k] = newItem.v;
+    this.coordinator.sendTo(obj.receiver, result, obj.protoId);
   };
   
   exports.SimObjForWebWorkers = SimObjForWebWorkers;

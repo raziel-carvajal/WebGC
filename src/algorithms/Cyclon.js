@@ -59,8 +59,7 @@
         this.log.error('Unknown selection policy');
       break;
     }
-    var receiver = this.selectPeer();
-    this.coordi.sendTo(receiver, subDict, {id: this.protoId, push: this.propagationPolicy.push});
+    this.coordi.sendTo(dstPeer, subDict, this.protoId);
   };
   /**
   * @method selectItemsToKeep

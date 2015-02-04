@@ -16,7 +16,7 @@
         'defined in the configuartion file will be used');
     }
   }
-  SimFuncFactory.prototype.instantiateFuncs = function(profile){
+  SimFuncFactory.prototype.instantiateFuncs = function(profile, coordinator){
     try{
       if(this.funcs === 'undefined')
         throw 'Object that describes similarity functions is not defined';
@@ -39,7 +39,8 @@
           loggingServer: this.logOpts,
           peerId: this.peerId,
           'profile': profile,
-          workerFile: this.funcs[p]
+          workerFile: this.funcs[p],
+          'coordinator': coordinator
         };
         this.catalogue[p] = new constructor(opts);
       }
