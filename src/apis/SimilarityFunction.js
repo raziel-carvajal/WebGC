@@ -68,17 +68,7 @@
 
 
 
-  SimilarityFunction.prototype.orderBySimilarity = function(n, view, newItem, receiver, protoId){
-    var values = [], nulls = [];
-    for( i = 0; i < keys.length; i++ ){
-      if( view[ keys[i] ].hasOwnProperty('data') && typeof view[ keys[i] ].data === 'number' )
-        values.push({
-          k: keys[i],
-          v: this.compute(this.profile, view[ keys[i] ].data)
-        });
-      else
-        nulls.push( keys[i] );
-    }
+  SimilarityFunction.prototype.orderBySimilarity = function(values, n, view, nulls){
     values.sort( function(a,b){return a.v - b.v;} );
     var result = {};
     i = 0;
@@ -92,16 +82,7 @@
       result[key] = view[key];
       i++;
     }
-    if(newItem !== null)
-      result[newItem.k] = newItem.v;
-    this.coordinator.sendTo(receiver, result, protoId);
-
-
-
-
-
-
-
+    return result;
   };
   
   /**
