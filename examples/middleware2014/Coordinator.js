@@ -76,8 +76,6 @@
   util.inherits(Coordinator, Peer);
   
   Coordinator.prototype.sendTo = function(receiver, payload, protoId){
-    console.log('Coordi');
-    console.log(this);
     console.log('proto: ' + protoId + ', receiver: ' + receiver);
     var connection = this.connect(receiver, {label: protoId});
     connection.on('error', function(e){
@@ -87,20 +85,6 @@
       connection.send(payload);
     });
   };
-  
-  //Coordinator.prototype.scheduleActiveThread = function(view){
-  //  var protocol, keys = Object.keys(this.protocols);
-  //  for(var i = 0; i < keys.length; i++ ){
-  //    protocol = this.protocols[ keys[i] ];
-  //    protocol.initialize(view);
-  //  }
-  //  var self = this;
-  //  window.setInterval( function(){
-  //    var keys = Object.keys(self.protocols);
-  //    for( var i = 0; i < keys.length; i++ )
-  //      self.doActiveThread( self.protocols[ keys[i] ] );
-  //  }, 5000 );
-  //};
   
   /**
   * @method handleConnection
@@ -113,8 +97,8 @@
     var self = this;
     connection.on('data', function(data){
       protocol.selectItemsToKeep(self.id, data);
-      if(protocol.propagationPolicy.pull)
-        protocol.selectItemsToSend(self.id, receiver, 'passive');
+      //if(protocol.propagationPolicy.pull)
+      //  protocol.selectItemsToSend(self.id, receiver, 'passive');
     });
     connection.on('error', function(err){
       self.log.error('During the reception of a ' + protocol.protoId + ' message');
@@ -177,10 +161,8 @@
       /** 
       * @fires Coordinator#doActiveThread */
       var data = JSON.parse(http.responseText);
-      if(data.view.length !== 0){
+      if(data.view.length !== 0)
         self.emit('doActiveThread', data.view);
-        //self.scheduleActiveThread(data.view);
-      }
       else
         window.setTimeout( function(){ self.getFirstView(); }, 5000 );
     };

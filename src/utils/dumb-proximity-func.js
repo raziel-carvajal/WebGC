@@ -12,7 +12,7 @@
     if( typeof opts.profile !== 'number' || opts.profile < 0 )
       throw 'The preference is not valid';
     //calling this function initialize the profile of the user (profile propertie in opts)
-    SimilarityFunction.call(this, opts.profile);
+    SimilarityFunction.call(this, opts);
   }
   util.inherits(DumbProximityFunc, SimilarityFunction);
   /**

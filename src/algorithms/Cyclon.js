@@ -60,7 +60,6 @@
       break;
     }
     console.log('Cyclon. Coordi');
-    console.log(this.coordinator);
     console.log('thread: ' + thread + ', dstPeer: ' + dstPeer);
     this.coordinator.sendTo(dstPeer, subDict, this.protoId);
   };
