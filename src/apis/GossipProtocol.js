@@ -20,7 +20,7 @@
     this.propagationPolicy = opts.propagationPolicy;
     // This attribute is a unique ID for the algorithm
     this.protoId = opts.protoId;
-    this.coordi = opts.coordinator;
+    this.coordinator = opts.coordinator;
     // msgs
     this.nonImpMsg = 'An implementation for this method is required';
   }

@@ -22,7 +22,6 @@
     /**
     * Property: "this.proximityFunc", is filled by the GossipFactory at execution time
     **/
-    this.proximityFunc.cluView = this.view;
   }
   /**
   * @description This object represents the configuration by default of this protocol. During the
@@ -76,7 +75,7 @@
         var subDict = this.gossipUtil.getRandomSubDict(itmsNum, this.view);
         if(newItem !== null)
           subDict[thisId] = newItem;
-        this.coordi.sendTo(dstPeer, subDict, this.protoId);
+        this.coordinator.sendTo(dstPeer, subDict, this.protoId);
       break;
       case 'biased':
         if(newItem !== null)
@@ -104,12 +103,13 @@
     var mergedViews = this.gossipUtil.mergeViews(tmp, this.rpsView);
     if( thisId in mergedViews )
       delete mergedViews[thisId];
-    this.view = this.proximityFunc.getClosestNeighbours(this.viewSize, mergedViews);
+    this.proximityFunc.updateClusteringView(this.viewSize, mergedViews);
   };
   /** 
   * @method initialize
   * @description See method GossipProtocol.initialize() for more information. */
   Vicinity.prototype.initialize = function(keys){
+    this.proximityFunc.cluView = this.view;
     if( keys.length > 0 ){
       var i = 0;
       while(i < this.viewSize && i < keys.length){

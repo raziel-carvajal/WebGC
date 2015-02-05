@@ -21,14 +21,14 @@
     this.simFunFactory = new SimFuncFactory({ 
       loggingServer: opts.loggingServer, peerId: opts.peerId, simFunOpts: opts.similarityFunctions
     });
-    this.simFunFactory.instantiateFuncs(this.profile, this);
+    this.simFunFactory.instantiateFuncs(this.profile, this.__proto__);
     
     this.factory = new GossipFactory({ loggingServer: opts.loggingServer, peerId: opts.peerId });
     var algosNames = Object.keys(opts.gossipAlgos);
     var algo;
     for( var i = 0; i < algosNames.length; i++ ){
       algo = opts.gossipAlgos[ algosNames[i] ];
-      this.factory.createProtocol(algo, algosNames[i], this);
+      this.factory.createProtocol(algo, algosNames[i], this.__proto__);
     }
     this.factory.setDependencies(opts.gossipAlgos, this.simFunFactory.catalogue);
     this.protocols = this.factory.inventory;
@@ -63,6 +63,8 @@
   util.inherits(Coordinator, Peer);
   
   Coordinator.prototype.sendTo = function(receiver, payload, protoId){
+    console.log('Coordinator');
+    console.log(this);
     var connection = this.connect(receiver, {label: protoId});
     connection.on('error', function(e){
       this.log.error('During the view exchange with: ' + receiver + ', in protocol: ' + protoId);
@@ -78,11 +80,11 @@
       protocol = this.protocols[ keys[i] ];
       protocol.initialize(view);
     }
-    //var self = this;
+    var self = this;
     window.setInterval( function(){
-      var keys = Object.keys(this.protocols);
+      var keys = Object.keys(self.protocols);
       for( var i = 0; i < keys.length; i++ )
-        this.doActiveThread( this.protocols[ keys[i] ] );
+        self.doActiveThread( self.protocols[ keys[i] ] );
     }, 5000 );
   };
   
@@ -161,18 +163,12 @@
       /** 
       * @fires Coordinator#doActiveThread */
       var data = JSON.parse(http.responseText);
-      if(data.view.length !== 0){
-        self.test();
+      if(data.view.length !== 0)
         self.scheduleActiveThread(data.view);
-        //self.emit('doActiveThread', data.view);
-      }else
+      else
         window.setTimeout( function(){ self.getFirstView(); }, 5000 );
     };
     http.send(null);
-  };
-  
-  Coordinator.prototype.test = function(){
-    this.log.error('It is called...');
   };
   
   Coordinator.prototype.getGraph = function(viewType) {

@@ -7,7 +7,6 @@
       return null;
     }
     SimilarityFunction.call(this, opts);
-    //this.worker.onmessage = this.updateGlobalView;
     var self = this;
     this.worker.onmessage = function(event){
       var payload = event.data;
@@ -19,28 +18,19 @@
   util.inherits(SimObjForWebWorkers, SimilarityFunction);
   
   SimObjForWebWorkers.prototype.getClosestNeighbours = function(n, view, newItem, receiver, protoId){
-    var keys = Object.keys(view), r = {};
-    if(newItem !== null)
-      r[newItem.k] = newItem.v;
-    if(n <= 0 || keys.length === 0){
-      this.coordinator.sendTo(receiver, r, protoId);
-      return;
+    var keys = Object.keys(view);
+    if( !this.checkBaseCase(n, view, newItem, receiver, protoId, keys, false) ){
+      var payload = {
+        'n': n,
+        'view': view,
+        'newItem': newItem,
+        'receiver': receiver,
+        'protoId': protoId,
+        profile: this.profile,
+        updateCluView: false
+      };
+      this.worker.postMessage(payload);
     }
-    if( keys.length <= n ){
-      for(var i = 0; i < keys.length; i++)
-        r[ keys[i] ] = view[ keys[i] ];
-      this.coordinator.sendTo(receiver, r, protoId);
-      return;
-    }
-    var payload = {
-      'n': n,
-      'view': view,
-      'newItem': newItem,
-      'receiver': receiver,
-      'protoId': protoId,
-      profile: this.profile
-    };
-    this.worker.postMessage(payload);
   };
   
   SimObjForWebWorkers.prototype.applyEvaluation = function(obj){
@@ -55,22 +45,40 @@
       else
         nulls.push( keys[i] );
     }
-    values.sort( function(a,b){return a.v - b.v;} );
-    var result = {};
-    i = 0;
-    while(i < values.length && i < n){
-      result[ values[i].k ] = obj.view[ values[i].k ];
-      i++;
-    }
-    var key;
-    while(i < n){
-      key = nulls.pop();
-      result[key] = obj.view[key];
-      i++;
-    }
+    var result = this.orderBySimilarity(values, obj.n, obj.view, nulls);
     if(obj.newItem !== null)
       result[newItem.k] = newItem.v;
-    this.coordinator.sendTo(obj.receiver, result, obj.protoId);
+    if(obj.updateCluView){
+      keys = Object.keys(result);
+      //clustring protocol view will be updated here!!!
+      this.cluView = {};
+      for(i = 0; i < keys.length; i++)
+        this.cluView[ keys[i] ] = result[ keys[i] ];
+    }else
+      this.coordinator.sendTo(obj.receiver, result, obj.protoId);
+  };
+  
+  SimObjForWebWorkers.prototype.updateClusteringView = function(n, view){
+    var keys = Object.keys(view);
+    var result = this.checkBaseCase(n, view, null, null, null, keys, true);
+    if(result === null){
+      var payload = {
+        'n': n,
+        'view': view,
+        'newItem': null,
+        'receiver': null,
+        'protoId': null,
+        profile: this.profile,
+        updateCluView: true
+      };
+      this.worker.postMessage(payload);
+    }else{
+      keys = Object.keys(result);
+      //clustring protocol view will be updated here!!!
+      this.cluView = {};
+      for(var i = 0; i < keys.length; i++)
+        this.cluView[ keys[i] ] = result[ keys[i] ];
+    }
   };
   
   exports.SimObjForWebWorkers = SimObjForWebWorkers;

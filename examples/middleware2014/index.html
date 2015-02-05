@@ -42,7 +42,7 @@
           document.getElementById('profile').innerHTML = 'Getting data for plotting...';
           gRef.pool = window.setInterval(function(){
             isFirstGraphDrawn(gRef.coord.first);
-            }, 1000);
+            }, 2000);
           gRef.coord = new Coordinator(configurationObj);
         }
       });

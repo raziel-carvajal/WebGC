@@ -42,7 +42,7 @@
   * parameter opts. The reference of every gossip protocol will be kept in the GossipFactory.inventory
   * property of the factory.
   * @param {Object} opts - Configuration object of a gossip protocol. */
-  GossipFactory.prototype.createProtocol = function(opts, algoId, coordi){
+  GossipFactory.prototype.createProtocol = function(opts, algoId, coordinator){
     try{
       var protocol;
       if( typeof opts.class !== 'string' )
@@ -56,7 +56,7 @@
       this.gossipUtil.extendProperties(opts, {peerId: this.peerId, 
         loggingServer: this.loggingServer, protoId: algoId});
       this.checkProperties(opts);
-      opts.coordinator = coordi;
+      opts['coordinator'] = coordinator;
       protocol = new constructor(opts);
       if( !this.inventory.hasOwnProperty(algoId) )
         this.inventory[algoId] = protocol;
@@ -81,6 +81,7 @@
           var algoAttStr = atts[ attsKeys[j] ];
           var container = algoAttStr.split('.');
           if( container.length === 2 ){
+            this.log.info('c0: ' + container[0] + ' c1: ' + container[1]);
             var objExt = this.inventory[ container[0] ];
             if( objExt !== 'undefined' ){
               if( objExt[ container[1] ] !== 'undefined'){
@@ -96,6 +97,7 @@
               this.log.error('The protocol with id [' + payload + '] was not loaded by the Factory');
             }
           }else if(container.length === 1){
+            this.log.info('c0: ' + container[0]);
             var objSim = simFunCatalogue[ container[0] ];
             if(objSim !== 'undefined'){
               this.inventory[ keys[i] ][ attsKeys[j] ] = objSim;

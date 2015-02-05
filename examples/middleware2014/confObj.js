@@ -56,9 +56,9 @@ var configurationObj = {
     port: 9991
   },
   similarityFunctions: {
-    functions: { dumbFunc: 'DumbSimFunc.js'},
-    usingWebWorkers: true
-    //functions: { dumbFunc: 'DumbProximityFunc'},
-    //usingWebWorkers: false
+    //functions: { dumbFunc: 'DumbSimFunc.js'},
+    //usingWebWorkers: true
+    functions: { dumbFunc: 'DumbProximityFunc'},
+    usingWebWorkers: false
   }
 };
