@@ -10,9 +10,6 @@
     this.profile = opts.profile;
     this.coordinator = opts.coordinator;
     this.noImMsg = 'It is required to provide an implementation for this method';
-    //this property must be initialized in the constructor of
-    //the clustering protocol
-    //this.cluView = null;
   }
   
   SimilarityFunction.prototype.compute = function(a,b){throw this.noImMsg;};
@@ -23,6 +20,7 @@
     if(newItem !== null)
       r[newItem.k] = newItem.v;
     if(n <= 0 || keys.length === 0){
+      this.log.info('Base case SimFun. View is empty');
       if(getValue)
         return r;
       else{
@@ -30,7 +28,8 @@
         return true;
       }
     }
-    if( keys.length <= n ){
+    if( keys.length < n ){
+      this.log.info('Base case SimFun. view size: ' + keys.length + ', n: ' + n);
       for(var i = 0; i < keys.length; i++)
         r[ keys[i] ] = view[ keys[i] ];
       if(getValue)
@@ -47,7 +46,9 @@
   };
   
   SimilarityFunction.prototype.orderBySimilarity = function(values, n, view, nulls){
+    this.log.info('Values before ordering: ' + JSON.stringify({'v': values}));
     values.sort( function(a,b){return a.v - b.v;} );
+    this.log.info('Values after ordering: ' + JSON.stringify({'v': values}));
     var result = {};
     var i = 0;
     while(i < values.length && i < n){
@@ -60,6 +61,7 @@
       result[key] = view[key];
       i++;
     }
+    this.log.info('Final order is: ' + JSON.stringify(result));
     return result;
   };  
   /**
@@ -85,6 +87,7 @@
       var result = this.orderBySimilarity(values, n, view, nulls);
       if(newItem !== null)
         result[newItem.k] = newItem.v;
+      this.log.info('Closest neighbours: ' + JSON.stringify(result));
       this.coordinator.sendTo(receiver, result, protoId);
     }
   };
@@ -92,7 +95,7 @@
   SimilarityFunction.prototype.updateClusteringView = function(n, view){
     var keys = Object.keys(view), i;
     var result = this.checkBaseCase(n, view, null, null, null, keys, true);
-    if(result === null){
+    if(result === null || Object.keys(result).length === 0){
       var values = [], nulls = [];
       for(i = 0; i < keys.length; i++ ){
         if( view[ keys[i] ].hasOwnProperty('data') && typeof view[ keys[i] ].data === 'number' )
@@ -106,10 +109,12 @@
       result = this.orderBySimilarity(values, n, view, nulls);
     }
     //clustring protocol view will be updated here!!!
+    this.log.info('current clustering view: ' + JSON.stringify(this.cluView));
     this.cluView = {};
     keys = Object.keys(result);
     for(i = 0; i < keys.length; i++)
       this.cluView[ keys[i] ] = result[ keys[i] ];
+    this.log.info('clustring view after update: ' + JSON.stringify(this.cluView));
   };
   
   exp.SimilarityFunction = SimilarityFunction;

@@ -101,6 +101,7 @@
   Vicinity.prototype.selectItemsToKeep = function(thisId, rcvCache){
     var tmp = this.gossipUtil.mergeViews(this.view, rcvCache);
     var mergedViews = this.gossipUtil.mergeViews(tmp, this.rpsView);
+    this.log.info('mergedView: ' + JSON.stringify(mergedViews));
     if( thisId in mergedViews )
       delete mergedViews[thisId];
     this.proximityFunc.updateClusteringView(this.viewSize, mergedViews);

@@ -76,7 +76,7 @@
   util.inherits(Coordinator, Peer);
   
   Coordinator.prototype.sendTo = function(receiver, payload, protoId){
-    console.log('proto: ' + protoId + ', receiver: ' + receiver);
+    this.log.info('proto: ' + protoId + ', sending msg to receiver: ' + receiver);
     var connection = this.connect(receiver, {label: protoId});
     connection.on('error', function(e){
       this.log.error('During the view exchange with: ' + receiver + ', in protocol: ' + protoId);
@@ -93,9 +93,10 @@
   * @param {DataConnection} connection - This connection allows the exchange of meesages amog peers. */
   Coordinator.prototype.handleConnection = function(connection){
     var protocol = this.protocols[connection.label];
-    var receiver = protocol.selectPeer();
+    //var receiver = protocol.selectPeer();
     var self = this;
     connection.on('data', function(data){
+      self.log.info('msg was received, payload: ' + JSON.stringify(data));
       protocol.selectItemsToKeep(self.id, data);
       //if(protocol.propagationPolicy.pull)
       //  protocol.selectItemsToSend(self.id, receiver, 'passive');
@@ -114,8 +115,10 @@
     this.log.info(logi);
     protocol.loop++;
     protocol.increaseAge();
-    if(protocol.propagationPolicy.push)
+    if(protocol.propagationPolicy.push){
+      this.log.info('active thread...');
       protocol.selectItemsToSend(this.id, protocol.selectPeer(), 'active');
+    }
   };
   
   /**
