@@ -21,14 +21,14 @@
     this.simFunFactory = new SimFuncFactory({ 
       loggingServer: opts.loggingServer, peerId: opts.peerId, simFunOpts: opts.similarityFunctions
     });
-    this.simFunFactory.instantiateFuncs(this.profile, this.__proto__);
+    this.simFunFactory.instantiateFuncs(this.profile, this);
     
     this.factory = new GossipFactory({ loggingServer: opts.loggingServer, peerId: opts.peerId });
     var algosNames = Object.keys(opts.gossipAlgos);
     var algo;
     for( var i = 0; i < algosNames.length; i++ ){
       algo = opts.gossipAlgos[ algosNames[i] ];
-      this.factory.createProtocol(algo, algosNames[i], this.__proto__);
+      this.factory.createProtocol(algo, algosNames[i], this);
     }
     this.factory.setDependencies(opts.gossipAlgos, this.simFunFactory.catalogue);
     this.protocols = this.factory.inventory;
