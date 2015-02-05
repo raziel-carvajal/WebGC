@@ -58,13 +58,27 @@
     this.on('connection', function(c){ 
       self.handleConnection(c); 
     });
+    
+    this.on('doActiveThread', function(view){
+      var i, protocol, keys = Object.keys(self.protocols);
+      for( i = 0; i < keys.length; i++ ){
+        protocol = self.protocols[ keys[i] ];
+        protocol.initialize(view);
+      }
+      window.setInterval( function(){
+        var keys = Object.keys(self.protocols);
+        for( var i = 0; i < keys.length; i++ )
+          self.doActiveThread( self.protocols[ keys[i] ] );
+      }, 20000 );
+    });
   }
   
   util.inherits(Coordinator, Peer);
   
   Coordinator.prototype.sendTo = function(receiver, payload, protoId){
-    console.log('Coordinator');
+    console.log('Coordi');
     console.log(this);
+    console.log('proto: ' + protoId + ', receiver: ' + receiver);
     var connection = this.connect(receiver, {label: protoId});
     connection.on('error', function(e){
       this.log.error('During the view exchange with: ' + receiver + ', in protocol: ' + protoId);
@@ -74,19 +88,19 @@
     });
   };
   
-  Coordinator.prototype.scheduleActiveThread = function(view){
-    var protocol, keys = Object.keys(this.protocols);
-    for(var i = 0; i < keys.length; i++ ){
-      protocol = this.protocols[ keys[i] ];
-      protocol.initialize(view);
-    }
-    var self = this;
-    window.setInterval( function(){
-      var keys = Object.keys(self.protocols);
-      for( var i = 0; i < keys.length; i++ )
-        self.doActiveThread( self.protocols[ keys[i] ] );
-    }, 5000 );
-  };
+  //Coordinator.prototype.scheduleActiveThread = function(view){
+  //  var protocol, keys = Object.keys(this.protocols);
+  //  for(var i = 0; i < keys.length; i++ ){
+  //    protocol = this.protocols[ keys[i] ];
+  //    protocol.initialize(view);
+  //  }
+  //  var self = this;
+  //  window.setInterval( function(){
+  //    var keys = Object.keys(self.protocols);
+  //    for( var i = 0; i < keys.length; i++ )
+  //      self.doActiveThread( self.protocols[ keys[i] ] );
+  //  }, 5000 );
+  //};
   
   /**
   * @method handleConnection
@@ -163,8 +177,10 @@
       /** 
       * @fires Coordinator#doActiveThread */
       var data = JSON.parse(http.responseText);
-      if(data.view.length !== 0)
-        self.scheduleActiveThread(data.view);
+      if(data.view.length !== 0){
+        self.emit('doActiveThread', data.view);
+        //self.scheduleActiveThread(data.view);
+      }
       else
         window.setTimeout( function(){ self.getFirstView(); }, 5000 );
     };

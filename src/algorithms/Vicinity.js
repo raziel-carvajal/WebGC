@@ -79,16 +79,16 @@
       break;
       case 'biased':
         if(newItem !== null)
-          this.proximityFunc.getClosestNeighbours(itmsNum, this.view, {k: thisId, v: newItem});
+          this.proximityFunc.getClosestNeighbours(itmsNum, this.view, {k: thisId, v: newItem}, dstPeer, this.protoId);
         else
-          this.proximityFunc.getClosestNeighbours(itmsNum, this.view, null);
+          this.proximityFunc.getClosestNeighbours(itmsNum, this.view, null, dstPeer, this.protoId);
       break;
       case 'agr-biased':
         var mergedV = this.gossipUtil.mergeViews(this.view, this.rpsView);
         if(newItem !== null)
-          this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, {k: thisId, v: newItem});
+          this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, {k: thisId, v: newItem}, dstPeer, this.protoId);
         else
-          this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, null);
+          this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, null, dstPeer, this.protoId);
       break;
       default:
         this.log.error('Unknown peer selection policy');
