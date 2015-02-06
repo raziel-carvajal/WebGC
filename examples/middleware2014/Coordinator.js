@@ -49,7 +49,7 @@
       window.setInterval( function(){
         self.getGraph('rps');
         self.plotterObj.loop++;
-      }, 15000);
+      }, 11000);
       window.setInterval( function(){ self.getGraph('clu'); }, 15000);
       window.setInterval( function(){ self.first = 1; }, 21000);
     });
@@ -72,7 +72,7 @@
         var keys = Object.keys(self.protocols);
         for( var i = 0; i < keys.length; i++ )
           self.doActiveThread( self.protocols[ keys[i] ] );
-      }, 20000 );
+      }, 10000 );
     });
   }
   

@@ -20,16 +20,6 @@ var configurationObj = {
     }
   },
   gossipAlgos: {
-//    cyclon1: {
-//      class: 'SamplingService',
-//      viewSize: 4,
-//      fanout: 4,
-//      periodTimeOut: 10000,
-//      propagationPolicy: { push: true, pull: true },
-//      selectionPolicy: 'oldest',
-//      H: 2,
-//      S: 0
-//    },
     cyclon1: {
       class: 'Cyclon',
       viewSize: 4,
@@ -43,7 +33,7 @@ var configurationObj = {
       fanout: 4,
       periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true },
-      selectionPolicy: 'agr-biased', // random OR biased OR agr-biased
+      selectionPolicy: 'biased', // random OR biased OR agr-biased
       attributes: {
         rpsView: 'cyclon1.view',
         proximityFunc: 'dumbFunc'
