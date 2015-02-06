@@ -55,10 +55,11 @@
   * GossipProtocol.fanout items are chosen from the views Vicinity.rpsView and 
   * GossipProtocol.view ;see method GossipProtocol.selectItemsToSend() for more information.*/
   Vicinity.prototype.selectItemsToSend = function(thisId, dstPeer, thread){
+    var clone = JSON.parse(JSON.stringify(this.view));
     var itmsNum, newItem = null;
     switch( thread ){
       case 'active':
-        delete this.view[dstPeer];
+        delete clone[dstPeer];
         itmsNum = this.fanout - 1;
       break;
       case 'passive':
@@ -72,19 +73,19 @@
       newItem = this.gossipUtil.newItem(0, this.proximityFunc.profile);
     switch( this.selectionPolicy ){
       case 'random':
-        var subDict = this.gossipUtil.getRandomSubDict(itmsNum, this.view);
+        var subDict = this.gossipUtil.getRandomSubDict(itmsNum, clone);
         if(newItem !== null)
           subDict[thisId] = newItem;
         this.coordinator.sendTo(dstPeer, subDict, this.protoId);
       break;
       case 'biased':
         if(newItem !== null)
-          this.proximityFunc.getClosestNeighbours(itmsNum, this.view, {k: thisId, v: newItem}, dstPeer, this.protoId);
+          this.proximityFunc.getClosestNeighbours(itmsNum, clone, {k: thisId, v: newItem}, dstPeer, this.protoId);
         else
-          this.proximityFunc.getClosestNeighbours(itmsNum, this.view, null, dstPeer, this.protoId);
+          this.proximityFunc.getClosestNeighbours(itmsNum, clone, null, dstPeer, this.protoId);
       break;
       case 'agr-biased':
-        var mergedV = this.gossipUtil.mergeViews(this.view, this.rpsView);
+        var mergedV = this.gossipUtil.mergeViews(clone, this.rpsView);
         if(newItem !== null)
           this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, {k: thisId, v: newItem}, dstPeer, this.protoId);
         else
@@ -99,18 +100,19 @@
   * @method selectItemsToKeep
   * @description See method GossipProtocol.selectItemsToKeep() for more information. */
   Vicinity.prototype.selectItemsToKeep = function(thisId, rcvCache){
+    this.log.info('selectItemsToKeep() rcvView: ' + JSON.stringify(rcvCache));
     var tmp = this.gossipUtil.mergeViews(this.view, rcvCache);
     var mergedViews = this.gossipUtil.mergeViews(tmp, this.rpsView);
     this.log.info('mergedView: ' + JSON.stringify(mergedViews));
     if( thisId in mergedViews )
       delete mergedViews[thisId];
-    this.proximityFunc.updateClusteringView(this.viewSize, mergedViews);
+    this.proximityFunc.updateClusteringView(this.viewSize, mergedViews, this.view);
+    this.log.info('cluView: ' + JSON.stringify(this.view));
   };
   /** 
   * @method initialize
   * @description See method GossipProtocol.initialize() for more information. */
   Vicinity.prototype.initialize = function(keys){
-    this.proximityFunc.cluView = this.view;
     if( keys.length > 0 ){
       var i = 0;
       while(i < this.viewSize && i < keys.length){

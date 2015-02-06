@@ -124,9 +124,10 @@
     if( n >= Object.keys(src).length )
       return src;
     else {
+      var keys = Object.keys(src);
       var tmpDict = {}, result = {}, key, tmpAr, i;
-      for( key in src )
-        tmpDict[key] = 1;
+      for(i = 0; i < keys.length; i++)
+        tmpDict[ keys[i] ] = 1;
       i = 0;
       do{
         tmpAr = Object.keys(tmpDict);

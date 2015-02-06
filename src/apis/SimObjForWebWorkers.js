@@ -1,12 +1,14 @@
 (function(exports){
   function SimObjForWebWorkers(opts){
-    this.log = new Logger(opts.loggingServer, opts.peerId, 'SimObjForWebWorkers');
     this.worker = new Worker(opts.workerFile);
     if(this.worker === 'undefined'){
       this.log.error('WebWorker initialization was not performed');
       return null;
     }
+    opts.objName = 'SimObjForWebWorkers';
     SimilarityFunction.call(this, opts);
+    this.refNum = 0;
+    this.viewRefs = {};
     var self = this;
     this.worker.onmessage = function(event){
       var payload = event.data;
@@ -47,38 +49,48 @@
     }
     var result = this.orderBySimilarity(values, obj.n, obj.view, nulls);
     if(obj.newItem !== null)
-      result[newItem.k] = newItem.v;
+      result[obj.newItem.k] = obj.newItem.v;
     if(obj.updateCluView){
-      keys = Object.keys(result);
-      //clustring protocol view will be updated here!!!
-      this.cluView = {};
-      for(i = 0; i < keys.length; i++)
-        this.cluView[ keys[i] ] = result[ keys[i] ];
+      this.log.info('view received from worker');
+      var viewRef = this.viewRefs[obj.refNum];
+      this.exchageValues(viewRef, result);
+      delete this.viewRefs[obj.refNum];
     }else
       this.coordinator.sendTo(obj.receiver, result, obj.protoId);
   };
   
-  SimObjForWebWorkers.prototype.updateClusteringView = function(n, view){
-    var keys = Object.keys(view);
-    var result = this.checkBaseCase(n, view, null, null, null, keys, true);
+  SimObjForWebWorkers.prototype.updateClusteringView = function(n, rcView, view){
+    var keys = Object.keys(rcView);
+    var result = this.checkBaseCase(n, rcView, null, null, null, keys, true);
     if(result === null){
+      this.refNum++;
+      this.viewRefs[this.refNum] = view;
       var payload = {
         'n': n,
-        'view': view,
+        'view': rcView,
         'newItem': null,
         'receiver': null,
         'protoId': null,
         profile: this.profile,
-        updateCluView: true
+        updateCluView: true,
+        'refNum': this.refNum
       };
       this.worker.postMessage(payload);
     }else{
-      keys = Object.keys(result);
-      //clustring protocol view will be updated here!!!
-      this.cluView = {};
-      for(var i = 0; i < keys.length; i++)
-        this.cluView[ keys[i] ] = result[ keys[i] ];
+      this.exchageValues(view, result);
     }
+  };
+  
+  SimObjForWebWorkers.prototype.exchageValues = function(oldView, newView){
+      var i, keys;
+      this.log.info('cluView before update: ' + JSON.stringify(oldView));
+      keys = Object.keys(oldView);
+      for(i = 0; i < keys.length; i++)
+        delete oldView[ keys[i] ];
+      keys = Object.keys(newView);
+      for(i = 0; i < keys.length; i++)
+        oldView[ keys[i] ] = newView[ keys[i] ];
+      this.log.info('cluView after update: ' + JSON.stringify(oldView));
   };
   
   exports.SimObjForWebWorkers = SimObjForWebWorkers;

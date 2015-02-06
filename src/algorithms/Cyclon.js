@@ -45,22 +45,20 @@
   * @description The selection of peers is performed in a randomly way.See method 
   * GossipProtocol.selectItemsToSend() for more information.*/
   Cyclon.prototype.selectItemsToSend = function(thisId, dstPeer, thread){
-    var subDict = {};
+    var subDict = {}, clone = JSON.parse(JSON.stringify(this.view));
     switch( thread ){
       case 'active':
-        delete this.view[dstPeer];
-        subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, this.view);
+        delete clone[dstPeer];
+        subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone);
         subDict[thisId] = this.gossipUtil.newItem(0, this.data);
       break;
       case 'passive':
-        subDict = this.gossipUtil.getRandomSubDict(this.fanout, this.view);
+        subDict = this.gossipUtil.getRandomSubDict(this.fanout, this.clone);
       break;
       default:
         this.log.error('Unknown selection policy');
       break;
     }
-    console.log('Cyclon. Coordi');
-    console.log('thread: ' + thread + ', dstPeer: ' + dstPeer);
     this.coordinator.sendTo(dstPeer, subDict, this.protoId);
   };
   /**

@@ -43,7 +43,7 @@ var configurationObj = {
       fanout: 4,
       periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true },
-      selectionPolicy: 'biased', // random OR biased OR agr-biased
+      selectionPolicy: 'agr-biased', // random OR biased OR agr-biased
       attributes: {
         rpsView: 'cyclon1.view',
         proximityFunc: 'dumbFunc'
@@ -56,7 +56,7 @@ var configurationObj = {
     port: 9991
   },
   similarityFunctions: {
-    //functions: { dumbFunc: 'DumbSimFunc.js'},
+    //functions: { dumbFunc: '../../src/workers/DumbSimFunc.js'},
     //usingWebWorkers: true
     functions: { dumbFunc: 'DumbProximityFunc'},
     usingWebWorkers: false

@@ -8,7 +8,7 @@
     this.loop = 0;
     this.logs = {};
     this.logger = new Logger(loggingServer);
-    this.logger.setOutput(plotterId, this.constructor.name);
+    this.logger.setOutput(plotterId, 'Plotter');
     this.ref = plotterId;
   }
 
@@ -64,9 +64,9 @@
   };
   
   Plotter.prototype.buildGraph = function(viewType, nodes, view){
-    this.logger.info('Building graph of type ' + viewType);
+    //this.logger.info('Building graph of type ' + viewType);
     var eles = this.getGraphFormat(this.ref, nodes, view);
-    this.logger.info('For view ' + viewType + ' the elements are ' + JSON.stringify(eles));
+    //this.logger.info('For view ' + viewType + ' the elements are ' + JSON.stringify(eles));
     var layoutOpts = {
       name: 'circle',
       fit: true,
@@ -102,7 +102,7 @@
       this.currentLoop++;
       graphContainer = 'rps-section';
     }
-    this.logger.info('graphcontainer is ' + graphContainer);
+    //this.logger.info('graphcontainer is ' + graphContainer);
     var input = {
       container: document.getElementById(graphContainer),
       layout: layoutOpts,

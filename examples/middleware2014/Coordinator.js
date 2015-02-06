@@ -46,8 +46,11 @@
     var self = this;
     this.on('open', function(){ 
       window.setTimeout( function(){ self.getFirstView(); }, 5000 );
-      window.setInterval( function(){ self.getGraph('rps'); }, 11000);
-      window.setInterval( function(){ self.getGraph('clu'); }, 11000);
+      window.setInterval( function(){
+        self.getGraph('rps');
+        self.plotterObj.loop++;
+      }, 15000);
+      window.setInterval( function(){ self.getGraph('clu'); }, 15000);
       window.setInterval( function(){ self.first = 1; }, 21000);
     });
     /**
@@ -76,7 +79,7 @@
   util.inherits(Coordinator, Peer);
   
   Coordinator.prototype.sendTo = function(receiver, payload, protoId){
-    this.log.info('proto: ' + protoId + ', sending msg to receiver: ' + receiver);
+    this.log.info('proto: ' + protoId + ', sendTo: ' + receiver);
     var connection = this.connect(receiver, {label: protoId});
     connection.on('error', function(e){
       this.log.error('During the view exchange with: ' + receiver + ', in protocol: ' + protoId);
@@ -85,7 +88,6 @@
       connection.send(payload);
     });
   };
-  
   /**
   * @method handleConnection
   * @description This method performs the passive thread of each gossip-based protocol in the object 
@@ -96,7 +98,7 @@
     //var receiver = protocol.selectPeer();
     var self = this;
     connection.on('data', function(data){
-      self.log.info('msg was received, payload: ' + JSON.stringify(data));
+      self.log.info('protocol: ' + connection.label + ', msg received: ' + JSON.stringify(data));
       protocol.selectItemsToKeep(self.id, data);
       //if(protocol.propagationPolicy.pull)
       //  protocol.selectItemsToSend(self.id, receiver, 'passive');
@@ -105,7 +107,6 @@
       self.log.error('During the reception of a ' + protocol.protoId + ' message');
     });
   };
-  
   /** 
   * @method doActiveThread
   * @description This method performs the active thread of each gossip-based protocol in the 
@@ -173,15 +174,13 @@
   };
   
   Coordinator.prototype.getGraph = function(viewType) {
-    var loop = this.plotterObj.loop;
-    this.log.info('Getting graph with loop ' + loop);
     var http = new XMLHttpRequest();
     var url = 'http://' + this.options.host + ':' + this.options.port + '/' + this.options.key + 
       '/' + this.id + '/getGraph';
     var self = this;
     http.open('get', url, true);
     http.onerror = function(e) {
-      self.log.error('Trying to get graph for loop ' + loop);
+      self.log.error('Trying to get graph for loop ' + self.plotterObj.loop);
     };
     http.onreadystatechange = function() {
       if (http.readyState !== 4) {
@@ -191,7 +190,7 @@
         http.onerror();
         return;
       }
-      self.log.info('Graph ' + http.responseText + ' for loop ' + loop);
+      self.log.info('Graph ' + http.responseText + ' for loop ' + self.plotterObj.loop);
       var nodes = JSON.parse(http.responseText);
       var neighbours;
       if(viewType === 'clu')
@@ -201,7 +200,6 @@
       console.info('View type: ' + viewType);
       console.info( JSON.stringify(neighbours.view) );
       self.plotterObj.buildGraph(viewType, nodes, neighbours.view);
-      self.plotterObj.loop++;
     };
     http.send(null);
   };
