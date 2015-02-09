@@ -4,11 +4,11 @@
   /**
   * @class Cyclon
   * @augments GossipProtocol
-  * @description This class implements the goosip-base algorithm Cyclon. The local view is 
-  * basically a set of ID's, each ID identifies a remote peer. Each key in the view 
-  * GossipProtocol.view is the ID of a remote peer and each key points 
-  * to an object that contains an age field (timestamp) and a data field (application dependent).
-  * @param {Object} opts - Configuration of the gossip-based protocol.
+  * @description This class implements the goosip-based algorithm Cyclon. The local view is an
+  * object where each property identifies a remote peer with ID "peerId"; properties point to 
+  * a vector with two entries, the first one contains the age (integer) of the vector and the 
+  * second one is the data owned by the peer "peerId".
+  * @param opts {Object} - properties to set by the object Cyclon
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Cyclon(opts){
     this.log = new Logger(opts.loggingServer, opts.peerId, 'Cyclon');

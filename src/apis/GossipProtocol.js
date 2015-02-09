@@ -3,14 +3,15 @@
 (function(exports){
   /** 
   * @class GossipProtocol
-  * @description This "abstract" class represents a gossip-based protocol. The concret implementation
-  * of every protocol must inherit from this class, additionally, every concret object must overwrite 
-  * all the methods in this class; otherwise an exception will be reached.
-  * @param opts:Object - Configuration of the gossip-based protocol.
+  * @description This "abstract" class represents a gossip-based protocol. Every class with the
+  * implementation of a gossip protocol must inherit from this class, additionally, every method
+  * on this class must be overwritten otherwise an exception will be reached.
+  * @param opts {Object} - attributes of the object
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>
   */ 
   function GossipProtocol(opts){
     this.class = opts.class;
+    //attributes in common for each protocol
     this.view = {};
     this.loop = 0;
     this.data = opts.data;
@@ -18,14 +19,19 @@
     this.fanout = opts.fanout;
     this.periodTimeOut = opts.periodTimeOut;
     this.propagationPolicy = opts.propagationPolicy;
-    // This attribute is a unique ID for the algorithm
-    this.protoId = opts.protoId;
-    this.coordinator = opts.coordinator;
-    // msgs
+    this.protoId = opts.protoId;//unique ID for the algorithm
+    this.coordinator = opts.coordinator;//reference to a Coordinator
+    var idForLogging = opts.class + '_' + opts.protoId;
+    this.log = new Logger(opts.loggingServer, opts.peerId, idForLogging);
+    this.gossipUtil = new GossipUtil({
+      loggingServer: opts.loggingServer,
+      peerId: opts.peerId,
+      objName: idForLogging });
+    //error and warning messages
     this.nonImpMsg = 'An implementation for this method is required';
   }
   /** 
-  * @description This method increments the age of each item in the view GossipProtocol.view
+  * @description The age field of each item in the view GossipProtocol.view increments by one
   * @method increaseAge */
   GossipProtocol.prototype.increaseAge = function(){ throw this.nonImpMsg; };
   /** 
@@ -33,7 +39,7 @@
   * string is a set of tuples where each tuple has two entries, the first entry is an ID of a remote 
   * peer and the second entry is its timestamp. 
   * @method getLog
-  * @returns String - String representation of the view.*/
+  * @returns {String} - String representation of the view.*/
   GossipProtocol.prototype.getLog = function(){ throw this.nonImpMsg; };
   /** 
   * @description This method selects one remote peer identifier in GossipProtocol.view
