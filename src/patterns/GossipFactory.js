@@ -12,10 +12,9 @@
     this.loggingServer = opts.loggingServer;
     this.inventory = {};
     this.log = new Logger(opts.loggingServer, opts.peerId, 'GossipFactory');
-    this.gossipUtil = new GossipUtil({
-      loggingServer: opts.loggingServer,
-      peerId: opts.peerId, objName: 'GossipFactory'
-    });
+    this.gossipUtil = opts.gossipUtil;
+    //
+    this.
   }
   /**
   * @method checkProperties
@@ -44,17 +43,17 @@
   * @param {Object} opts - Configuration object of a gossip protocol. */
   GossipFactory.prototype.createProtocol = function(opts, algoId, coordinator){
     try{
-      var protocol;
       if( typeof opts.class !== 'string' )
         throw "The class of the algorithm must be a string";
-      var constructor = exports[ opts.class ];
-      if( typeof constructor === 'undefined' )
-        throw 'Object does not exist in the library of the system';
-      //this extend is made when users missed options in the configuration object
-      this.gossipUtil.extendProperties(opts, constructor.defaultOpts);
+      var algoName = exports[opts.class];
+      if(algoName === 'undefined')
+        throw 'Algorithm: ' + opts.class + ' does not exist in WebGC' ;
+      //if users missed options in the configuration file, standards options are used insted
+      this.gossipUtil.extendProperties(opts, algoName.defaultOpts);
       //additional options are given for logging proposes
-      this.gossipUtil.extendProperties(opts, {peerId: this.peerId, 
-        loggingServer: this.loggingServer, protoId: algoId});
+      this.gossipUtil.extendProperties(opts, {
+        peerId: this.peerId, loggingServer: this.loggingServer, protoId: algoId
+      });
       this.checkProperties(opts);
       opts['coordinator'] = coordinator;
       protocol = new constructor(opts);
@@ -65,6 +64,9 @@
     }catch(e){
       this.log.error("Gossip-based protocol wasn't created. " + e);
     }
+  };
+  GossipFactory.prototype.createWebWorker = function(algoName, algoId){
+
   };
   /**
   * @method setDependencies

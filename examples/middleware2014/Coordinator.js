@@ -17,13 +17,17 @@
     this.first = 0;
     this.profile = opts.gossipAlgos.vicinity1.data;
     this.log = new Logger(opts.loggingServer, opts.peerId, 'Coordinator');
+    this.gossipUtil = new GossipUtil({
+      loggingServer: opts.loggingServer, peerId: opts.peerId, objName: 'Coordinator'});
     
-    this.simFunFactory = new SimFuncFactory({ 
-      loggingServer: opts.loggingServer, peerId: opts.peerId, simFunOpts: opts.similarityFunctions
-    });
-    this.simFunFactory.instantiateFuncs(this.profile, this);
+    this.factory = new GossipFactory({
+      loggingServer: opts.loggingServer, peerId: opts.peerId, 'gossipUtil': gossipUtil });
+
+    //this.simFunFactory = new SimFuncFactory({ 
+    //  loggingServer: opts.loggingServer, peerId: opts.peerId, simFunOpts: opts.similarityFunctions
+    //});
+    //this.simFunFactory.instantiateFuncs(this.profile, this);
     
-    this.factory = new GossipFactory({ loggingServer: opts.loggingServer, peerId: opts.peerId });
     var algosNames = Object.keys(opts.gossipAlgos);
     var algo;
     for( var i = 0; i < algosNames.length; i++ ){
@@ -32,9 +36,9 @@
     }
     this.factory.setDependencies(opts.gossipAlgos, this.simFunFactory.catalogue);
     this.protocols = this.factory.inventory;
-    this.gossipUtil = new GossipUtil({
-      loggingServer: opts.loggingServer, peerId: opts.peerId, objName: 'Coordinator'
-    });
+
+
+
     this.plotterObj = new Plotter(opts.loggingServer, opts.peerId);
     /** 
      * This method fires the constructor of the [Peer]{@link Peer} object. */

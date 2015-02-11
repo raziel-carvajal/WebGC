@@ -1,0 +1,176 @@
+<html lang="en">
+<head>
+  <title>WebGC demo</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
+  <meta http-equiv="Content-Language" content="en-us">
+
+  <script type="text/javascript" src="./LoggerForWebWorker.js"></script>
+  <script>
+ var logm = new Logger('131.254.213.42', 9990);
+ logm.info('hola');
+
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+<!-- <title>WebGC demo</title> -->
+<body style="zoom: 1; background-color: #ddd;">
+  <div id="main" class="mainContainer">
+    <div id="form" class="formContainer">
+      <h2>Preferences</h2>
+        Your peer ID: <input type="text" id="user" placeholder="Write your ID, here!">
+        Your preference is :
+        <select id="list">
+          <option value="v1">Internet of Things</option>
+          <option value="v2">P2P Systems</option>
+          <option value="v3">Cloud Computing</option>
+          <option value="v4">Big Data</option>
+        </select>
+        <input class="button" type="button" value="START" id="start">
+        <div id="statusSec" class="status_section">
+          <div id="profile" class="profiile_cls"></div>
+          <div id="info" class="info_cls">
+          </div>
+        </div> 
+    </div>
+    <div id="graphs" class="graphsContainer">
+      <div id="rps-section" class="rpsContainer"></div>
+      <div id="clu-section" class="cluContainer"></div>
+    </div>
+    <div id="chat" class="chatContainer">
+      <div id="actions">
+        Your peer ID is: <span id="pid"></span><br>
+        Connect to a peer: <input type="text" id="rid" 
+          placeholder="Someone else's id">
+        <input class="button" type="button" value="Connect"
+          id="connect">
+        <br><br>
+        <form id="send">
+          <input type="text" id="text" placeholder="Enter message">
+          <input class="button" type="submit" value="Send to selected peers">
+        </form>
+        <button id="close">Close selected connections</button>
+      </div>
+      <div id="wrap"><div id="connections"><span class="filler">You have not yet
+        made any connections.</span></div>
+        <div class="clear"></div>
+      </div>
+      <!--
+      <div id="box" style="background: #fff; font-size: 18px;padding:40px 30px; text-align: center;">
+        Drag file here to send to active connections.
+      </div>
+      -->
+    </div>
+  </div>
+</body>  
+</html>

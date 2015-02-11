@@ -37,14 +37,19 @@ var configurationObj = {
       attributes: {
         rpsView: 'cyclon1.view',
         proximityFunc: 'dumbFunc'
-      }
+      },
+      dependencies:[ 
+        {objId: 'cyclon1', property: 'view'},
+        {objId: 'dumbFunc', property: 'functionName'}
+      ]
     }
   },
+  withWebWorkers: true,
   plotter: false,
   loggingServer: {
     host: '131.254.213.42',
     port: 9991
-  },
+  },//similarity function definition must be here
   similarityFunctions: {
     //functions: { dumbFunc: '../../src/workers/DumbSimFunc.js'},
     //usingWebWorkers: true
