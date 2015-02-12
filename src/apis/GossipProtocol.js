@@ -17,16 +17,17 @@
     this.data = opts.data;
     this.viewSize = opts.viewSize;
     this.fanout = opts.fanout;
-    this.periodTimeOut = opts.periodTimeOut;
+    this.gossipPeriod = opts.gossipPeriod;
     this.propagationPolicy = opts.propagationPolicy;
-    this.protoId = opts.protoId;//unique ID for the algorithm
-    this.coordinator = opts.coordinator;//reference to a Coordinator
-    var idForLogging = opts.class + '_' + opts.protoId;
-    this.log = new Logger(opts.loggingServer, opts.peerId, idForLogging);
-    this.gossipUtil = new GossipUtil({
-      loggingServer: opts.loggingServer,
-      peerId: opts.peerId,
-      objName: idForLogging });
+    this.algoId = opts.algoId;//unique ID for the algorithm
+    this.gossipMediator = opts.gossipMediator;//reference to a Coordinator
+    var logOpts = {
+      host: opts.loggingServer.host,
+      port: opts.loggingServer.port,
+      header: opts.class + '_' + opts.protoId
+    };
+    this.log = new Logger(logOpts);
+    this.gossipUtil = new GossipUtil({logger: this.log});
     //error and warning messages
     this.nonImpMsg = 'An implementation for this method is required';
   }

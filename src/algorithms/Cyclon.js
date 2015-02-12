@@ -11,12 +11,7 @@
   * @param opts {Object} - properties to set by the object Cyclon
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Cyclon(opts){
-    this.log = new Logger(opts.loggingServer, opts.peerId, 'Cyclon');
-    this.gossipUtil = new GossipUtil({
-      loggingServer: opts.loggingServer,
-      peerId: opts.peerId,
-      objName: 'Cyclon'
-    });
+    this.gossipUtil.inherits(Cyclon, GossipProtocol);
     GossipProtocol.call(this, opts);
   }
   /**
@@ -33,7 +28,7 @@
     periodTimeOut: 10000,
     propagationPolicy: { push: true, pull: true }
   };
-  util.inherits(Cyclon, GossipProtocol);
+  //util.inherits(Cyclon, GossipProtocol);
   /** 
   * @description This method selects the remote peer's identifier with the oldest age.See method 
   * GossipProtocol.selectPeer() for more information.*/
@@ -59,7 +54,15 @@
         this.log.error('Unknown selection policy');
       break;
     }
-    this.coordinator.sendTo(dstPeer, subDict, this.protoId);
+    var msg = {
+      header: 'ActiveThreadAnsw',
+      payload: {
+        receiver: dstPeer,
+        view: subDict,
+        algoId: this.algoId
+      }
+    };
+    this.gossipMediator.postInMainThread(msg);
   };
   /**
   * @method selectItemsToKeep

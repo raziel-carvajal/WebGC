@@ -4,11 +4,12 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
   <meta http-equiv="Content-Language" content="en-us">
 
-  <script type="text/javascript" src="./LoggerForWebWorker.js"></script>
+  <script type="text/javascript" src="../../src/utils/LoggerForWebWorker.js"></script>
   <script>
- var logm = new Logger('131.254.213.42', 9990);
+ var logm = new Logger({host: '131.254.213.42', port: 9990, header: 'Test'});
  logm.info('hola');
-
+ logm.warn('warn');
+ logm.error('error');
   </script>
 
 

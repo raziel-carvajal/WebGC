@@ -11,7 +11,10 @@
   *algorithm
   *@param {Object} opts - options of the logger */
   function GossipUtil(opts){
-    this.log = new Logger(opts.loggingServer, opts.peerId, opts.objName);
+    if(opts.logger !== 'undefined')
+      this.log = opts.logger;
+    else
+      this.log = new Logger(opts.logOpts);
   }
   /**
   *@method newItem
@@ -155,6 +158,18 @@
       if( !dst.hasOwnProperty(keys[i]) )
         dst[ keys[i] ] = src[ keys[i] ];
     }
+  };
+  
+  GossipUtil.prototype.inherits = function(ctor, superCtor) {
+    ctor.super_ = superCtor;
+    ctor.prototype = Object.create(superCtor.prototype, {
+      constructor: {
+        value: ctor,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
   };
   
   exports.GossipUtil = GossipUtil;
