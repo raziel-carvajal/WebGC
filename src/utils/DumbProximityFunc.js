@@ -8,13 +8,13 @@
   * this function amog two peers is computing the difference of the preferences of both peers.
   * @param {Integer} value - Preference of the local peer.*/
   function DumbProximityFunc(opts){
-    if( typeof opts.profile !== 'number' || opts.profile < 0 )
-      throw 'The preference is not valid';
-    //calling this function initialize the profile of the user (profile propertie in opts)
-    opts.objName = 'DumbProximityFunc';
+    opts.gossipUtil.inherits(exports.DumbProximityFunc, exports.SimilarityFunction);    
+    if( typeof opts.profile !== 'number' || opts.profile < 0 ){
+      opts.log.error('Profile in similarity function is not valid');
+      return null;
+    }
     SimilarityFunction.call(this, opts);
   }
-  util.inherits(DumbProximityFunc, SimilarityFunction);
   /**
   * @description This method computes the absolute value of the diference among a and b.
   * @method compute

@@ -1,4 +1,4 @@
-function compute(a,b){
+:function compute(a,b){
   if( !(typeof a === 'number' && typeof b === 'number') )
     return null;
   return Math.abs(a - b);

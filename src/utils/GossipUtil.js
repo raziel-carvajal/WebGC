@@ -10,11 +10,8 @@
   *@description This class implements miscelaneous functions needed by a gossip-based
   *algorithm
   *@param {Object} opts - options of the logger */
-  function GossipUtil(opts){
-    if(opts.logger !== 'undefined')
-      this.log = opts.logger;
-    else
-      this.log = new Logger(opts.logOpts);
+  function GossipUtil(log){
+    this.log = log;
   }
   /**
   *@method newItem

@@ -34,26 +34,22 @@ var configurationObj = {
       periodTimeOut: 10000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'biased', // random OR biased OR agr-biased
-      attributes: {
-        rpsView: 'cyclon1.view',
-        proximityFunc: 'dumbFunc'
+      similarityFunction: function(a, b){
+        this.log.info('a: ' + a + ' - b: ' + b);
+        if( !(typeof a === 'number' && typeof b === 'number') ){
+          this.log.warn('ProximityFunc: eval() with non numbers');
+          return null;
+        }
+        return Math.abs(a - b);
       },
-      dependencies:[ 
-        {objId: 'cyclon1', property: 'view'},
-        {objId: 'dumbFunc', property: 'functionName'}
+      dependencies:[
+        { algoId: 'cyclon1', algoAttribute: 'view' }
       ]
     }
   },
-  withWebWorkers: true,
-  plotter: false,
-  loggingServer: {
+  usingWebWorkers: true,
+  logOpts: {
     host: '131.254.213.42',
     port: 9991
-  },//similarity function definition must be here
-  similarityFunctions: {
-    //functions: { dumbFunc: '../../src/workers/DumbSimFunc.js'},
-    //usingWebWorkers: true
-    functions: { dumbFunc: 'DumbProximityFunc'},
-    usingWebWorkers: false
   }
 };

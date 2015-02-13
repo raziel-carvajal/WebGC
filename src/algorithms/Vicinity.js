@@ -11,17 +11,9 @@
   * @param {Object} opts - Settings for the protocol.
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Vicinity(opts){
-    this.log = new Logger(opts.loggingServer, opts.peerId, 'Vicinity');
-    this.gossipUtil = new GossipUtil({
-      loggingServer: opts.loggingServer,
-      peerId: opts.peerId,
-      objName: 'Vicinity'
-    });
+    this.gossipUtil.inherits(Vicinity, GossipProtocol);
     GossipProtocol.call(this, opts);
     this.selectionPolicy = opts.selectionPolicy;
-    /**
-    * Property: "this.proximityFunc", is filled by the GossipFactory at execution time
-    **/
   }
   /**
   * @description This object represents the configuration by default of this protocol. During the
@@ -39,7 +31,7 @@
     selectionPolicy: 'biased' // random OR biased OR agr-biased
   };
   // the util object belongs to PeerJS
-  util.inherits(Vicinity, GossipProtocol);
+  //util.inherits(Vicinity, GossipProtocol);
   /** 
   * @method selectPeer
   * @description This method selects the remote peer's identifier with the oldest age. See method 
@@ -56,7 +48,7 @@
   * GossipProtocol.view ;see method GossipProtocol.selectItemsToSend() for more information.*/
   Vicinity.prototype.selectItemsToSend = function(thisId, dstPeer, thread){
     var clone = JSON.parse(JSON.stringify(this.view));
-    var itmsNum, newItem = null;
+    var itmsNum, msg, newItem = null;
     switch( thread ){
       case 'active':
         delete clone[dstPeer];
@@ -76,24 +68,33 @@
         var subDict = this.gossipUtil.getRandomSubDict(itmsNum, clone);
         if(newItem !== null)
           subDict[thisId] = newItem;
-        this.coordinator.sendTo(dstPeer, subDict, this.protoId);
-      break;
+        msg = this.newActiveMsg(dstPeer, this.algoId, subDict);
+        this.gossipMediator.postInMainThread(msg);
+        break;
       case 'biased':
         if(newItem !== null)
-          this.proximityFunc.getClosestNeighbours(itmsNum, clone, {k: thisId, v: newItem}, dstPeer, this.protoId);
+          this.proximityFunc.getClosestNeighbours(itmsNum, clone, {k: thisId, v: newItem}, dstPeer, this.algoId);
         else
-          this.proximityFunc.getClosestNeighbours(itmsNum, clone, null, dstPeer, this.protoId);
-      break;
+          this.proximityFunc.getClosestNeighbours(itmsNum, clone, null, dstPeer, this.algoId);
+        break;
       case 'agr-biased':
-        var mergedV = this.gossipUtil.mergeViews(clone, this.rpsView);
-        if(newItem !== null)
-          this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, {k: thisId, v: newItem}, dstPeer, this.protoId);
-        else
-          this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, null, dstPeer, this.protoId);
-      break;
+        var deps = this.gossipMediator.dependencies;
+        var keys = Object.keys(deps);
+        var params;
+        for(var i = 0; i < keys.length; i++){
+          params = [dstPeer, 'postAgrBiased'];
+          this.gossipMediator.applyDependency(keys[i], 'selectItemsToSend', params);
+        }
+        //var mergedV = this.gossipUtil.mergeViews(clone, this.rpsView);
+        //
+        //if(newItem !== null)
+        //  this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, {k: thisId, v: newItem}, dstPeer, this.algoId);
+        //else
+        //  this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, null, dstPeer, this.algoId);
+        break;
       default:
         this.log.error('Unknown peer selection policy');
-      break;
+        break;
     }
   };
   /**
@@ -176,5 +177,6 @@
   Vicinity.prototype.getPlotInfo = function(peerId){
     return { peer: peerId, profile: this.proximityFunc.profile, loop: this.loop, 'view': Object.keys(this.view) };
   };
+  
   exports.Vicinity = Vicinity;
 })(this);

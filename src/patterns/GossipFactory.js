@@ -9,12 +9,9 @@
   * @author Raziel Carvajal Gomez <raziel.carvajal-gomez@inria.fr> */  
   function GossipFactory(opts){
     this.peerId = opts.peerId;
-    this.loggingServer = opts.loggingServer;
+    this.log = opts.log;
     this.inventory = {};
-    this.log = new Logger(opts.loggingServer, opts.peerId, 'GossipFactory');
     this.gossipUtil = opts.gossipUtil;
-    //
-    this.
   }
   /**
   * @method checkProperties
@@ -41,38 +38,90 @@
   * parameter opts. The reference of every gossip protocol will be kept in the GossipFactory.inventory
   * property of the factory.
   * @param {Object} opts - Configuration object of a gossip protocol. */
-  GossipFactory.prototype.createProtocol = function(opts, algoId, coordinator){
+  GossipFactory.prototype.createProtocol = function(algoId, algOpts){
     try{
-      if( typeof opts.class !== 'string' )
+      if( typeof algOpts.class !== 'string' )
         throw "The class of the algorithm must be a string";
-      var algoName = exports[opts.class];
+      var algoName = exports[algOpts.class];
       if(algoName === 'undefined')
-        throw 'Algorithm: ' + opts.class + ' does not exist in WebGC' ;
+        throw 'Algorithm: ' + algOpts.class + ' does not exist in WebGC' ;
       //if users missed options in the configuration file, standards options are used insted
-      this.gossipUtil.extendProperties(opts, algoName.defaultOpts);
+      this.gossipUtil.extendProperties(algOpts, algoName.defaultOpts);
       //additional options are given for logging proposes
-      this.gossipUtil.extendProperties(opts, {
-        peerId: this.peerId, loggingServer: this.loggingServer, protoId: algoId
+      this.gossipUtil.extendProperties(algOpts, {
+        'algoId': algoId,
+        peerId: this.peerId,
       });
-      this.checkProperties(opts);
-      opts['coordinator'] = coordinator;
-      protocol = new constructor(opts);
+      this.checkProperties(algOpts);
+      var logOpts = {
+        host: this.log.host,
+        port: this.log.port,
+        header: algoName + '_' + algoId
+      };
       if( !this.inventory.hasOwnProperty(algoId) )
-        this.inventory[algoId] = protocol;
+        this.inventory[algoId] = this.createWebWorker(algOpts, logOpts);
       else
         throw "The Object's identifier (" + algoId + ") already exists";
     }catch(e){
       this.log.error("Gossip-based protocol wasn't created. " + e);
     }
   };
-  GossipFactory.prototype.createWebWorker = function(algoName, algoId){
-
+  
+  GossipFactory.prototype.createWebWorker = function(algOpts, logOpts){
+    var statements = "importScripts('../../src/utils/LoggerForWebWorker.js');";
+    statements    += "var logOpts = " + JSON.stringify(logOpts) + ";";
+    statements    += "var log = new Logger(logOpts);";
+    
+    statements    += "importScripts('../../src/utils/GossipUtil.js');";
+    statements    += "var gossipUtil = new GossipUtil(log);";
+    statements    += "importScripts('../../src/apis/GossipProtocol.js');";
+    
+    var keysWithFunc = this.searchFunctions(algOpts), i;
+    console.log('algOpts before');
+    console.log(algOpts);
+    if(keysWithFunc.length > 0){
+      console.log('keysWithFunc has items');
+      statements  += "importScripts('../../src/apis/SimilarityFunction.js');";
+      for(i = 0; i < keysWithFunc.length; i++)
+        algOpts[ " ' " + keysWithFunc[i] + " ' " ] = String(algOpts[ keysWithFunc[i] ]);
+    }
+    console.log('algOpts after');
+    console.log(algOpts);
+    statements    += "importScripts('../../src/algorithms/" + opts.class + ".js');";
+    statements    += "var algOpts = " + JSON.stringify(algOpts) + ";";
+    for(i = 0; i < keysWithFunc.length; i++){
+      statements  += "eval( var " + keysWithFunc[i] + " = " + algOpts[ keysWithFunc[i]] + ");";
+      statements  += "algOpts[' " + keysWithFunc[i] + " '] = " + keysWithFunc[i] + ";";
+    }
+    statements    += "log.info(JSON.stringify(algOpts));";
+    statements    += "var algo = new " + opts.class + "(algOpts, log, gossipUtil);";
+    
+    statements    += "importScripts('../../src/workers/GossipMediator.js');";
+    //"this" referes the web-worker
+    statements    += "var mediator = new GossipMediator(algo, log, this);";
+    statements    += "algo.setMediator(mediator);";
+    statements    += "mediator.listen();";
+    
+    var blob = new BlobBuilder();
+    blob.append(statements);
+    var blobUrl = URL.createObjectURL(blob.getBlob());
+    console.log(blobUrl);
+    return new Worker(blobUrl);
+  };
+  
+  GossipFactory.prototype.searchFunctions = function(obj){
+    var keys = Object.keys(obj), keysWithFunc = [];
+    for(var i = 0; i < keys.length; i++){
+      if(typeof obj[ keys[i] ] === 'function')
+        keysWithFunc.push(keys[i]);
+    }
+    return keysWithFunc;
   };
   /**
   * @method setDependencies
   * @description In some cases, there are gossip protocols that have dependencies amog them. This method
   * reads the property dependencies in the configuration object and establishes those dependencies. For
-  * this method, a dependency is to share the property of one gossip protocol with another gossip protocol.*/ 
+  * this method, a dependency is to share the property of one gossip protocol with another gossip protocol.*/
   GossipFactory.prototype.setDependencies = function(gossipAlgos, simFunCatalogue){
     var keys = Object.keys(gossipAlgos);
     for( var i = 0; i < keys.length; i++ ){

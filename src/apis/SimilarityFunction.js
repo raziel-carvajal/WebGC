@@ -7,9 +7,10 @@
   * @param profile - Profile of the local peer; this parame
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */ 
   function SimilarityFunction(opts){
-    this.log = new Logger(opts.loggingServer, opts.peerId, opts.objName);
+    this.log = opts.log;
     this.profile = opts.profile;
-    this.coordinator = opts.coordinator;
+    this.gossipMediator = opts.gossipMediator;
+    this.newMainThreadMsg = opts.msgMTConstructor;
     this.noImMsg = 'It is required to provide an implementation for this method';
   }
   
@@ -19,12 +20,14 @@
     function(n, view, newItem, receiver, protoId, keys, getValue){
     if(newItem !== null)
       view[newItem.k] = newItem.v;
+    var msg;
     if(n <= 0 || keys.length === 0){
       this.log.info('Base case SimFun. View is empty');
       if(getValue)
         return view;
       else{
-        this.coordinator.sendTo(receiver, view, protoId);
+        msg = this.newMainThreadMsg(receiver, protoId, view);
+        this.gossipMediator.postInMainThread(msg);
         return true;
       }
     }
@@ -33,7 +36,8 @@
       if(getValue)
         return view;
       else{
-        this.coordinator.sendTo(receiver, view, protoId);
+        msg = this.newMainThreadMsg(receiver, protoId, view);
+        this.gossipMediator.postInMainThread(msg);
         return true;
       }
     }
@@ -73,23 +77,12 @@
     this.log.info('getClosestNeighbours()');
     var keys = Object.keys(view);
     if( !this.checkBaseCase(n, view, newItem, receiver, protoId, keys, false) ){
-      var values = [], nulls = [];
-      for(var i = 0; i < keys.length; i++){
-        if( view[ keys[i] ].hasOwnProperty('data') && typeof view[ keys[i] ].data === 'number' )
-          values.push({
-            k: keys[i],
-            v: this.compute(this.profile, view[ keys[i] ].data)
-          });
-        else
-          nulls.push( keys[i] );
-      }
-      this.log.info('values: ' + JSON.stringify({'v': values}));
-      this.log.info('nulls : ' + JSON.stringify({'v': nulls}));
-      var result = this.orderBySimilarity(values, n, view, nulls);
+      var result = this.getNsimilarPeers(view, n, keys);
       if(newItem !== null)
         result[newItem.k] = newItem.v;
       this.log.info('simFun.getCloNeigh() closestNeigh: ' + JSON.stringify(result));
-      this.coordinator.sendTo(receiver, result, protoId);
+      var msg = this.newMainThreadMsg(receiver, protoId, result);
+      this.gossipMediator.postInMainThread(msg);
     }
   };
   
@@ -97,19 +90,8 @@
     this.log.info('updateClusteringView()');
     var keys = Object.keys(rcView), i;
     var result = this.checkBaseCase(n, rcView, null, null, null, keys, true);
-    if(result === null || Object.keys(result).length === 0){
-      var values = [], nulls = [];
-      for(i = 0; i < keys.length; i++ ){
-        if( rcView[ keys[i] ].hasOwnProperty('data') && typeof rcView[ keys[i] ].data === 'number' )
-          values.push({
-            k: keys[i],
-            v: this.compute(this.profile, rcView[ keys[i] ].data)
-          });
-        else
-          nulls.push( keys[i] );
-      }
-      result = this.orderBySimilarity(values, n, rcView, nulls);
-    }
+    if(result === null || Object.keys(result).length === 0)
+      result = this.getNsimilarPeers(rcView, n, keys);
     this.log.info('cluView before update: ' + JSON.stringify(view));
     keys = Object.keys(view);
     for(i = 0; i < keys.length; i++)
@@ -118,6 +100,22 @@
     for(i = 0; i < keys.length; i++)
       view[ keys[i] ] = result[ keys[i] ];
     this.log.info('cluView after update: ' + JSON.stringify(view));
+  };
+  
+  SimilarityFunction.prototype.getNsimilarPeers = function(view, n, keys){
+    var values = [], nulls = [];
+    for(i = 0; i < keys.length; i++ ){
+      if( view[ keys[i] ].hasOwnProperty('data') && typeof view[ keys[i] ].data === 'number' )
+        values.push({
+          k: keys[i],
+          v: this.compute(this.profile, view[ keys[i] ].data)
+        });
+      else
+        nulls.push( keys[i] );
+    }
+    this.log.info('values: ' + JSON.stringify({'v': values}));
+    this.log.info('nulls : ' + JSON.stringify({'v': nulls}));
+    return this.orderBySimilarity(values, n, view, nulls);
   };
   
   exp.SimilarityFunction = SimilarityFunction;

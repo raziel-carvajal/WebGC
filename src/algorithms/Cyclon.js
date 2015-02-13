@@ -10,9 +10,9 @@
   * second one is the data owned by the peer "peerId".
   * @param opts {Object} - properties to set by the object Cyclon
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
-  function Cyclon(opts){
-    this.gossipUtil.inherits(Cyclon, GossipProtocol);
-    GossipProtocol.call(this, opts);
+  function Cyclon(algOpts, log, gossipUtil){
+    gossipUtil.inherits(Cyclon, GossipProtocol);
+    GossipProtocol.call(this, opts, log, gossipUtil);
   }
   /**
   * @description This object represents the configuration by default of this protocol. During the
@@ -28,13 +28,10 @@
     periodTimeOut: 10000,
     propagationPolicy: { push: true, pull: true }
   };
-  //util.inherits(Cyclon, GossipProtocol);
   /** 
   * @description This method selects the remote peer's identifier with the oldest age.See method 
   * GossipProtocol.selectPeer() for more information.*/
-  Cyclon.prototype.selectPeer = function(){
-    return this.gossipUtil.getOldestKey(this.view);
-  };
+  Cyclon.prototype.selectPeer = function(){ return this.gossipUtil.getOldestKey(this.view); };
   /**
   * @method selectItemsToSend
   * @description The selection of peers is performed in a randomly way.See method 
@@ -46,22 +43,15 @@
         delete clone[dstPeer];
         subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone);
         subDict[thisId] = this.gossipUtil.newItem(0, this.data);
-      break;
+        break;
       case 'passive':
         subDict = this.gossipUtil.getRandomSubDict(this.fanout, this.clone);
-      break;
+        break;
       default:
         this.log.error('Unknown selection policy');
-      break;
+        break;
     }
-    var msg = {
-      header: 'ActiveThreadAnsw',
-      payload: {
-        receiver: dstPeer,
-        view: subDict,
-        algoId: this.algoId
-      }
-    };
+    var msg = this.newControllerMsg(dstPeer, this.algoId, subDict);
     this.gossipMediator.postInMainThread(msg);
   };
   /**
@@ -101,7 +91,7 @@
   * @method initialize
   * @description See method GossipProtocol.initialize() for more information.*/
   Cyclon.prototype.initialize = function(keys){
-    if( keys.length > 0 ){
+    if(keys.length > 0){
       var i = 0;
       while(i < this.viewSize && i < keys.length){
         this.view[keys[i]] = this.gossipUtil.newItem(0, '?');
@@ -145,6 +135,7 @@
   Cyclon.prototype.getPlotInfo = function(peerId){ 
     return {peer: peerId, profile: this.data, loop: this.loop, view: Object.keys(this.view)};
   };
+  
   exports.Cyclon = Cyclon;
   
 })(this);

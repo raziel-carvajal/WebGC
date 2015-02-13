@@ -16,29 +16,21 @@
     this.connectedPeers = {};
     this.first = 0;
     this.profile = opts.gossipAlgos.vicinity1.data;
-    this.log = new Logger(opts.loggingServer, opts.peerId, 'Coordinator');
-    this.gossipUtil = new GossipUtil({
-      loggingServer: opts.loggingServer, peerId: opts.peerId, objName: 'Coordinator'});
-    
+    opts.logOpts.header = 'Coordinator_' + opts.peerId;
+    this.log = new Logger(opts.logOpts);
+    this.gossipUtil = new GossipUtil(log);
     this.factory = new GossipFactory({
-      loggingServer: opts.loggingServer, peerId: opts.peerId, 'gossipUtil': gossipUtil });
-
-    //this.simFunFactory = new SimFuncFactory({ 
-    //  loggingServer: opts.loggingServer, peerId: opts.peerId, simFunOpts: opts.similarityFunctions
-    //});
-    //this.simFunFactory.instantiateFuncs(this.profile, this);
-    
-    var algosNames = Object.keys(opts.gossipAlgos);
-    var algo;
+      peerId: opts.peerId,
+      'log': this.log,
+      'gossipUtil': this.gossipUtil
+    });
+    var algosNames = Object.keys(opts.gossipAlgos), algOpts;
     for( var i = 0; i < algosNames.length; i++ ){
-      algo = opts.gossipAlgos[ algosNames[i] ];
-      this.factory.createProtocol(algo, algosNames[i], this);
+      algOpts = opts.gossipAlgos[ algosNames[i] ];
+      //TODO condition for having web workers or not is needed!!
+      this.factory.createProtocol(algosNames[i], algOpts);
     }
-    this.factory.setDependencies(opts.gossipAlgos, this.simFunFactory.catalogue);
     this.protocols = this.factory.inventory;
-
-
-
     this.plotterObj = new Plotter(opts.loggingServer, opts.peerId);
     /** 
      * This method fires the constructor of the [Peer]{@link Peer} object. */
@@ -49,7 +41,6 @@
     * the function in this event is performed. */
     var self = this;
     this.on('open', function(){ 
-      window.setTimeout( function(){ self.getFirstView(); }, 5000 );
       window.setInterval( function(){
         self.getGraph('rps');
         self.plotterObj.loop++;
@@ -81,6 +72,32 @@
   }
   
   util.inherits(Coordinator, Peer);
+  
+  Coordinator.prototype.setWorkerEvents = function(worker){
+    var self = this;
+    worker.addEventListener('message', function(e){
+      var payload = e.data;
+      switch(payload.request){
+        case 'itemsToSend':
+          break;
+        case 'evalDep':
+          break;
+        case 'evalResult':
+          break;
+        case 'firstView':
+          self.getFirstView(payload.emitter);
+          break;
+        default:
+          break;
+      }
+    }, false);
+    worker.addEventListener('error', function(e){
+      self.log.error('In Worker: ' + e.message + ', lineno: ' + e.lineno);
+    }, false);
+  };
+  Coordinator.prototype.createWorkerMsg = function(emitter, receiver, payload){
+    return {'emitter': emitter, 'receiver': receiver, 'payload': payload};
+  };
   
   Coordinator.prototype.sendTo = function(receiver, payload, protoId){
     this.log.info('proto: ' + protoId + ', sendTo: ' + receiver);
@@ -147,11 +164,11 @@
   * @method getFirstView
   * @desc This method gets from a remote PeerServer a set of remote peer identifiers. This 
   * set of identifiers allows to bootstrap the gossip protocols. */
-  Coordinator.prototype.getFirstView = function() {
+  Coordinator.prototype.getFirstView = function(algoId) {
     var http = new XMLHttpRequest();
     var protocol = this.options.secure ? 'https://' : 'http://';
-    var url = protocol + this.options.host + ':' + this.options.port + '/' + this.options.key + 
-      '/' + this.id + '/' + this.profile + '/view';
+    var url = protocol + this.options.host + ':' + this.options.port + '/' +
+      this.options.key + '/' + this.id + '/' + this.profile + '/view';
     http.open('get', url, true);
     var self = this;
     http.onerror = function(e) {
@@ -159,20 +176,21 @@
       self._abort('server-error', 'Could not get the random view');
     };
     http.onreadystatechange = function() {
-      if (http.readyState !== 4) {
+      if (http.readyState !== 4)
         return;
-      }
-      if (http.status !== 200) {
-        http.onerror();
-        return;
-      }
+      if (http.status !== 200) { http.onerror(); return; }
       /** 
       * @fires Coordinator#doActiveThread */
       var data = JSON.parse(http.responseText);
-      if(data.view.length !== 0)
-        self.emit('doActiveThread', data.view);
-      else
-        window.setTimeout( function(){ self.getFirstView(); }, 5000 );
+      if(data.view.length !== 0){
+        var worker = self.protocols[algoId];
+        if(worker !== 'undefined'){
+          var msg = {answer: 'firstView', view: data.view};
+          worker.postMessage(msg);
+        }else{
+          self.log.error('AlgoId: ' + algoId + ', has not worker');
+        }
+      }
     };
     http.send(null);
   };

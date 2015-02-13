@@ -9,7 +9,7 @@
   * @param opts {Object} - attributes of the object
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>
   */ 
-  function GossipProtocol(opts){
+  function GossipProtocol(opts, log, gossipUtil){
     this.class = opts.class;
     //attributes in common for each protocol
     this.view = {};
@@ -20,17 +20,17 @@
     this.gossipPeriod = opts.gossipPeriod;
     this.propagationPolicy = opts.propagationPolicy;
     this.algoId = opts.algoId;//unique ID for the algorithm
-    this.gossipMediator = opts.gossipMediator;//reference to a Coordinator
-    var logOpts = {
-      host: opts.loggingServer.host,
-      port: opts.loggingServer.port,
-      header: opts.class + '_' + opts.protoId
-    };
-    this.log = new Logger(logOpts);
-    this.gossipUtil = new GossipUtil({logger: this.log});
+    this.log = log;
+    this.gossipUtil = gossipUtil;
     //error and warning messages
     this.nonImpMsg = 'An implementation for this method is required';
   }
+  
+  GossipProtocol.prototype.setMediator = function(mediator){this.gossipMediator = mediator;};
+  
+  GossipProtocol.prototype.newControllerMsg = function(receiver, algoId, payload){
+    return {'receiver': receiver, 'algoId': algoId, 'payload': payload};
+  };
   /** 
   * @description The age field of each item in the view GossipProtocol.view increments by one
   * @method increaseAge */
