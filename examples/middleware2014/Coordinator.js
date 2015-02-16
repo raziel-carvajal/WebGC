@@ -15,23 +15,29 @@
   function Coordinator(opts){
     this.connectedPeers = {};
     this.first = 0;
-    this.profile = opts.gossipAlgos.vicinity1.data;
+    this.profile = opts.gossipAlgos.cyclon1.data;
     opts.logOpts.header = 'Coordinator_' + opts.peerId;
+    console.log('logOpts: ' + JSON.stringify(opts.logOpts));
     this.log = new Logger(opts.logOpts);
-    this.gossipUtil = new GossipUtil(log);
+    this.gossipUtil = new GossipUtil(this.log);
     this.factory = new GossipFactory({
       peerId: opts.peerId,
       'log': this.log,
       'gossipUtil': this.gossipUtil
     });
-    var algosNames = Object.keys(opts.gossipAlgos), algOpts;
-    for( var i = 0; i < algosNames.length; i++ ){
+    var algosNames = Object.keys(opts.gossipAlgos), algOpts, worker;
+    for(var i = 0; i < algosNames.length; i++){
       algOpts = opts.gossipAlgos[ algosNames[i] ];
       //TODO condition for having web workers or not is needed!!
       this.factory.createProtocol(algosNames[i], algOpts);
+      worker = this.factory.inventory[ algosNames[i] ];
+      if(worker !== 'undefined')
+        this.setWorkerEvents(worker);
+      else
+        console.error('worker: ' + algosNames[i] + ' is not defined');
     }
-    this.protocols = this.factory.inventory;
-    this.plotterObj = new Plotter(opts.loggingServer, opts.peerId);
+    this.workers = this.factory.inventory;
+    this.plotterObj = new Plotter(this.log, opts.peerId);
     /** 
      * This method fires the constructor of the [Peer]{@link Peer} object. */
     Peer.call(this, opts.peerId, opts.peerJsOpts);
@@ -40,13 +46,16 @@
     * Once the [PeerServe]{@link PeerServer} gives an [id]{@link id} to the local peer
     * the function in this event is performed. */
     var self = this;
-    this.on('open', function(){ 
-      window.setInterval( function(){
-        self.getGraph('rps');
-        self.plotterObj.loop++;
-      }, 11000);
-      window.setInterval( function(){ self.getGraph('clu'); }, 15000);
-      window.setInterval( function(){ self.first = 1; }, 21000);
+    this.on('open', function(){
+      console.log('Peer is ready to listen external messages');
+      console.log('Getting first view...');
+      window.setTimeout(function(){ self.getFirstView(); }, 5000);
+      //window.setInterval( function(){
+      //  self.getGraph('rps');
+      //  self.plotterObj.loop++;
+      //}, 11000);
+      //window.setInterval( function(){ self.getGraph('clu'); }, 15000);
+      //window.setInterval( function(){ self.first = 1; }, 21000);
     });
     /**
     * @event Coordinator#connection
@@ -57,18 +66,18 @@
       self.handleConnection(c); 
     });
     
-    this.on('doActiveThread', function(view){
-      var i, protocol, keys = Object.keys(self.protocols);
-      for( i = 0; i < keys.length; i++ ){
-        protocol = self.protocols[ keys[i] ];
-        protocol.initialize(view);
-      }
-      window.setInterval( function(){
-        var keys = Object.keys(self.protocols);
-        for( var i = 0; i < keys.length; i++ )
-          self.doActiveThread( self.protocols[ keys[i] ] );
-      }, 10000 );
-    });
+    //this.on('doActiveThread', function(view){
+    //  var i, protocol, keys = Object.keys(self.protocols);
+    //  for( i = 0; i < keys.length; i++ ){
+    //    protocol = self.protocols[ keys[i] ];
+    //    protocol.initialize(view);
+    //  }
+    //  window.setInterval( function(){
+    //    var keys = Object.keys(self.protocols);
+    //    for( var i = 0; i < keys.length; i++ )
+    //      self.doActiveThread( self.protocols[ keys[i] ] );
+    //  }, 10000 );
+    //});
   }
   
   util.inherits(Coordinator, Peer);
@@ -76,37 +85,29 @@
   Coordinator.prototype.setWorkerEvents = function(worker){
     var self = this;
     worker.addEventListener('message', function(e){
-      var payload = e.data;
-      switch(payload.request){
-        case 'itemsToSend':
-          break;
-        case 'evalDep':
-          break;
-        case 'evalResult':
-          break;
-        case 'firstView':
-          self.getFirstView(payload.emitter);
+      var msg = e.data;
+      switch(msg.header){
+        case 'activeMsg':
+          self.log.info('sending msg: ' + JSON.stringify(msg));
+          self.sendTo(msg);
           break;
         default:
           break;
       }
     }, false);
+    
     worker.addEventListener('error', function(e){
       self.log.error('In Worker: ' + e.message + ', lineno: ' + e.lineno);
     }, false);
   };
-  Coordinator.prototype.createWorkerMsg = function(emitter, receiver, payload){
-    return {'emitter': emitter, 'receiver': receiver, 'payload': payload};
-  };
   
-  Coordinator.prototype.sendTo = function(receiver, payload, protoId){
-    this.log.info('proto: ' + protoId + ', sendTo: ' + receiver);
-    var connection = this.connect(receiver, {label: protoId});
+  Coordinator.prototype.sendTo = function(msg){
+    var connection = this.connect(msg.receiver, {label: msg.algoId});
     connection.on('error', function(e){
-      this.log.error('During the view exchange with: ' + receiver + ', in protocol: ' + protoId);
+      this.log.error('During the view exchange with: ' + msg.receiver + ', in protocol: ' + msg.algoId);
     });
     connection.on('open', function(){
-      connection.send(payload);
+      connection.send(msg.payload);
     });
   };
   /**
@@ -115,14 +116,16 @@
   * Coordinator.protocols
   * @param {DataConnection} connection - This connection allows the exchange of meesages amog peers. */
   Coordinator.prototype.handleConnection = function(connection){
-    var protocol = this.protocols[connection.label];
-    //var receiver = protocol.selectPeer();
+    var worker = this.workers[connection.label];
     var self = this;
     connection.on('data', function(data){
-      self.log.info('protocol: ' + connection.label + ', msg received: ' + JSON.stringify(data));
-      protocol.selectItemsToKeep(self.id, data);
-      //if(protocol.propagationPolicy.pull)
-      //  protocol.selectItemsToSend(self.id, receiver, 'passive');
+      self.log.info('worker: ' + connection.label + ', msg received: ' + JSON.stringify(data));
+      var msg = {
+        header: 'passiveMsg',
+        emitter: connection.peer,
+        payload: data
+      };
+      worker.postMessage(msg);
     });
     connection.on('error', function(err){
       self.log.error('During the reception of a ' + protocol.protoId + ' message');
@@ -150,21 +153,21 @@
   * by a string.
   * @returns {Object} Object that contains the view of each gossip protocol in the 
   * Coordinator.protocols object. */ 
-  Coordinator.prototype.getPeers = function(){
-    var result = {}, keys = this.protocols.Object.keys();
-    var key, value;
-    for( var i = 0; i < keys.length; i++ ){
-      key = this.protocols[i].class;
-      value = this.protocols[i].view;
-      result[ key ] = value;
-    }
-    return result;
-  };
+  //Coordinator.prototype.getPeers = function(){
+  //  var result = {}, keys = this.protocols.Object.keys();
+  //  var key, value;
+  //  for( var i = 0; i < keys.length; i++ ){
+  //    key = this.protocols[i].class;
+  //    value = this.protocols[i].view;
+  //    result[ key ] = value;
+  //  }
+  //  return result;
+  //};
   /**
   * @method getFirstView
   * @desc This method gets from a remote PeerServer a set of remote peer identifiers. This 
   * set of identifiers allows to bootstrap the gossip protocols. */
-  Coordinator.prototype.getFirstView = function(algoId) {
+  Coordinator.prototype.getFirstView = function() {
     var http = new XMLHttpRequest();
     var protocol = this.options.secure ? 'https://' : 'http://';
     var url = protocol + this.options.host + ':' + this.options.port + '/' +
@@ -179,17 +182,17 @@
       if (http.readyState !== 4)
         return;
       if (http.status !== 200) { http.onerror(); return; }
-      /** 
-      * @fires Coordinator#doActiveThread */
+      console.log('First view: ' + http.responseText);
       var data = JSON.parse(http.responseText);
       if(data.view.length !== 0){
-        var worker = self.protocols[algoId];
-        if(worker !== 'undefined'){
-          var msg = {answer: 'firstView', view: data.view};
-          worker.postMessage(msg);
-        }else{
-          self.log.error('AlgoId: ' + algoId + ', has not worker');
+        var algoIds = Object.keys(self.workers);
+        for(var i = 0; i < algoIds.length; i++){
+          console.log('Sending view to worker: ' + algoIds[i]);
+          self.workers[ algoIds[i] ].postMessage({header: 'firstView', view: data.view});
         }
+      }else{
+        console.error('First view request failed');
+        //TODO schedule a new request
       }
     };
     http.send(null);

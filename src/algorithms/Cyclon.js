@@ -11,8 +11,8 @@
   * @param opts {Object} - properties to set by the object Cyclon
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Cyclon(algOpts, log, gossipUtil){
-    gossipUtil.inherits(Cyclon, GossipProtocol);
-    GossipProtocol.call(this, opts, log, gossipUtil);
+    //gossipUtil.inherits(Cyclon, GossipProtocol);
+    GossipProtocol.call(this, algOpts, log, gossipUtil);
   }
   /**
   * @description This object represents the configuration by default of this protocol. During the
@@ -32,17 +32,34 @@
   * @description This method selects the remote peer's identifier with the oldest age.See method 
   * GossipProtocol.selectPeer() for more information.*/
   Cyclon.prototype.selectPeer = function(){ return this.gossipUtil.getOldestKey(this.view); };
+  /***/
+  Cyclon.prototype.setMediator = function(mediator){ this.gossipMediator = mediator; };
+  /** 
+  * @description This method initialize GossipProtocol.view with the peer identifiers n the array keys.
+  * @method initialize
+  * @param keys:Array - Array of peer identifiers. */
+  Cyclon.prototype.initialize = function(keys){
+    if(keys.length > 0){
+      var i = 0;
+      while(i < this.viewSize && i < keys.length){
+        this.view[ keys[i] ] = this.gossipUtil.newItem(0, '?');
+        i++;
+      }
+    }
+    this.log.info('init view: ' + JSON.stringify(this.view));
+  };
   /**
   * @method selectItemsToSend
   * @description The selection of peers is performed in a randomly way.See method 
   * GossipProtocol.selectItemsToSend() for more information.*/
-  Cyclon.prototype.selectItemsToSend = function(thisId, dstPeer, thread){
+  Cyclon.prototype.selectItemsToSend = function(thread){
+    var dstPeer = this.selectPeer();
     var subDict = {}, clone = JSON.parse(JSON.stringify(this.view));
     switch( thread ){
       case 'active':
         delete clone[dstPeer];
         subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone);
-        subDict[thisId] = this.gossipUtil.newItem(0, this.data);
+        subDict[this.peerId] = this.gossipUtil.newItem(0, this.data);
         break;
       case 'passive':
         subDict = this.gossipUtil.getRandomSubDict(this.fanout, this.clone);
@@ -51,13 +68,19 @@
         this.log.error('Unknown selection policy');
         break;
     }
-    var msg = this.newControllerMsg(dstPeer, this.algoId, subDict);
+    var msg = {
+      header: 'activeMsg',
+      emitter: this.peerId,
+      receiver: dstPeer,
+      payload: subDict,
+      algoId: this.algoId
+    };
     this.gossipMediator.postInMainThread(msg);
   };
   /**
   * @method selectItemsToKeep
   * @description See method GossipProtocol.selectItemsToKeep() for more information.*/
-  Cyclon.prototype.selectItemsToKeep = function(thisId, rcvCache){
+  Cyclon.prototype.selectItemsToKeep = function(rcvCache){
     var rcvKeys = Object.keys(rcvCache);
     if( rcvKeys.length === 0 )
       return;
@@ -68,14 +91,14 @@
       do{
         this.view[ rcvKeys[i] ] = rcvCache[ rcvKeys[i] ];
         i += 1;
-      }while( i < rcvKeys.length && Object.keys(this.view).length < this.viewSize );
+      }while(i < rcvKeys.length && Object.keys(this.view).length < this.viewSize);
     }else{
       var newCache = {};
-      if( thisId in rcvCache ){
-        delete rcvCache[thisId];
+      if(this.algoId in rcvCache){
+        delete rcvCache[this.algoId];
         rcvKeys = Object.keys(rcvCache);
       }
-      for( i = 0; i < rcvKeys.length; i += 1 ){
+      for(i = 0; i < rcvKeys.length; i++){
         if( !(rcvKeys[i] in this.view) )
           newCache[ rcvKeys[i] ] = rcvCache[ rcvKeys[i] ];
       }
@@ -84,19 +107,12 @@
         newCache[ currentKeys[i] ] = this.view[ currentKeys[i] ];
         i += 1;
       }
-      this.view = newCache;
-    }
-  };
-  /** 
-  * @method initialize
-  * @description See method GossipProtocol.initialize() for more information.*/
-  Cyclon.prototype.initialize = function(keys){
-    if(keys.length > 0){
-      var i = 0;
-      while(i < this.viewSize && i < keys.length){
-        this.view[keys[i]] = this.gossipUtil.newItem(0, '?');
-        i++;
-      }
+      var keys = Object.keys(this.view);
+      for(i = 0; i < keys.length; i++)
+        delete this.view[ keys[i] ];
+      keys = Object.keys(newCache);
+      for(i = 0; i < keys.length; i++)
+        this.view[ keys[i] ] = newCache[ keys[i] ];
     }
   };
   /** 

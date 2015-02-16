@@ -10,8 +10,8 @@
   function GossipFactory(opts){
     this.peerId = opts.peerId;
     this.log = opts.log;
-    this.inventory = {};
     this.gossipUtil = opts.gossipUtil;
+    this.inventory = {};
   }
   /**
   * @method checkProperties
@@ -46,6 +46,7 @@
       if(algoName === 'undefined')
         throw 'Algorithm: ' + algOpts.class + ' does not exist in WebGC' ;
       //if users missed options in the configuration file, standards options are used insted
+      console.log('algOpts before: ' + JSON.stringify(algOpts));
       this.gossipUtil.extendProperties(algOpts, algoName.defaultOpts);
       //additional options are given for logging proposes
       this.gossipUtil.extendProperties(algOpts, {
@@ -53,10 +54,11 @@
         peerId: this.peerId,
       });
       this.checkProperties(algOpts);
+      console.log('AlgOpts after:' + JSON.stringify(algOpts));
       var logOpts = {
         host: this.log.host,
         port: this.log.port,
-        header: algoName + '_' + algoId
+        header: algOpts.class + '_' + algoId
       };
       if( !this.inventory.hasOwnProperty(algoId) )
         this.inventory[algoId] = this.createWebWorker(algOpts, logOpts);
@@ -68,44 +70,45 @@
   };
   
   GossipFactory.prototype.createWebWorker = function(algOpts, logOpts){
-    var statements = "importScripts('../../src/utils/LoggerForWebWorker.js');";
-    statements    += "var logOpts = " + JSON.stringify(logOpts) + ";";
-    statements    += "var log = new Logger(logOpts);";
+    var origin = window.location.href.split('peerjs-gossip')[0];
+    origin += 'peerjs-gossip/';
+    var statements = "importScripts('" + origin + "src/utils/LoggerForWebWorker.js');\n";
+    statements    += "var logOpts = " + JSON.stringify(logOpts) + ";\n";
+    statements    += "var log = new Logger(logOpts);\n";
     
-    statements    += "importScripts('../../src/utils/GossipUtil.js');";
-    statements    += "var gossipUtil = new GossipUtil(log);";
-    statements    += "importScripts('../../src/apis/GossipProtocol.js');";
+    statements    += "importScripts('" + origin + "src/utils/GossipUtil.js');\n";
+    statements    += "var gossipUtil = new GossipUtil(log);\n";
+    statements    += "importScripts('" + origin + "src/apis/GossipProtocol.js');\n";
     
     var keysWithFunc = this.searchFunctions(algOpts), i;
     console.log('algOpts before');
     console.log(algOpts);
     if(keysWithFunc.length > 0){
       console.log('keysWithFunc has items');
-      statements  += "importScripts('../../src/apis/SimilarityFunction.js');";
+      statements  += "importScripts('" + origin + "src/apis/SimilarityFunction.js');\n";
       for(i = 0; i < keysWithFunc.length; i++)
         algOpts[ " ' " + keysWithFunc[i] + " ' " ] = String(algOpts[ keysWithFunc[i] ]);
     }
     console.log('algOpts after');
     console.log(algOpts);
-    statements    += "importScripts('../../src/algorithms/" + opts.class + ".js');";
-    statements    += "var algOpts = " + JSON.stringify(algOpts) + ";";
+    statements    += "importScripts('" + origin + "src/algorithms/" + algOpts.class + ".js');\n";
+    statements    += "var algOpts = " + JSON.stringify(algOpts) + ";\n";
     for(i = 0; i < keysWithFunc.length; i++){
-      statements  += "eval( var " + keysWithFunc[i] + " = " + algOpts[ keysWithFunc[i]] + ");";
-      statements  += "algOpts[' " + keysWithFunc[i] + " '] = " + keysWithFunc[i] + ";";
+      statements  += "eval( var " + keysWithFunc[i] + " = " + algOpts[ keysWithFunc[i]] + ");\n";
+      statements  += "algOpts[' " + keysWithFunc[i] + " '] = " + keysWithFunc[i] + ";\n";
     }
-    statements    += "log.info(JSON.stringify(algOpts));";
-    statements    += "var algo = new " + opts.class + "(algOpts, log, gossipUtil);";
+    statements    += "var algo = new " + algOpts.class + "(algOpts, log, gossipUtil);\n";
     
-    statements    += "importScripts('../../src/workers/GossipMediator.js');";
+    statements    += "importScripts('" + origin + "src/workers/GossipMediator.js');\n";
     //"this" referes the web-worker
-    statements    += "var mediator = new GossipMediator(algo, log, this);";
-    statements    += "algo.setMediator(mediator);";
-    statements    += "mediator.listen();";
+    statements    += "var m = new GossipMediator(algo, log, this);\n";
+    statements    += "algo.setMediator(m);\n";
+    statements    += "m.listen();\n";
     
-    var blob = new BlobBuilder();
-    blob.append(statements);
-    var blobUrl = URL.createObjectURL(blob.getBlob());
-    console.log(blobUrl);
+    console.log('web-worker content: ' + statements);
+    window.URL = window.URL || window.webkitURL;
+    var blob = new Blob([statements], {type: 'text/javascript'});
+    var blobUrl = window.URL.createObjectURL(blob);
     return new Worker(blobUrl);
   };
   

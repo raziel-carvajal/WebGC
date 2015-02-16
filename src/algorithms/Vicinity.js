@@ -10,10 +10,11 @@
   * data field (application dependent).
   * @param {Object} opts - Settings for the protocol.
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
-  function Vicinity(opts){
-    this.gossipUtil.inherits(Vicinity, GossipProtocol);
-    GossipProtocol.call(this, opts);
+  function Vicinity(algOpts, log, gossipUtil){
+    gossipUtil.inherits(Vicinity, GossipProtocol);
+    GossipProtocol.call(this, algOpts, log, gossipUtil);
     this.selectionPolicy = opts.selectionPolicy;
+    //TODO initialize similarity function 
   }
   /**
   * @description This object represents the configuration by default of this protocol. During the
@@ -109,18 +110,6 @@
       delete mergedViews[thisId];
     this.proximityFunc.updateClusteringView(this.viewSize, mergedViews, this.view);
     this.log.info('cluView: ' + JSON.stringify(this.view));
-  };
-  /** 
-  * @method initialize
-  * @description See method GossipProtocol.initialize() for more information. */
-  Vicinity.prototype.initialize = function(keys){
-    if( keys.length > 0 ){
-      var i = 0;
-      while(i < this.viewSize && i < keys.length){
-        this.view[ keys[i] ] = this.gossipUtil.newItem(0, '?');
-        i++;
-      }
-    }
   };
   /** 
   * @method increaseAge

@@ -22,15 +22,10 @@
     this.algoId = opts.algoId;//unique ID for the algorithm
     this.log = log;
     this.gossipUtil = gossipUtil;
+    this.peerId = opts.peerId;
     //error and warning messages
     this.nonImpMsg = 'An implementation for this method is required';
   }
-  
-  GossipProtocol.prototype.setMediator = function(mediator){this.gossipMediator = mediator;};
-  
-  GossipProtocol.prototype.newControllerMsg = function(receiver, algoId, payload){
-    return {'receiver': receiver, 'algoId': algoId, 'payload': payload};
-  };
   /** 
   * @description The age field of each item in the view GossipProtocol.view increments by one
   * @method increaseAge */
@@ -54,7 +49,7 @@
   * @param dstPeer:String - The ID of the remote peer.
   * @param thread:String - Whether the selection is performed in the passive thread or in the active thread.
   * @returns Object - Subset of the local view.*/
-  GossipProtocol.prototype.selectItemsToSend = function(thisId, dstPeer, thread){ throw this.nonImpMsg; };
+  GossipProtocol.prototype.selectItemsToSend = function(thread){ throw this.nonImpMsg; };
   /**
   * @description This method merges the received set of items rcvCache with those in GossipProtocol.view 
   * the size of the view is kept less than or equal to GossipProtocol.viewSize
@@ -62,11 +57,6 @@
   * @param thisId:String - The ID of the local peer.
   * @param rcvCache:String - The set of items to merge. */
   GossipProtocol.prototype.selectItemsToKeep = function(thisId, rcvCache){ throw this.nonImpMsg; };
-  /** 
-  * @description This method initialize GossipProtocol.view with the peer identifiers n the array keys.
-  * @method initialize
-  * @param keys:Array - Array of peer identifiers. */
-  GossipProtocol.prototype.initialize = function(keys){ throw this.nonImpMsg; };
   /**
   * @description Strictly talking this method doesn't belong to a gossip-based class but it is used
   * for geting data about the neighbours of each peer and to send them to a PeerJS plotter

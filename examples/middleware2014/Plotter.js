@@ -4,11 +4,11 @@
 * TODO Finish with the doc of this file*/
 (function(exports){
   
-  function Plotter(loggingServer, plotterId){
+  function Plotter(log, plotterId){
     this.loop = 0;
     this.logs = {};
-    this.logger = new Logger(loggingServer);
-    this.logger.setOutput(plotterId, 'Plotter');
+    this.logger = log;
+    //this.logger.setOutput(plotterId, 'Plotter');
     this.ref = plotterId;
   }
 

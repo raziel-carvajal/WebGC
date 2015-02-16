@@ -1,6 +1,8 @@
 (function(exports){
   function Logger(opts){
     if(typeof opts.host === 'string' && typeof opts.port === 'number'){
+      this.host = opts.host;
+      this.port = opts.port;
       this.url = 'http://' + opts.host + ':' + opts.port + '/log';
       this.header = opts.header;
     }

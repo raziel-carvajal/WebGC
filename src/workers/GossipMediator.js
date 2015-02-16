@@ -1,7 +1,7 @@
 (function(exports){
-  function GossipMediator(logServerOpts, algo, worker){
-    this.log = new Logger(logServerOpts, 'GossipMediator');
+  function GossipMediator(algo, log, worker){
     this.algo = algo;
+    this.log = log;
     this.worker = worker;
     this.dependencies = {};
   }
@@ -18,8 +18,9 @@
   };
   GossipMediator.prototype.scheduleActiveThread = function(){
     var self = this;
-    this.activeRef = setInterval(function(){
-      self.algo.selectItemsToSend();
+    setInterval(function(){
+      self.log.info('Doing active thread with loop: ' + self.algo.loop);
+      self.algo.selectItemsToSend('active');
       self.algo.loop++;
     }, this.algo.gossipPeriod);
   };
@@ -57,11 +58,20 @@
   GossipMediator.prototype.listen = function(){
     var self = this;
     this.worker.addEventListener('message', function(e){
-      var payload = e.data;
-      switch(payload.answer){
+      var msg = e.data;
+      switch(msg.header){
         case 'firstView':
-          self.algo.initialize(payload.view);
+          self.log.info('First view received: ' + JSON.stringify({view: msg.view}));
+          self.algo.initialize(msg.view);
           self.scheduleActiveThread();
+          break;
+        case 'passiveMsg':
+          self.log.info('passive msg received from: ' + msg.emitter);
+          self.algo.selectItemsToKeep(msg.payload);
+          self.log.info('view after performing update: ' + JSON.stringify(self.algo.view));
+          break;
+        default:
+          self.log.info('Header: ' + payload.header + ' is unkown');
           break;
       }
     }, false);
