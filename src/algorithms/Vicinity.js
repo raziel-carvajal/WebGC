@@ -13,8 +13,9 @@
   function Vicinity(algOpts, log, gossipUtil){
     gossipUtil.inherits(Vicinity, GossipProtocol);
     GossipProtocol.call(this, algOpts, log, gossipUtil);
-    this.selectionPolicy = opts.selectionPolicy;
-    //TODO initialize similarity function 
+    this.selectionPolicy = algOpts.selectionPolicy;
+    this.simObj = new SimilarityFunction(this.data, log, algOpts.similarityFunction);
+    this.dependencies = algOpts.dependencies;
   }
   /**
   * @description This object represents the configuration by default of this protocol. During the
@@ -31,6 +32,24 @@
     propagationPolicy: {push: true, pull: true},
     selectionPolicy: 'biased' // random OR biased OR agr-biased
   };
+  /** 
+  * @description This method initialize GossipProtocol.view with the peer identifiers n the array keys.
+  * @method initialize
+  * @param keys:Array - Array of peer identifiers. */
+  Vicinity.prototype.initialize = function(keys){
+    if(keys.length > 0){
+      var i = 0;
+      while(i < this.viewSize && i < keys.length){
+        this.view[ keys[i].id ] = this.gossipUtil.newItem(0, keys[i].profile);
+        i++;
+      }
+    }
+    this.log.info('initialization of view: ' + JSON.stringify(this.view));
+  };
+  Vicinity.prototype.setMediator = function(mediator){
+    mediator.setDependencies(this.dependencies);
+    this.gossipMediator = mediator;
+  };
   // the util object belongs to PeerJS
   //util.inherits(Vicinity, GossipProtocol);
   /** 
@@ -38,6 +57,7 @@
   * @description This method selects the remote peer's identifier with the oldest age. See method 
   * GossipProtocol.selectPeer() for more information.*/
   Vicinity.prototype.selectPeer = function(){ return this.gossipUtil.getOldestKey(this.view); };
+  Vicinity.prototype.doAgrBiasedSelection = function(payload){};
   /**
   * @method selectItemsToSend
   * @description The selection of items is performed following one of the next cases: i) if 
@@ -47,9 +67,10 @@
   * and iii) if selection='agr-biased' the most similar 
   * GossipProtocol.fanout items are chosen from the views Vicinity.rpsView and 
   * GossipProtocol.view ;see method GossipProtocol.selectItemsToSend() for more information.*/
-  Vicinity.prototype.selectItemsToSend = function(thisId, dstPeer, thread){
+  Vicinity.prototype.selectItemsToSend = function(thread){
+    var dstPeer = this.selectPeer();
     var clone = JSON.parse(JSON.stringify(this.view));
-    var itmsNum, msg, newItem = null;
+    var itmsNum, msg, newItem = null, subDict;
     switch( thread ){
       case 'active':
         delete clone[dstPeer];
@@ -63,35 +84,47 @@
       break;
     }
     if(thread === 'active')
-      newItem = this.gossipUtil.newItem(0, this.proximityFunc.profile);
+      newItem = this.gossipUtil.newItem(0, this.simObj.profile);
     switch( this.selectionPolicy ){
       case 'random':
-        var subDict = this.gossipUtil.getRandomSubDict(itmsNum, clone);
+        subDict = this.gossipUtil.getRandomSubDict(itmsNum, clone);
         if(newItem !== null)
-          subDict[thisId] = newItem;
-        msg = this.newActiveMsg(dstPeer, this.algoId, subDict);
+          subDict[this.peerId] = newItem;
+        msg = {
+          header: 'activeMsg',
+          emitter: this.peerId,
+          receiver: dstPeer,
+          payload: subDict,
+          algoId: this.algoId
+        };
         this.gossipMediator.postInMainThread(msg);
         break;
       case 'biased':
+        subDict = this.simObj.getClosestNeighbours(itmsNum, clone, {k: this.peerId, v: newItem});
         if(newItem !== null)
-          this.proximityFunc.getClosestNeighbours(itmsNum, clone, {k: thisId, v: newItem}, dstPeer, this.algoId);
-        else
-          this.proximityFunc.getClosestNeighbours(itmsNum, clone, null, dstPeer, this.algoId);
+          subDict[this.peerId] = newItem;
+        msg = {
+          header: 'activeMsg',
+          emitter: this.peerId,
+          receiver: dstPeer,
+          payload: subDict,
+          algoId: this.algoId
+        };
+        this.gossipMediator.postInMainThread(msg);
         break;
       case 'agr-biased':
-        var deps = this.gossipMediator.dependencies;
-        var keys = Object.keys(deps);
-        var params;
-        for(var i = 0; i < keys.length; i++){
-          params = [dstPeer, 'postAgrBiased'];
-          this.gossipMediator.applyDependency(keys[i], 'selectItemsToSend', params);
+        msg = {
+          cluView: clone,
+          n: itmsNum,
+          'newItem': newItem,
+          receiver: dstPeer,
+          callback: 'doAgrBiasedSelection'
+        };
+        for(var i = 0; i < this.dependencies.length; i++){
+          msg.depId = this.dependencies[i].algoId;
+          msg.depAtt = this.dependencies[i].algoAttribute;
+          this.gossipMediator.applyDependency(msg);
         }
-        //var mergedV = this.gossipUtil.mergeViews(clone, this.rpsView);
-        //
-        //if(newItem !== null)
-        //  this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, {k: thisId, v: newItem}, dstPeer, this.algoId);
-        //else
-        //  this.proximityFunc.getClosestNeighbours(itmsNum, mergedV, null, dstPeer, this.algoId);
         break;
       default:
         this.log.error('Unknown peer selection policy');

@@ -46,17 +46,18 @@
   };
   util.inherits(SamplingService, GossipProtocol);
   /** 
+  * @description This method initialize GossipProtocol.view with the peer identifiers n the array keys.
   * @method initialize
-  * @description See method GossipProtocol.initilize() for more information.*/
+  * @param keys:Array - Array of peer identifiers. */
   SamplingService.prototype.initialize = function(keys){
-    if( keys.length !== 0 ){
+    if(keys.length > 0){
       var i = 0;
       while(i < this.viewSize && i < keys.length){
-        this.view[ keys[i] ] = this.gossipUtil.newItem(0, '?');
-        this.inVandNonReturned[ keys[i] ] = 1;
+        this.view[ keys[i].id ] = this.gossipUtil.newItem(0, keys[i].profile);
         i++;
       }
     }
+    this.log.info('initialization of view: ' + JSON.stringify(this.view));
   };
   /**
   * @method selectPeer

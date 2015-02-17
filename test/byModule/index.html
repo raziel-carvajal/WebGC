@@ -7,18 +7,34 @@
   <script type="text/javascript" src="../../src/utils/LoggerForWebWorker.js"></script>
   -->
   <script>
+    var url = 'http://131.254.16.163:9990/profile';
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-type', 'text/plain');
+    xhr.onreadystatechange = function(){
+      if(xhr.readyState !== 4)
+        return;
+      if(xhr.status !== 200){
+        xhr.onerror();
+        return;
+      }
+    };
+    xhr.onerror = function(e){
+      console.error('post failed');
+    };
+    xhr.send(JSON.stringify({peerId: 'myId', profile: 'P'}));
  //var logm = new Logger({host: '131.254.213.42', port: 9990, header: 'Test'});
  //logm.info('hola');
  //logm.warn('warn');
  //logm.error('error');
- var worker = new Worker('worker.js');
- worker.addEventListener('message', function(e){
- console.log('Evaluation: ' + e.data);
- }, false);
- worker.addEventListener('error', function(e){
- console.error('msg: ' + e.message + ', lineno: ' + e.lineno);
- }, false);
- worker.postMessage('eval');
+// var worker = new Worker('worker.js');
+// worker.addEventListener('message', function(e){
+// console.log('Evaluation: ' + e.data);
+// }, false);
+// worker.addEventListener('error', function(e){
+// console.error('msg: ' + e.message + ', lineno: ' + e.lineno);
+// }, false);
+// worker.postMessage('eval');
   </script>
 
 

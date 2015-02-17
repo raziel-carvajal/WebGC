@@ -31,13 +31,6 @@
   * @method increaseAge */
   GossipProtocol.prototype.increaseAge = function(){ throw this.nonImpMsg; };
   /** 
-  * @description This method obtains a string representation of view GossipProtocol.view Basically, the 
-  * string is a set of tuples where each tuple has two entries, the first entry is an ID of a remote 
-  * peer and the second entry is its timestamp. 
-  * @method getLog
-  * @returns {String} - String representation of the view.*/
-  GossipProtocol.prototype.getLog = function(){ throw this.nonImpMsg; };
-  /** 
   * @description This method selects one remote peer identifier in GossipProtocol.view
   * @method selectPeer
   * @returns String - ID of the remote peer.*/

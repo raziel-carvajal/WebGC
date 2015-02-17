@@ -6,66 +6,29 @@
   * @description "Abstract class" for any implementation of a similarit 
   * @param profile - Profile of the local peer; this parame
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */ 
-  function SimilarityFunction(opts){
-    this.log = opts.log;
-    this.profile = opts.profile;
-    this.gossipMediator = opts.gossipMediator;
-    this.newMainThreadMsg = opts.msgMTConstructor;
+  function SimilarityFunction(profile, log, simFun){
+    this.profil = profile;
+    this.log = log;
+    this.simFunc = simFunc;
     this.noImMsg = 'It is required to provide an implementation for this method';
   }
   
   SimilarityFunction.prototype.compute = function(a,b){throw this.noImMsg;};
   
-  SimilarityFunction.prototype.checkBaseCase = 
-    function(n, view, newItem, receiver, protoId, keys, getValue){
+  SimilarityFunction.prototype.checkBaseCase = function(n, view, newItem, keys){
     if(newItem !== null)
       view[newItem.k] = newItem.v;
     var msg;
     if(n <= 0 || keys.length === 0){
       this.log.info('Base case SimFun. View is empty');
-      if(getValue)
-        return view;
-      else{
-        msg = this.newMainThreadMsg(receiver, protoId, view);
-        this.gossipMediator.postInMainThread(msg);
-        return true;
-      }
+      return view;
     }
-    if( keys.length < n ){
+    if(keys.length < n){
       this.log.info('Base case SimFun. view size: ' + keys.length + ', n: ' + n);
-      if(getValue)
-        return view;
-      else{
-        msg = this.newMainThreadMsg(receiver, protoId, view);
-        this.gossipMediator.postInMainThread(msg);
-        return true;
-      }
+      return view;
     }
-    if(getValue)
-      return null;
-    else
-      return false;
+    return null;
   };
-  
-  SimilarityFunction.prototype.orderBySimilarity = function(values, n, view, nulls){
-    this.log.info('Values before ordering: ' + JSON.stringify({'v': values}));
-    values.sort( function(a,b){return a.v - b.v;} );
-    this.log.info('Values after ordering: ' + JSON.stringify({'v': values}));
-    var result = {};
-    var i = 0;
-    while(i < values.length && i < n){
-      result[ values[i].k ] = view[ values[i].k ];
-      i++;
-    }
-    var key;
-    while(i < n){
-      key = nulls.pop();
-      result[key] = view[key];
-      i++;
-    }
-    this.log.info('Final order is: ' + JSON.stringify(result));
-    return result;
-  };  
   /**
   * @description This method gets a subset with the n most similar items to the local peer from
   * the object view.
@@ -73,17 +36,17 @@
   * @param {Integer} n - Number of the most similar items to the local peer.
   * @param {Dictonary} view - Source where the most similar items are taken.
   * @returns {Dictionary} Subset of [view]{@link view}.*/
-  SimilarityFunction.prototype.getClosestNeighbours = function(n, view, newItem, receiver, protoId){
+  SimilarityFunction.prototype.getClosestNeighbours = function(n, view, newItem){
     this.log.info('getClosestNeighbours()');
     var keys = Object.keys(view);
-    if( !this.checkBaseCase(n, view, newItem, receiver, protoId, keys, false) ){
-      var result = this.getNsimilarPeers(view, n, keys);
+    var result = this.checkBaseCase(n, view, newItem, keys);
+    if(result === null){
+      result = this.getNsimilarPeers(view, n, keys);
       if(newItem !== null)
         result[newItem.k] = newItem.v;
-      this.log.info('simFun.getCloNeigh() closestNeigh: ' + JSON.stringify(result));
-      var msg = this.newMainThreadMsg(receiver, protoId, result);
-      this.gossipMediator.postInMainThread(msg);
     }
+    this.log.info('simFun.getCloNeigh() closestNeigh: ' + JSON.stringify(result));
+    return result;
   };
   
   SimilarityFunction.prototype.updateClusteringView = function(n, rcView, view){
@@ -103,19 +66,20 @@
   };
   
   SimilarityFunction.prototype.getNsimilarPeers = function(view, n, keys){
-    var values = [], nulls = [];
-    for(i = 0; i < keys.length; i++ ){
-      if( view[ keys[i] ].hasOwnProperty('data') && typeof view[ keys[i] ].data === 'number' )
-        values.push({
-          k: keys[i],
-          v: this.compute(this.profile, view[ keys[i] ].data)
-        });
-      else
-        nulls.push( keys[i] );
-    }
-    this.log.info('values: ' + JSON.stringify({'v': values}));
-    this.log.info('nulls : ' + JSON.stringify({'v': nulls}));
-    return this.orderBySimilarity(values, n, view, nulls);
+    var values = [], i;
+    for(i = 0; i < keys.length; i++ )
+      values.push({
+        k: keys[i],
+        v: this.simFunc(this.profile, view[ keys[i] ].data, this.log)
+      });
+    this.log.info('Values before ordering: ' + JSON.stringify({'v': values}));
+    values.sort( function(a,b){return a.v - b.v;} );
+    this.log.info('Values after ordering: ' + JSON.stringify({'v': values}));
+    var result = {};
+    for(i = 0; i < values.length; i++)
+      result[ values[i].k ] = view[ values[i].k ];
+    this.log.info('Final order is: ' + JSON.stringify(result));
+    return result;
   };
   
   exp.SimilarityFunction = SimilarityFunction;

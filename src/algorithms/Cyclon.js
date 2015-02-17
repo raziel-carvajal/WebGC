@@ -42,11 +42,11 @@
     if(keys.length > 0){
       var i = 0;
       while(i < this.viewSize && i < keys.length){
-        this.view[ keys[i] ] = this.gossipUtil.newItem(0, '?');
+        this.view[ keys[i].id ] = this.gossipUtil.newItem(0, keys[i].profile);
         i++;
       }
     }
-    this.log.info('init view: ' + JSON.stringify(this.view));
+    this.log.info('initialization of view: ' + JSON.stringify(this.view));
   };
   /**
   * @method selectItemsToSend
@@ -129,22 +129,6 @@
   * @param {String} key - ID of the item to update.
   * @param {Object} data - New value for the data property*/
   Cyclon.prototype.setData = function(key, data){ this.view[key].data = data; };
-  /** 
-  * @method getLog
-  * @description See method GossipProtocol.getLog() for more information.*/
-  Cyclon.prototype.getLog = function(){
-    var cacheTrace = '['; var limit;
-    var cacheKeys = Object.keys(this.view);
-    if( cacheKeys.length === 0 )
-      cacheTrace += ']';
-    else{
-      limit = cacheKeys.length - 1;
-      for(var i = 0; i < limit; i += 1)
-        cacheTrace += '(' + cacheKeys[i] + ', ' + this.view[ cacheKeys[i] ].age + '), ';
-      cacheTrace += '(' + cacheKeys[limit] + ', ' + this.view[ cacheKeys[limit] ].age + ')]';
-    }
-    return cacheTrace;
-  };
   /**
   * @method getPlotInfo
   * @description See method GossipProtocol.getPlotInfo for more information*/

@@ -15,9 +15,8 @@
   function Coordinator(opts){
     this.connectedPeers = {};
     this.first = 0;
-    this.profile = opts.gossipAlgos.cyclon1.data;
+    this.profile = opts.gossipAlgos.vicinity1.data;
     opts.logOpts.header = 'Coordinator_' + opts.peerId;
-    console.log('logOpts: ' + JSON.stringify(opts.logOpts));
     this.log = new Logger(opts.logOpts);
     this.gossipUtil = new GossipUtil(this.log);
     this.factory = new GossipFactory({
@@ -48,6 +47,8 @@
     var self = this;
     this.on('open', function(){
       console.log('Peer is ready to listen external messages');
+      console.log('posting profile...');
+      self.postProfile();
       console.log('Getting first view...');
       window.setTimeout(function(){ self.getFirstView(); }, 5000);
       //window.setInterval( function(){
@@ -88,7 +89,6 @@
       var msg = e.data;
       switch(msg.header){
         case 'activeMsg':
-          self.log.info('sending msg: ' + JSON.stringify(msg));
           self.sendTo(msg);
           break;
         default:
@@ -102,9 +102,10 @@
   };
   
   Coordinator.prototype.sendTo = function(msg){
+    var self = this;
     var connection = this.connect(msg.receiver, {label: msg.algoId});
     connection.on('error', function(e){
-      this.log.error('During the view exchange with: ' + msg.receiver + ', in protocol: ' + msg.algoId);
+      self.log.error('while sending view to: ' + msg.receiver + ', in protocol: ' + msg.algoId);
     });
     connection.on('open', function(){
       connection.send(msg.payload);
@@ -163,6 +164,25 @@
   //  }
   //  return result;
   //};
+  Coordinator.prototype.postProfile = function(){
+    var xhr = new XMLHttpRequest();
+    var protocol = this.options.secure ? 'https://' : 'http://';
+    var url = protocol + this.options.host + ':' + this.options.port + '/profile';
+    var self = this;
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-type', 'text/plain');
+    xhr.onreadystatechange = function(){
+      if (xhr.readyState !== 4)
+        return;
+      if (xhr.status !== 200) { xhr.onerror(); return; }
+      self.log.info('profile was posted properly');
+    };
+    xhr.onerror = function(){
+      self.log.error('while posting profile on server');
+    };
+    var msg = {id: this.id, profile: this.profile};
+    xhr.send(JSON.stringify(msg));
+  };
   /**
   * @method getFirstView
   * @desc This method gets from a remote PeerServer a set of remote peer identifiers. This 
@@ -171,7 +191,7 @@
     var http = new XMLHttpRequest();
     var protocol = this.options.secure ? 'https://' : 'http://';
     var url = protocol + this.options.host + ':' + this.options.port + '/' +
-      this.options.key + '/' + this.id + '/' + this.profile + '/view';
+      this.options.key + '/' + this.id + '/view';
     http.open('get', url, true);
     var self = this;
     http.onerror = function(e) {

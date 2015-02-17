@@ -46,7 +46,6 @@
       if(algoName === 'undefined')
         throw 'Algorithm: ' + algOpts.class + ' does not exist in WebGC' ;
       //if users missed options in the configuration file, standards options are used insted
-      console.log('algOpts before: ' + JSON.stringify(algOpts));
       this.gossipUtil.extendProperties(algOpts, algoName.defaultOpts);
       //additional options are given for logging proposes
       this.gossipUtil.extendProperties(algOpts, {
@@ -54,11 +53,10 @@
         peerId: this.peerId,
       });
       this.checkProperties(algOpts);
-      console.log('AlgOpts after:' + JSON.stringify(algOpts));
       var logOpts = {
         host: this.log.host,
         port: this.log.port,
-        header: algOpts.class + '_' + algoId
+        header: algOpts.class + '_' + this.peerId
       };
       if( !this.inventory.hasOwnProperty(algoId) )
         this.inventory[algoId] = this.createWebWorker(algOpts, logOpts);
@@ -75,37 +73,29 @@
     var statements = "importScripts('" + origin + "src/utils/LoggerForWebWorker.js');\n";
     statements    += "var logOpts = " + JSON.stringify(logOpts) + ";\n";
     statements    += "var log = new Logger(logOpts);\n";
-    
     statements    += "importScripts('" + origin + "src/utils/GossipUtil.js');\n";
     statements    += "var gossipUtil = new GossipUtil(log);\n";
     statements    += "importScripts('" + origin + "src/apis/GossipProtocol.js');\n";
-    
+    console.log('algOpts before: ' + JSON.stringify(algOpts));
     var keysWithFunc = this.searchFunctions(algOpts), i;
-    console.log('algOpts before');
-    console.log(algOpts);
     if(keysWithFunc.length > 0){
-      console.log('keysWithFunc has items');
       statements  += "importScripts('" + origin + "src/apis/SimilarityFunction.js');\n";
       for(i = 0; i < keysWithFunc.length; i++)
-        algOpts[ " ' " + keysWithFunc[i] + " ' " ] = String(algOpts[ keysWithFunc[i] ]);
+        algOpts[ keysWithFunc[i] ] = String(algOpts[ keysWithFunc[i] ]);
     }
-    console.log('algOpts after');
-    console.log(algOpts);
+    console.log('algOpts afer: ' + JSON.stringify(algOpts));
     statements    += "importScripts('" + origin + "src/algorithms/" + algOpts.class + ".js');\n";
     statements    += "var algOpts = " + JSON.stringify(algOpts) + ";\n";
-    for(i = 0; i < keysWithFunc.length; i++){
-      statements  += "eval( var " + keysWithFunc[i] + " = " + algOpts[ keysWithFunc[i]] + ");\n";
-      statements  += "algOpts[' " + keysWithFunc[i] + " '] = " + keysWithFunc[i] + ";\n";
-    }
+    for(i = 0; i < keysWithFunc.length; i++)
+      statements  += "algOpts[" + "'" + keysWithFunc[i] + "'" + "] = eval(" + algOpts[ keysWithFunc[i]] + ");\n";
     statements    += "var algo = new " + algOpts.class + "(algOpts, log, gossipUtil);\n";
-    
     statements    += "importScripts('" + origin + "src/workers/GossipMediator.js');\n";
     //"this" referes the web-worker
     statements    += "var m = new GossipMediator(algo, log, this);\n";
     statements    += "algo.setMediator(m);\n";
     statements    += "m.listen();\n";
     
-    console.log('web-worker content: ' + statements);
+    console.log('web-worker content:\n' + statements);
     window.URL = window.URL || window.webkitURL;
     var blob = new Blob([statements], {type: 'text/javascript'});
     var blobUrl = window.URL.createObjectURL(blob);
