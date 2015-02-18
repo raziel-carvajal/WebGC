@@ -34,24 +34,19 @@
   };
   
   /***/
-  GossipMediator.prototype.applyDependency = function(objectId, funcToExe, params){
-    if(this.dependencies.hasOwnProperty(objectId)){
-      var dep = this.dependencies[objectId];
-      if(dep.isExternal){
-        var msg = {
-          receiver: objectId,
-          property: dep.property,
-          emitter: this.algo.algoId,
-          'funcToExe': funcToExe
-        };
+  GossipMediator.prototype.applyDependency = function(msg){
+    if(this.dependencies.hasOwnProperty(msg.depId)){
+      var dep = this.dependencies[msg.depId];
+      if(dep.isExternal)
         this.postInMainThread(msg);
-      }else{
-        var objInWorker = exports[objectId];
-        var objFunc = objInWorker[dep.property];
-        if(objInWorker !== 'undefined' && objFunc === 'function'){
-          var result = objFunc(params);
-          funcToExe(result);
-        }
+      else{
+        var objInWorker = exports[msg.depId];
+        var obj = objInWorker[msg.depAtt];
+        if(objInWorker !== 'undefined' && typeof obj === 'object'){
+          msg.result = obj;
+          msg.callback(msg);
+        }else
+          this.log.error('dependency obj is not in worker scope');
       }
     }else{
       this.log.error('dependency: ' + depId + ' is not recognized');

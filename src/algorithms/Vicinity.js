@@ -118,6 +118,7 @@
           n: itmsNum,
           'newItem': newItem,
           receiver: dstPeer,
+          emitter: this.algoId,
           callback: 'doAgrBiasedSelection'
         };
         for(var i = 0; i < this.dependencies.length; i++){
