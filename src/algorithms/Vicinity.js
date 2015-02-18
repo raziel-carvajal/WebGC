@@ -57,7 +57,6 @@
   * @description This method selects the remote peer's identifier with the oldest age. See method 
   * GossipProtocol.selectPeer() for more information.*/
   Vicinity.prototype.selectPeer = function(){ return this.gossipUtil.getOldestKey(this.view); };
-  Vicinity.prototype.doAgrBiasedSelection = function(payload){};
   /**
   * @method selectItemsToSend
   * @description The selection of items is performed following one of the next cases: i) if 
@@ -68,9 +67,8 @@
   * GossipProtocol.fanout items are chosen from the views Vicinity.rpsView and 
   * GossipProtocol.view ;see method GossipProtocol.selectItemsToSend() for more information.*/
   Vicinity.prototype.selectItemsToSend = function(thread){
-    var dstPeer = this.selectPeer();
-    var clone = JSON.parse(JSON.stringify(this.view));
-    var itmsNum, msg, newItem = null, subDict;
+    var dstPeer = this.selectPeer();var clone = JSON.parse(JSON.stringify(this.view));
+    var itmsNum, msg, subDict;
     switch( thread ){
       case 'active':
         delete clone[dstPeer];
@@ -83,8 +81,7 @@
         itmsNum = 0;
       break;
     }
-    if(thread === 'active')
-      newItem = this.gossipUtil.newItem(0, this.simObj.profile);
+    var newItem = thread === 'active' ? this.gossipUtil.newItem(0, this.simObj.profile) : null;
     switch( this.selectionPolicy ){
       case 'random':
         subDict = this.gossipUtil.getRandomSubDict(itmsNum, clone);
@@ -114,6 +111,7 @@
         break;
       case 'agr-biased':
         msg = {
+          header: 'getDep',
           cluView: clone,
           n: itmsNum,
           'newItem': newItem,
@@ -132,26 +130,53 @@
         break;
     }
   };
+  Vicinity.prototype.doAgrBiasedSelection = function(msg){
+    var mergedViews = this.gossipUtil.mergeViews(msg.cluView, msg.result);
+    var similarNeig = this.simObj.getClosestNeighbours(msg.n, mergedViews, {k: this.peerId, v: msg.newItem});
+    var payload = {
+      header: 'activeMsg',
+      emitter: this.peerId,
+      receiver: msg.receiver,
+      'payload': similarNeig,
+      algoId: this.algoId
+    };
+    this.gossipMediator.postInMainThread(payload);
+  };
   /**
   * @method selectItemsToKeep
   * @description See method GossipProtocol.selectItemsToKeep() for more information. */
-  Vicinity.prototype.selectItemsToKeep = function(thisId, rcvCache){
+  Vicinity.prototype.selectItemsToKeep = function(rcvCache){
     this.log.info('selectItemsToKeep() rcvView: ' + JSON.stringify(rcvCache));
-    var tmp = this.gossipUtil.mergeViews(this.view, rcvCache);
-    var mergedViews = this.gossipUtil.mergeViews(tmp, this.rpsView);
-    this.log.info('mergedView: ' + JSON.stringify(mergedViews));
-    if( thisId in mergedViews )
-      delete mergedViews[thisId];
-    this.proximityFunc.updateClusteringView(this.viewSize, mergedViews, this.view);
-    this.log.info('cluView: ' + JSON.stringify(this.view));
+    var mergedViews = this.gossipUtil.mergeViews(this.view, rcvCache);
+    var msg = {
+      header: 'getDep',
+      cluView: mergedViews,
+      emitter: this.algoId,
+      callback: 'doItemsToKeepWithDep'
+    };
+    for(var i = 0; i < this.dependencies.length; i++){
+      msg.depId = this.dependencies[i].algoId;
+      msg.depAtt = this.dependencies[i].algoAttribute;
+      this.gossipMediator.applyDependency(msg);
+    }
+  };
+  /***/
+  Vicinity.prototype.doItemsToKeepWithDep = function(msg){
+    var mergedViews = this.gossipUtil.mergeViews(msg.cluView, msg.result);
+    if(this.peerId in mergedViews)
+      delete mergedViews[this.peerId];
+    var similarNeig = this.simObj.getClosestNeighbours(this.viewSize, mergedViews, null);
+    var keys = Object.keys(this.view), i;
+    for(i = 0; i < keys.length; i++){ delete this.view[ keys[i] ]; }
+    keys = Object.keys(similarNeig);
+    for(i = 0; i < keys.length; i++){ this.view[ keys[i] ] = similarNeig[ keys[i] ]; }
   };
   /** 
   * @method increaseAge
   * @description See method GossipProtocol.increaseAge() for more information. */
   Vicinity.prototype.increaseAge = function(){
     var keys = Object.keys(this.view);
-    for( var i = 0; i < keys.length; i++ )
-      this.view[ keys[i] ].age++;
+    for(var i = 0; i < keys.length; i++){ this.view[ keys[i] ].age++; }
   };
   /**
   * @method getSimilarPeerIds

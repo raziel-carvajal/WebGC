@@ -82,10 +82,8 @@
   * @description See method GossipProtocol.selectItemsToKeep() for more information.*/
   Cyclon.prototype.selectItemsToKeep = function(rcvCache){
     var rcvKeys = Object.keys(rcvCache);
-    if( rcvKeys.length === 0 )
-      return;
-    var i;
-    var currentKeys = Object.keys(this.view);
+    if( rcvKeys.length === 0 ){ return; }
+    var i, currentKeys = Object.keys(this.view);
     if( currentKeys.length === 0 ){
       i = 0;
       do{
@@ -108,11 +106,9 @@
         i += 1;
       }
       var keys = Object.keys(this.view);
-      for(i = 0; i < keys.length; i++)
-        delete this.view[ keys[i] ];
+      for(i = 0; i < keys.length; i++){ delete this.view[ keys[i] ]; }
       keys = Object.keys(newCache);
-      for(i = 0; i < keys.length; i++)
-        this.view[ keys[i] ] = newCache[ keys[i] ];
+      for(i = 0; i < keys.length; i++){ this.view[ keys[i] ] = newCache[ keys[i] ];}
     }
   };
   /** 
@@ -120,8 +116,7 @@
   * @description See method GossipProtocol.increaseAge() for more information.*/
   Cyclon.prototype.increaseAge = function(){
     var keys = Object.keys(this.view);
-    for( var i = 0; i < keys.length; i++ )
-      this.view[keys[i]].age++;
+    for( var i = 0; i < keys.length; i++ ){ this.view[keys[i]].age++; }
   };
   /** 
   * @method setData 

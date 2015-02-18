@@ -6,14 +6,12 @@
   * @description "Abstract class" for any implementation of a similarit 
   * @param profile - Profile of the local peer; this parame
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */ 
-  function SimilarityFunction(profile, log, simFun){
-    this.profil = profile;
+  function SimilarityFunction(profile, log, simFunc){
+    this.profile = profile;
     this.log = log;
     this.simFunc = simFunc;
     this.noImMsg = 'It is required to provide an implementation for this method';
   }
-  
-  SimilarityFunction.prototype.compute = function(a,b){throw this.noImMsg;};
   
   SimilarityFunction.prototype.checkBaseCase = function(n, view, newItem, keys){
     if(newItem !== null)
@@ -49,36 +47,37 @@
     return result;
   };
   
-  SimilarityFunction.prototype.updateClusteringView = function(n, rcView, view){
-    this.log.info('updateClusteringView()');
-    var keys = Object.keys(rcView), i;
-    var result = this.checkBaseCase(n, rcView, null, null, null, keys, true);
-    if(result === null || Object.keys(result).length === 0)
-      result = this.getNsimilarPeers(rcView, n, keys);
-    this.log.info('cluView before update: ' + JSON.stringify(view));
-    keys = Object.keys(view);
-    for(i = 0; i < keys.length; i++)
-      delete view[ keys[i] ];
-    keys = Object.keys(result);
-    for(i = 0; i < keys.length; i++)
-      view[ keys[i] ] = result[ keys[i] ];
-    this.log.info('cluView after update: ' + JSON.stringify(view));
-  };
+  //SimilarityFunction.prototype.updateClusteringView = function(n, rcView, view){
+  //  this.log.info('updateClusteringView()');
+  //  var keys = Object.keys(rcView), i;
+  //  var result = this.checkBaseCase(n, rcView, null, null, null, keys, true);
+  //  if(result === null || Object.keys(result).length === 0)
+  //    result = this.getNsimilarPeers(rcView, n, keys);
+  //  this.log.info('cluView before update: ' + JSON.stringify(view));
+  //  keys = Object.keys(view);
+  //  for(i = 0; i < keys.length; i++)
+  //    delete view[ keys[i] ];
+  //  keys = Object.keys(result);
+  //  for(i = 0; i < keys.length; i++)
+  //    view[ keys[i] ] = result[ keys[i] ];
+  //  this.log.info('cluView after update: ' + JSON.stringify(view));
+  //};
   
   SimilarityFunction.prototype.getNsimilarPeers = function(view, n, keys){
     var values = [], i;
-    for(i = 0; i < keys.length; i++ )
+    for(i = 0; i < keys.length; i++ ){
       values.push({
         k: keys[i],
         v: this.simFunc(this.profile, view[ keys[i] ].data, this.log)
       });
-    this.log.info('Values before ordering: ' + JSON.stringify({'v': values}));
+    }
     values.sort( function(a,b){return a.v - b.v;} );
-    this.log.info('Values after ordering: ' + JSON.stringify({'v': values}));
     var result = {};
-    for(i = 0; i < values.length; i++)
+    i = 0;
+    while(i < n && i < values.length){
       result[ values[i].k ] = view[ values[i].k ];
-    this.log.info('Final order is: ' + JSON.stringify(result));
+      i++;
+    }
     return result;
   };
   

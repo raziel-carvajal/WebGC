@@ -76,16 +76,17 @@
     statements    += "importScripts('" + origin + "src/utils/GossipUtil.js');\n";
     statements    += "var gossipUtil = new GossipUtil(log);\n";
     statements    += "importScripts('" + origin + "src/apis/GossipProtocol.js');\n";
-    console.log('algOpts before: ' + JSON.stringify(algOpts));
+    
     var keysWithFunc = this.searchFunctions(algOpts), i;
     if(keysWithFunc.length > 0){
       statements  += "importScripts('" + origin + "src/apis/SimilarityFunction.js');\n";
       for(i = 0; i < keysWithFunc.length; i++)
         algOpts[ keysWithFunc[i] ] = String(algOpts[ keysWithFunc[i] ]);
     }
-    console.log('algOpts afer: ' + JSON.stringify(algOpts));
+    
     statements    += "importScripts('" + origin + "src/algorithms/" + algOpts.class + ".js');\n";
     statements    += "var algOpts = " + JSON.stringify(algOpts) + ";\n";
+    
     for(i = 0; i < keysWithFunc.length; i++)
       statements  += "algOpts[" + "'" + keysWithFunc[i] + "'" + "] = eval(" + algOpts[ keysWithFunc[i]] + ");\n";
     statements    += "var algo = new " + algOpts.class + "(algOpts, log, gossipUtil);\n";
@@ -95,7 +96,6 @@
     statements    += "algo.setMediator(m);\n";
     statements    += "m.listen();\n";
     
-    console.log('web-worker content:\n' + statements);
     window.URL = window.URL || window.webkitURL;
     var blob = new Blob([statements], {type: 'text/javascript'});
     var blobUrl = window.URL.createObjectURL(blob);
@@ -105,8 +105,7 @@
   GossipFactory.prototype.searchFunctions = function(obj){
     var keys = Object.keys(obj), keysWithFunc = [];
     for(var i = 0; i < keys.length; i++){
-      if(typeof obj[ keys[i] ] === 'function')
-        keysWithFunc.push(keys[i]);
+      if(typeof obj[ keys[i] ] === 'function'){ keysWithFunc.push(keys[i]); }
     }
     return keysWithFunc;
   };
@@ -115,55 +114,55 @@
   * @description In some cases, there are gossip protocols that have dependencies amog them. This method
   * reads the property dependencies in the configuration object and establishes those dependencies. For
   * this method, a dependency is to share the property of one gossip protocol with another gossip protocol.*/
-  GossipFactory.prototype.setDependencies = function(gossipAlgos, simFunCatalogue){
-    var keys = Object.keys(gossipAlgos);
-    for( var i = 0; i < keys.length; i++ ){
-      if( gossipAlgos[ keys[i] ].hasOwnProperty('attributes') ){
-        var atts = gossipAlgos[ keys[i] ].attributes;
-        var attsKeys = Object.keys(atts);
-        for( var j = 0; j < attsKeys.length; j++ ){
-          var algoAttStr = atts[ attsKeys[j] ];
-          var container = algoAttStr.split('.');
-          if( container.length === 2 ){
-            this.log.info('c0: ' + container[0] + ' c1: ' + container[1]);
-            var objExt = this.inventory[ container[0] ];
-            if( objExt !== 'undefined' ){
-              if( objExt[ container[1] ] !== 'undefined'){
-                this.inventory[ keys[i] ][ attsKeys[j] ] = objExt[ container[1] ];
-                this.log.info('Algorithm [' + keys[i] + '] was augmented with the property [' +
-                  attsKeys[j] + ']');
-              }else{
-                this.log.error('There is no property [' + container[1] + '] for the algorithm [' +
-                  container[0] + '], as a consecuence, the algorithm [' + keys[i]  + '] will ' +
-                  'have fatal errors during its execution');
-              }
-            }else{
-              this.log.error('The protocol with id [' + payload + '] was not loaded by the Factory');
-            }
-          }else if(container.length === 1){
-            this.log.info('c0: ' + container[0]);
-            var objSim = simFunCatalogue[ container[0] ];
-            if(objSim !== 'undefined'){
-              this.inventory[ keys[i] ][ attsKeys[j] ] = objSim;
-              this.log.info('Algorithm [' + keys[i] + '] was augmented with the simiilarity function ['+
-                container[0] + ']');
-            }else{
-              this.log.error('There is not property [' + container[0] + '] at the catalogue of '+
-                'similarity functions. The algorithm with ID [' + keys[i] + '] has not assigned '+
-                'any similarity function');
-            }
-          }else{
-            this.log.error('The value [' + algoAttStr + '] for the attribute [' + attsKeys[j] +
-              '] has not the right format (separation by a period). As a consecuence, the algorithm ' +
-              '[' + keys[i] + '] will have fatal errors during its execution.');
-          }
-        }
-      }else{
-        this.log.info('The algorithm [' + keys[i] + '] has not dependencies ' +
-          'with others algorithms.');
-      }
-    }
-  };
+  //GossipFactory.prototype.setDependencies = function(gossipAlgos, simFunCatalogue){
+  //  var keys = Object.keys(gossipAlgos);
+  //  for( var i = 0; i < keys.length; i++ ){
+  //    if( gossipAlgos[ keys[i] ].hasOwnProperty('attributes') ){
+  //      var atts = gossipAlgos[ keys[i] ].attributes;
+  //      var attsKeys = Object.keys(atts);
+  //      for( var j = 0; j < attsKeys.length; j++ ){
+  //        var algoAttStr = atts[ attsKeys[j] ];
+  //        var container = algoAttStr.split('.');
+  //        if( container.length === 2 ){
+  //          this.log.info('c0: ' + container[0] + ' c1: ' + container[1]);
+  //          var objExt = this.inventory[ container[0] ];
+  //          if( objExt !== 'undefined' ){
+  //            if( objExt[ container[1] ] !== 'undefined'){
+  //              this.inventory[ keys[i] ][ attsKeys[j] ] = objExt[ container[1] ];
+  //              this.log.info('Algorithm [' + keys[i] + '] was augmented with the property [' +
+  //                attsKeys[j] + ']');
+  //            }else{
+  //              this.log.error('There is no property [' + container[1] + '] for the algorithm [' +
+  //                container[0] + '], as a consecuence, the algorithm [' + keys[i]  + '] will ' +
+  //                'have fatal errors during its execution');
+  //            }
+  //          }else{
+  //            this.log.error('The protocol with id [' + payload + '] was not loaded by the Factory');
+  //          }
+  //        }else if(container.length === 1){
+  //          this.log.info('c0: ' + container[0]);
+  //          var objSim = simFunCatalogue[ container[0] ];
+  //          if(objSim !== 'undefined'){
+  //            this.inventory[ keys[i] ][ attsKeys[j] ] = objSim;
+  //            this.log.info('Algorithm [' + keys[i] + '] was augmented with the simiilarity function ['+
+  //              container[0] + ']');
+  //          }else{
+  //            this.log.error('There is not property [' + container[0] + '] at the catalogue of '+
+  //              'similarity functions. The algorithm with ID [' + keys[i] + '] has not assigned '+
+  //              'any similarity function');
+  //          }
+  //        }else{
+  //          this.log.error('The value [' + algoAttStr + '] for the attribute [' + attsKeys[j] +
+  //            '] has not the right format (separation by a period). As a consecuence, the algorithm ' +
+  //            '[' + keys[i] + '] will have fatal errors during its execution.');
+  //        }
+  //      }
+  //    }else{
+  //      this.log.info('The algorithm [' + keys[i] + '] has not dependencies ' +
+  //        'with others algorithms.');
+  //    }
+  //  }
+  //};
   
   exports.GossipFactory = GossipFactory;
 })(this);

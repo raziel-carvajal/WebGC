@@ -86,10 +86,26 @@
   Coordinator.prototype.setWorkerEvents = function(worker){
     var self = this;
     worker.addEventListener('message', function(e){
-      var msg = e.data;
+      var msg = e.data, worker;
+      self.log.info('local message received: ' + JSON.stringify(msg));
       switch(msg.header){
         case 'activeMsg':
           self.sendTo(msg);
+          break;
+        case 'getDep':
+          worker = self.workers[msg.depId];
+          if(worker !== 'undefined')
+            worker.postMessage(msg);
+          else
+            self.log.error('there is not a worker for algorithm: ' + msg.depId);
+          break;
+        case 'setDep':
+          worker = self.workers[msg.emitter];
+          if(worker !== 'undefined'){
+            msg.header = 'applyDep';
+            worker.postMessage(msg);
+          }else
+            self.log.error('there is not a worker for algorithm: ' + msg.emitter);
           break;
         default:
           break;

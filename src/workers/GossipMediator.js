@@ -11,7 +11,7 @@
     var external, dep;
     for(var i = 0; i < algoDependencies.length; i++){
       dep = algoDependencies[i];
-      external = exports[dep.algoId] === 'undefined' ? true : false;
+      external = typeof exports[dep.algoId] === 'undefined' ? true : false;
       this.dependencies[dep.algoId] = {property: dep.algoAttribute, isExternal: external};
     }
   };
@@ -19,7 +19,7 @@
   GossipMediator.prototype.scheduleActiveThread = function(){
     var self = this;
     setInterval(function(){
-      self.log.info('active thread at loop: ' + self.algo.loop + ', view: ' + JSON.stringify(self.algo.view));
+      self.log.info('activeThread loop: ' + self.algo.loop + ', view: ' + JSON.stringify(self.algo.view));
       self.algo.selectItemsToSend('active');
       self.algo.loop++;
       self.algo.increaseAge();
@@ -27,11 +27,11 @@
   };
   
   /***/
-  GossipMediator.prototype.doGossipCallback = function(msg){
-    var funcToCall = this.algo[msg.funcToExe];
-    if(funcToCall === 'function')
-      funcToCall(msg.params);
-  };
+  //GossipMediator.prototype.doGossipCallback = function(msg){
+  //  var funcToCall = this.algo[msg.funcToExe];
+  //  if(funcToCall === 'function')
+  //    funcToCall(msg.params);
+  //};
   
   /***/
   GossipMediator.prototype.applyDependency = function(msg){
@@ -63,8 +63,19 @@
           self.scheduleActiveThread();
           break;
         case 'passiveMsg':
-          self.log.info('passive msg with payload: ' + JSON.stringify(msg));
           self.algo.selectItemsToKeep(msg.payload);
+          break;
+        case 'getDep':
+          var obj = self.algo[msg.depAtt];
+          if(obj !== 'undefined'){
+            msg.header = 'setDep';
+            msg.result = obj;
+            self.worker.postMessage(msg);
+          }else
+            self.log.error('attribute ' + msg.depAtt + ' does not exists');
+          break;
+        case 'applyDep':
+          self.algo[msg.callback](msg);
           break;
         default:
           self.log.warn('header: ' + payload.header + ' is unknown');
