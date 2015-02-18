@@ -17,6 +17,35 @@
 #       CREATED:  18/02/2015 16:35:49 CET
 #      REVISION:  ---
 #===============================================================================
+
+
+#===  FUNCTION  ================================================================
+#          NAME:  isChromeInstalled
+#   DESCRIPTION:  Verifies if the Chrome browser is available
+#    PARAMETERS:  
+#       RETURNS:  
+#===============================================================================
+function isChromeInstalled ()
+{
+if [ `uname` = "Linux" ] ; then
+  if [ -a /usr/bin/google-chrome ] ; then
+    chromeCommand="google-chrome"
+  else
+    echo "Chrome must be installed or wasn't found it"
+    exit 0
+  fi
+else
+  if [ -d /Applications/Google Chrome.app ]  ; then
+    chromeCommand="/Applications/Google Chrome.app"
+  else
+    echo "Chrome must be installed or wasn't found it"
+    exit 0
+  fi
+fi
+
+
+}    # ----------  end of function isChromeInstalled  ----------
+isChromeInstalled
 peers=$1
 exeTime=$2
 serverDir=$3
