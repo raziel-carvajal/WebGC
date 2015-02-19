@@ -14,7 +14,6 @@
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Coordinator(opts){
     this.connectedPeers = {};
-    this.first = 0;
     this.profile = opts.gossipAlgos.vicinity1.data;
     opts.logOpts.header = 'Coordinator_' + opts.peerId;
     this.log = new Logger(opts.logOpts);
@@ -37,7 +36,7 @@
     this.workers = this.factory.inventory;
     this.plotterObj = new Plotter(this.log, opts.peerId);
     /** 
-     * This method fires the constructor of the [Peer]{@link Peer} object. */
+    * This method fires the constructor of the [Peer]{@link Peer} object. */
     Peer.call(this, opts.peerId, opts.peerJsOpts);
     /** 
     * @event Coordinator#open
@@ -54,29 +53,13 @@
         self.getGraph();
         self.plotterObj.loop++;
       }, 12000);
-      //window.setInterval( function(){ self.first = 1; }, 21000);
     });
     /**
     * @event Coordinator#connection
     * @description This event is fired when a remote peer contacts the local peer via 
     * [the method]{@link DataConnection#send}. The actions of this event are linked with 
     * [the method]{@link ClusteringExecutor#handleConnection}. */
-    this.on('connection', function(c){ 
-      self.handleConnection(c); 
-    });
-    
-    //this.on('doActiveThread', function(view){
-    //  var i, protocol, keys = Object.keys(self.protocols);
-    //  for( i = 0; i < keys.length; i++ ){
-    //    protocol = self.protocols[ keys[i] ];
-    //    protocol.initialize(view);
-    //  }
-    //  window.setInterval( function(){
-    //    var keys = Object.keys(self.protocols);
-    //    for( var i = 0; i < keys.length; i++ )
-    //      self.doActiveThread( self.protocols[ keys[i] ] );
-    //  }, 10000 );
-    //});
+    this.on('connection', function(c){ self.handleConnection(c); });
   }
   
   util.inherits(Coordinator, Peer);
@@ -164,23 +147,6 @@
     }
   };
   
-  /**
-  * @method getPeers
-  * @desc This method gets the view GossipProtocol.view of each gossip protocol in the 
-  * Coordinator.protocols object. The view of each protocol is identified in a unique way 
-  * by a string.
-  * @returns {Object} Object that contains the view of each gossip protocol in the 
-  * Coordinator.protocols object. */ 
-  //Coordinator.prototype.getPeers = function(){
-  //  var result = {}, keys = this.protocols.Object.keys();
-  //  var key, value;
-  //  for( var i = 0; i < keys.length; i++ ){
-  //    key = this.protocols[i].class;
-  //    value = this.protocols[i].view;
-  //    result[ key ] = value;
-  //  }
-  //  return result;
-  //};
   Coordinator.prototype.postProfile = function(){
     var xhr = new XMLHttpRequest();
     var protocol = this.options.secure ? 'https://' : 'http://';
@@ -189,8 +155,7 @@
     xhr.open('POST', url, true);
     xhr.setRequestHeader('Content-type', 'text/plain');
     xhr.onreadystatechange = function(){
-      if (xhr.readyState !== 4)
-        return;
+      if (xhr.readyState !== 4){ return; }
       if (xhr.status !== 200) { xhr.onerror(); return; }
       self.log.info('profile was posted properly');
     };
@@ -216,8 +181,7 @@
       self._abort('server-error', 'Could not get the random view');
     };
     http.onreadystatechange = function() {
-      if (http.readyState !== 4)
-        return;
+      if (http.readyState !== 4){ return; }
       if (http.status !== 200) { http.onerror(); return; }
       console.log('First view: ' + http.responseText);
       var data = JSON.parse(http.responseText);
@@ -244,9 +208,7 @@
       self.log.error('Trying to get graph for loop ' + self.plotterObj.loop);
     };
     http.onreadystatechange = function() {
-      if (http.readyState !== 4) {
-        return;
-      }
+      if (http.readyState !== 4) { return; }
       if (http.status !== 200) {
         http.onerror();
         return;
@@ -262,6 +224,5 @@
     };
     http.send(null);
   };
-
   exports.Coordinator = Coordinator;
 })(this);

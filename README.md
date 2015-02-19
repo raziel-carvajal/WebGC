@@ -1,7 +1,12 @@
 # WebGC
-WebGC is a gossip-based library on the top of [PeerJS](http://peerjs.com/) (this project 
-offers the Peer object to enrich web browsers with peer-to-peer (P2P) communication 
-capabilities through the [WebRTC API](http://www.webrtc.org/)). The objective of this 
+WebGC is a peer-to-peer (P2P) library to coordinte the execution of gossip protocols, e. i. a gossip-based library. This project uses [WebRTC](http://www.webrtc.org/) to communicate web browsers with each others and depends of [PeerJS](http://peerjs.com/) (we plan to get rid of this dependencie), this project provides a P2P communication API (send, receive, etc) to exchange data over the Internet via the Peer object. Thanks to WebGC users enrich their applications with a gossip-based communication because the m
+
+
+ maintains, manages and executes gossip protocols
+
+ Maintainment,  execution 
+
+The objective of this 
 gossip library is to provide a communication layer that operates through the 
 implementation and management of gossip-based protocols. Thanks to WebGC, users can 
 enrich their applications with the benefits (and constrains) of a P2P-gossip communication.
