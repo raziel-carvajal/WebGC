@@ -23,14 +23,13 @@
     $(document).ready(function(){
       var gRef = {};
       //first function to be executed
-      $('#start').click( function(){
-        var userName = $('#user').val();
+      //$('#start').click( function(){
+        var userName = '#userId';
         if( userName === '' )
           alert("Type your name please");
         else{
           $('#start').attr('disabled', 'disabled');
-          var listObj = document.getElementById('list'); 
-          var index = listObj.selectedIndex; 
+          var index = #userProfile; 
           configurationObj['peerId'] = userName;
           configurationObj.gossipAlgos.cyclon1['data'] = index;
           configurationObj.gossipAlgos.vicinity1['data'] = index;
@@ -41,7 +40,7 @@
           //  }, 2000);
           gRef.coord = new Coordinator(configurationObj);
         }
-      });
+      //});
       //shows text when graphs load
       function isFirstGraphDrawn(first){
         console.debug('isFirstGraphDrawn: ?');

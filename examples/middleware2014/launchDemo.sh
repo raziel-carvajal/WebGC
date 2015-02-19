@@ -35,15 +35,14 @@ if [ `uname` = "Linux" ] ; then
     exit 0
   fi
 else
-  if [ -d /Applications/Google Chrome.app ]  ; then
-    chromeCommand="/Applications/Google Chrome.app"
+  if [ -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome ]  ; then
+    chromeCommand="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
   else
     echo "Chrome must be installed or wasn't found it"
     exit 0
   fi
 fi
-
-
+chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --allow-file-access-from-files --user-data-dir="
 }    # ----------  end of function isChromeInstalled  ----------
 isChromeInstalled
 peers=$1
@@ -51,78 +50,43 @@ exeTime=$2
 serverDir=$3
 testDir="output"
 origin=`pwd`
-simLim=3
-#chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --user-data-dir="
-chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --user-data-dir="
-opSysStr=`uname`
-if [ $opSysStr = "Linux" ] ; then
-  chromeCommand="google-chrome"
-else
-  if [ $opSysStr = "Darwin" ] ; then
-    chromeCommand="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-  else
-    echo -e "The operating system is not recognized\nEnd of the execution"
-    exit 1
-  fi
-fi
-echo "Your operating system is: $opSysStr"
-rm -fr $testDir "peer_*" "plotter"
+simLim=4
+
+rm -fr $testDir "peer_*"
 mkdir $testDir
-cd $testDir
-testDir=`pwd`
-peersDir="peers"
-mkdir $peersDir
-cd $peersDir
-declare -a chromePids
-pwd
 cd $serverDir
-cd lib
+cd src
 echo "Launching LoggingServer..."
-node LoggingServer.js 9001 >~/tmp/log.out &
+node LoggingServer.js 9991 >log &
 logServerPid=$!
-echo -e "\tDONE"
-sleep 5
-cd ../examples
+cd ../examples/middleware2014
 echo "Launching PeerServer..."
-node server.js 9000 4 >~/tmp/server.out &
+node server.js 9990 4 >/dev/null &
 nodePid=$!
-echo -e "\tDONE"
-echo "Waiting the announcement of the plotter..."
-sleep 5
-echo -e "\tDONE"
-cd $origin
-echo "Launching plotter..."
-mkdir plotter
-"$chromeCommand" $chromeStr"plotter" graph.html >/dev/null &
-plotterPid=$!
-echo -e "\tDONE"
-sleep 5
+
 echo "Launching instances of Chrome (one of them represents one peer)..."
+declare -a chromePids
+cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   peerDir="peer_$COUNTER"
+  mkdir $testDir/$peerDir
   data=$(( $COUNTER % $simLim ))
   htmlFile=$peerDir".html"
-  cat "multi-protocol.html" | sed "s/#D/$data/;s/#P/$peerDir/;" >$htmlFile
-  "$chromeCommand" $chromeStr$testDir/$peersDir/$peerDir $htmlFile >/dev/null &
+  cat "tmp.html" | sed "s/#userProfile/$data/;s/#userId/$peerDir/;" >$htmlFile
+  "$chromeCommand" $chromeStr$testDir/$peerDir $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
 done
 echo -e "\tDONE"
 echo "Waiting till the time of the experiment expires..."
-sleep $exeTime
-kill -9 $logServerPid $nodePid $plotterPid
+timeout=$(( $exeTime * 60 ))
+sleep $timeout
+echo -e "\tKilling node instances..."
+kill -9 $logServerPid $nodePid
 echo -e "\tDONE"
-cd $testDir
-resultsDir="results"
-mkdir $resultsDir
-cd $resultsDir
-echo "Parsing results..."
+echo "killing chrome instances..."
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   kill -9 ${chromePids[$COUNTER]}
-#  peerDir="peer_$COUNTER"
-#  mkdir $peerDir
-#  mv ../$peersDir/$peerDir/chrome_debug.log $peerDir
-#  cat $peerDir/chrome_debug.log | sed -n '/{*}/p' | sed 's/.*{\(.*\)}.*/\1/' >$peerDir/log
 done
 echo -e "\tDONE"
 echo "END OF THE EXECUTION"
-#echo "You can find the results of the test at test/vicinity-local-test/output/results"
+echo "the file: src/log at $serverDir contains the log of each peer"

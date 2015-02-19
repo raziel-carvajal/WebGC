@@ -19,7 +19,9 @@
   GossipMediator.prototype.scheduleActiveThread = function(){
     var self = this;
     setInterval(function(){
-      self.log.info('activeThread loop: ' + self.algo.loop + ', view: ' + JSON.stringify(self.algo.view));
+      var s = 'activeThread data: ' + self.algo.data + ', loop: ' + 
+        self.algo.loop + ', view: ' + JSON.stringify(self.algo.view);
+      self.log.info(s);
       self.algo.selectItemsToSend('active');
       self.algo.loop++;
       self.algo.increaseAge();
@@ -76,6 +78,13 @@
           break;
         case 'applyDep':
           self.algo[msg.callback](msg);
+          break;
+        case 'view':
+          msg.header = 'drawGraph';
+          msg.view = self.algo.view;
+          var t = self.algo.class === 'Vicinity' ? 'clu' : 'rps';
+          msg.type = t;
+          self.worker.postMessage(msg);
           break;
         default:
           self.log.warn('header: ' + payload.header + ' is unknown');

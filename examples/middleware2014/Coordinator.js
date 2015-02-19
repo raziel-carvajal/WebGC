@@ -27,7 +27,6 @@
     var algosNames = Object.keys(opts.gossipAlgos), algOpts, worker;
     for(var i = 0; i < algosNames.length; i++){
       algOpts = opts.gossipAlgos[ algosNames[i] ];
-      //TODO condition for having web workers or not is needed!!
       this.factory.createProtocol(algosNames[i], algOpts);
       worker = this.factory.inventory[ algosNames[i] ];
       if(worker !== 'undefined')
@@ -51,11 +50,10 @@
       self.postProfile();
       console.log('Getting first view...');
       window.setTimeout(function(){ self.getFirstView(); }, 5000);
-      //window.setInterval( function(){
-      //  self.getGraph('rps');
-      //  self.plotterObj.loop++;
-      //}, 11000);
-      //window.setInterval( function(){ self.getGraph('clu'); }, 15000);
+      window.setInterval( function(){
+        self.getGraph();
+        self.plotterObj.loop++;
+      }, 12000);
       //window.setInterval( function(){ self.first = 1; }, 21000);
     });
     /**
@@ -106,6 +104,9 @@
             worker.postMessage(msg);
           }else
             self.log.error('there is not a worker for algorithm: ' + msg.emitter);
+          break;
+        case 'drawGraph':
+          self.plotterObj.buildGraph(msg.type, msg.graph, msg.view);
           break;
         default:
           break;
@@ -234,10 +235,9 @@
     http.send(null);
   };
   
-  Coordinator.prototype.getGraph = function(viewType) {
+  Coordinator.prototype.getGraph = function() {
     var http = new XMLHttpRequest();
-    var url = 'http://' + this.options.host + ':' + this.options.port + '/' + this.options.key + 
-      '/' + this.id + '/getGraph';
+    var url = 'http://' + this.options.host + ':' + this.options.port + '/getGraph';
     var self = this;
     http.open('get', url, true);
     http.onerror = function(e) {
@@ -253,14 +253,12 @@
       }
       self.log.info('Graph ' + http.responseText + ' for loop ' + self.plotterObj.loop);
       var nodes = JSON.parse(http.responseText);
-      var neighbours;
-      if(viewType === 'clu')
-        neighbours = self.protocols.vicinity1;
-      if(viewType === 'rps')
-        neighbours = self.protocols.cyclon1;
-      console.info('View type: ' + viewType);
-      console.info( JSON.stringify(neighbours.view) );
-      self.plotterObj.buildGraph(viewType, nodes, neighbours.view);
+      var msg = {header: 'view', graph: nodes};
+      var keys = Object.keys(self.workers), worker;
+      for(var i = 0; i < keys.length; i++){
+        worker = self.workers[ keys[i] ];
+        worker.postMessage(msg);
+      }
     };
     http.send(null);
   };

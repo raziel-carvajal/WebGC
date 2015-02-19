@@ -7,3 +7,5 @@ examples/multi-protocols-test/plotter
 examples/multi-protocols-test/peer_*
 src/*/.*.swp
 examples/*/.*.swp
+examples/middleware2014/output
+examples/middleware2014/peer_*

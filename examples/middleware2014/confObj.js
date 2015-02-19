@@ -11,8 +11,8 @@
 * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>*/
 var configurationObj = {
   peerJsOpts: {
-    host: '131.254.16.163',
     //host: '131.254.213.42',
+    host: '127.0.0.1',
     port: 9990,//port of the PeerServer
     debug: 1,//Level of the local logging (logs that appears in the console part of each browser)
     logFunction: function(){
@@ -50,7 +50,7 @@ var configurationObj = {
   },
   usingWebWorkers: true,
   logOpts: {
-    host: '131.254.16.163',
+    host: '127.0.0.1',
     //host: '131.254.213.42',
     port: 9991
   }

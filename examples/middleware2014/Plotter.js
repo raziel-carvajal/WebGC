@@ -39,24 +39,26 @@
   Plotter.prototype.getGraphFormat = function(emitter, peers, view){
     var keys = Object.keys(peers);
     var nodes = [], edges = [];
-    var i;
+    var i, s;
     for(i = 0; i < keys.length; i++){
+      s = String(peers[ keys[i] ]);
       nodes.push({
         'data': {
           'id': keys[i],
           'name': keys[i],
-          'profile': this.getShape( peers[ keys[i] ]),
-          'color': this.getColor( peers[ keys[i] ])
+          'profile': this.getShape( s ),
+          'color': this.getColor( s )
         } 
       });
     }
     keys = Object.keys(view);
+    s = String(peers[emitter]);
     for(i = 0; i < keys.length; i++){
       edges.push({
         'data': {
           'source': emitter,
           'target': keys[i],
-          'color': this.getColor(peers[emitter])
+          'color': this.getColor(s)
         }
       });
     }
