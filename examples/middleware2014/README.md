@@ -1,18 +1,25 @@
-# Clustering Gossip-Based Algorithm (local test)
-This document describes how to perform a test of the gossip-based algorithm [Vicinity][]. 
-Considering a network of peers, Vicinity allows searching peers with a certain degree of 
-similarity in order to build clusters with them. For instance, considering a network where
-each peer knows its GPS coordinates, Vicinity tries to build clusters of peers wich belongs
-to the same geographical region.
-
-Given that Vicinity requires a way for searching similar peers in a network, this protocol
-runs on the top of a Random Peer Sampling ([RPS][]) service that feeds the Vicinity layer with
-random enough samples of the network. Taking into consideration the peers provided by the RPS
-layer, Vicinity uses a Similarity Function (SF) for distinguish wich are the similar peers.
+#Example with Vicinity
+In one network of peers where each of them owns its profile, 
+[Vicinity](http://dl.acm.org/citation.cfm?id=2138914) searches similar peers based 
+on peers' profiles to build clusters. For instance, in a network where each
+peer knows its GPS coordinates Vicinity forms clusters of peers that belongs
+to the same geographical region. Peers in the network are found thanks to another 
+dissemination protocol called 
+[Random Peer Sampling](http://dl.acm.org/citation.cfm?id=1275520).
 
 ## Test Scenario
-In this test every peer has assigned a certain preference (an integer between the set 
-[0, 1, 2]) in a round robin way, additionally, two peers are considered similar if the 
+Taking into account N peers where each peer's profile is an integer in the 
+interval [0, 1, 2, 3], this example shows how Vicinity forms clusters with peers 
+that have the same number or 
+
+
+
+
+In this example the profile of each peer is an integer in the interval [0,1,2,3] that is assigned in a round 
+
+
+ is an integer in the next interval  
+[0, 1, 2, 3] in a round robin way, additionally, two peers are considered similar if the 
 difference of these two peers' preferences is near to zero. In order to avoid negative 
 values, the SF first computes the difference D of two preferences and then the absolute value of D is 
 calculated.

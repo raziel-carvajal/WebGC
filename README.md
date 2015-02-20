@@ -50,3 +50,8 @@ through [Bower](http://bower.io/). **NOTE** dependencies for development are wri
 
 #Compatibility
 This project is compatible with Linux based systems (tested in Ubuntu 14.10) and MacOS (OS X Yosemite version 10.10), the web browser Chrome (version 38 or higher) must be installed too. Do not hesitate to report any issue or comment with the project.
+
+#TODO
+- Take rid off PeerJS
+- Launch WebGC on NodeJS
+- Take rid off the signaling server
