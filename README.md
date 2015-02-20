@@ -1,61 +1,52 @@
 # WebGC
-WebGC is a peer-to-peer (P2P) library to coordinte the execution of gossip protocols, e. i. a gossip-based library. This project uses [WebRTC](http://www.webrtc.org/) to communicate web browsers with each others and depends of [PeerJS](http://peerjs.com/) (we plan to get rid of this dependencie), this project provides a P2P communication API (send, receive, etc) to exchange data over the Internet via the Peer object. Thanks to WebGC users enrich their applications with a gossip-based communication because the m
+WebGC is a peer-to-peer (P2P) library to coordinte the execution of gossip protocols, e. i. a gossip-based library. This project uses [WebRTC](http://www.webrtc.org/) to communicate web browsers with each others and depends of [PeerJS](http://peerjs.com/) (we plan to get rid of this dependency), this project provides a P2P communication API (send, receive, etc) to exchange data over the Internet via the Peer object. WebGC offers a catalog of gossip protocols which is maintain by the library, users can extend this catalog via the implementation of the ```GossipProtocol``` interface.
 
 
- maintains, manages and executes gossip protocols
 
- Maintainment,  execution 
+#Installation instructions
+WebGC is a front-end library but in order to execute all the examples it is required to have the next programs installed: [NodeJS](http://nodejs.org/) (node is used generally in back-end applications and it is required for bootstrapping the communication with peers in PeerJS), [Bower](http://bower.io/), [NPM](https://www.npmjs.org/), the scripts of the examples requires Chrome (31 or higher) but WebGC is compatible with Firefox too, furthermore, peers running on Chrome can reach others running Firefox. Once you are done with the last requirements, do as follows:
 
-The objective of this 
-gossip library is to provide a communication layer that operates through the 
-implementation and management of gossip-based protocols. Thanks to WebGC, users can 
-enrich their applications with the benefits (and constrains) of a P2P-gossip communication.
+- type ``` bower install ``` in the main directory
 
-# Installation Instructions
-Be sure that [NodeJS](http://nodejs.org/), [Bower](http://bower.io/), [Git](http://git-scm.com/)
- and [NPM](https://www.npmjs.org/) are installed in your machine. In order to test this 
-library you must obtain the PeerJS-Server Gossip project as follows:
+Now you are done with the front-end part; additionally you must clone the PeerJS-Server Gossip project as follows:
 
-- Fork the project PeerJS-Server Gossip through the next command: ``` git clone               
+- Clone PeerJS-Server Gossip typing: ``` git clone               
   git+ssh://<user>@scm.gforge.inria.fr//gitroot/serverjs-gossip/serverjs-gossip.git  ```
-  the ``` <user> ``` tag must be replaced with your user's name.
-- Refer to the ``` serverjs-gossip/README.md ``` and follow the installations instructions.
-
-PeerJS-Server Gossip extends [PeerServer](https://github.com/peers/peerjs-server) with a way 
-to give peers a first view to bootstrap gossip algorithms. Once you are done with ServerJS-Gossip, verify that Google Chrome (at least version v31.0) is installed on your machine.
-
-Get the PeerJS-Gossip project as follows:
-
-- Fork the project PeerJS-Gossip with the next command: ``` git clone 
-  git+ssh://<user>@scm.gforge.inria.fr//gitroot/peerjs-gossip/peerjs-gossip.git  ``` the 
-  ``` <user> ``` tag must be replaced with your user's name.
-- Go to the folder ```peerjs-gossip```
-- Type ``` npm install ```
-- Type ``` bower install ```
-- You are done with the installation
-
+  the ``` <user> ``` tag must be replaced with your user's name
+- Type ```npm install``` in the main directory
+- That's it, refer to the ```README.md ``` file for more information about the project and why WebGC needs it
 
 # Examples
-In this section you can find a set of examples that shows how WebGC copes with the different
-implementations of gossip-based algorithms.
+For the moment there is one example that coordinates the execution of two gossip protocols, Random Peer Sampling (RPS) and clustering protocol, to discover peers with similar profiles. This example was presented in [Middleware 2014](http://2014.middleware-conference.org/program/posters/) in the session of demos and posters, for more information about this example refer to the file ```examples/middleware2014/README.md```, and its execution is done via the script ```examples/middleware2014/launchDemo.sh``` that accepts three parameters  ```<peers>, <execution-time>, <serverjs-gossip-dir>``` where:
 
-## Clustering Algorithm Example (Local test)
-Refer to the README.md file in the folder ``` test/multi-protocols-test ``` in order to lunch 
-an example of PeerJS-Gossip in your machine. This example will show you how a gossip-based algorithm is used
-for building clusters of peers.
+- ```<peers>``` is the number of peers in the test (integer),
+- ```<execution-time>``` is the duration (in minutes) of the test (integer) and
+- ```<serverjs-gossip-dir>``` is the directory where you clone the ServerJS-Gossip project
 
-## Non local test
-Besides the library is robust enough to lunch a test with different machines, where on each of them 
-there is at least one instance of a peer using WebGC, the documentation is *work in progress*
+### Script execution
+Type:
 
-# Code Documentation
-You can find the documentation of each object in this library at the folder ```peerjs-gossip/doc ```
+- ```cd <PATH>/peerjs-gossip/examples/middleware2014```
+    - Where ```<PATH>``` is the directory that contains both projects, PeerJS-Gossip and
+    ServerJS-Gossip.
+
+- ```./launchDemo.sh 10 5 <PATH>/serverjs-gossip```
+
+whit the last execution ten windows of Chrome are going to appear during five minutes, on each window the graph of the left represents the P2P overlay of the RPS protocol and the other graph represents the overlay of clustering protocol as it is shown in the next image: 
+
+![Alt text](pictures/example.png)
+
+##Non local execution
+```Loading...```
+
+#Code Documentation
+You can find the documentation of each object in this library at the ```doc ``` folder
 
 ## Create a new documentation
 This project uses [JSDoc](https://github.com/jsdoc3/jsdoc) to create the documentation of the code
-found at the ```lib``` directory. In order to generate a new documentation you must install JSDoc
+at the ```src``` directory. In order to generate a new documentation you must install JSDoc
 through [Bower](http://bower.io/). **NOTE** dependencies for development are written in the file
 ```bower.json``` but there is not any task for the generation at ```Gruntfile.js```
 
 #Compatibility
-This project is compatible with Linux based systems (tested in Ubuntu 14.10) and MacOS (OS X Yosemite version 10.10), the web browser Chrome (version 38 or higher) must be installed too. Do not hesitate to report any issue, comment, experience with the project or question to <mailto:raziel.carvajal-gomez@inria.fr>
+This project is compatible with Linux based systems (tested in Ubuntu 14.10) and MacOS (OS X Yosemite version 10.10), the web browser Chrome (version 38 or higher) must be installed too. Do not hesitate to report any issue or comment with the project.
