@@ -8,7 +8,6 @@
   * this object is called configuration object.
   * @author Raziel Carvajal Gomez <raziel.carvajal-gomez@inria.fr> */  
   function GossipFactory(opts){
-    this.peerId = opts.peerId;
     this.log = opts.log;
     this.gossipUtil = opts.gossipUtil;
     this.inventory = {};

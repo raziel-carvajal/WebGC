@@ -1,7 +1,7 @@
 /**
 *@module src/apis*/
 (function(exp){
-  /** 
+  /**
   * @class SimilarityFunction
   * @description "Abstract class" for any implementation of a similarit 
   * @param profile - Profile of the local peer; this parame

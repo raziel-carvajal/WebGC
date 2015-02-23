@@ -1,5 +1,5 @@
-/** 
-* @module lib/controllers */
+/**
+* @module lib/controllers*/
 (function(exports){
   /**
   * @class Coordinator
@@ -12,34 +12,53 @@
   * in order to bootstrap the exchange of messages with WebRTC. When the constructor of the
   * Peer object is lunched a "get identifier" request is performed.
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
-  function Coordinator(opts){
-    if( !(this instanceof Coordinator) ) 
-      return new Coordinator(opts);
-    this.log = new Logger(opts.loggingServer, opts.peerId, this.constructor.name);
-    this.factory = new GossipFactory( {loggingServer: opts.loggingServer, peerId: opts.peerId});
-    var algosNames = Object.keys(opts.gossipAlgos);
-    this.plotter = opts.plotter;
-    var algo;
-    for( var i = 0; i < algosNames.length; i++ ){
-      algo = opts.gossipAlgos[ algosNames[i] ];
-      this.factory.createProtocol(algo, algosNames[i]);
-    }
-    this.factory.setDependencies(opts.gossipAlgos);
-    this.protocols = this.factory.inventory;
-    this.gossipUtil = new GossipUtil({
-      loggingServer: opts.loggingServer,
-      peerId: opts.peerId, objName: this.constructor.name
-    });
+  function Coordinator(opts, profile, peerId){
+    if( !this.checkConfigFile(opts) ) return;
+    this.profile = profile;
+    this.peerId = peerId;
+    //opts.logOpts.header = 'Coordinator_' + opts.peerId;
+    this.log = new Logger(opts.logOpts);
+    this.gossipUtil = new GossipUtil(this.log);
+    this.gossipUtil.inherits(Coordinator, Peer);
+    this.factory = new GossipFactory({ 'log': this.log, 'gossipUtil': this.gossipUtil });
+    this.peerJsOpts = opts.peerJsOpts;
+    this.gossipAlgos = opts.gossipAlgos;
+    this.withWw = opts.usingWebWorkers;
+  }
+  
+  //util.inherits(Coordinator, Peer);
+  Coordinator.prototype.listen = function(){
+    var self = this;
+    this.isIdRandom = false;
     /** 
-     * This method fires the constructor of the [Peer]{@link Peer} object. */
-    Peer.call(this, opts.peerId, opts.peerJsOpts);
+    * This method fires the constructor of the [Peer]{@link Peer} object.*/
+    if(typeof this.peerId !== 'undefined'){
+      Peer.call(this, this.peerId, this.peerJsOpts);
+      this.log.header = 'Coordinator_' + this.peerId;
+      this.factory.peerId = this.peerId;
+    }else{
+      Peer.call(this, this.peerJsOpts);
+      this.isIdRandom = true;
+    }
     /** 
     * @event Coordinator#open
     * Once the [PeerServe]{@link PeerServer} gives an [id]{@link id} to the local peer
     * the function in this event is performed. */
-    var self = this;
-    this.on('open', function(){ 
-      window.setTimeout( function(){ self.getFirstView(); }, 10000 );
+    this.on('open', function(id){
+      if(self.isIdRandom){
+        self.peerId = id;
+        self.log.header = 'Coordinator_' + id;
+        self.factory.peerId = id;
+      }
+      console.log('Peer is ready to listen external messages');
+      console.log('posting profile...');
+      self.postProfile();
+      console.log('Getting first view...');
+      window.setTimeout(function(){ self.getFirstView(); }, 5000);
+      window.setInterval( function(){
+        self.getGraph();
+        self.plotterObj.loop++;
+      }, 12000);
     });
     /**
     * @event Coordinator#connection
@@ -47,47 +66,134 @@
     * [the method]{@link DataConnection#send}. The actions of this event are linked with 
     * [the method]{@link ClusteringExecutor#handleConnection}. */
     this.on('connection', function(c){ self.handleConnection(c); });
-    /**
-    * @event Coordinator#doActiveThread
-    * This event performs the active thread of the gossip protocols in the
-    * [protocols]{@link Coordinator#protocols} object. This event is linked with [the method]
-    * {@link ClusteringExecutor#doActiveThread}. */
-    this.on('doActiveThread', function(view){
-      var i, protocol, keys = Object.keys(self.protocols);
-      for( i = 0; i < keys.length; i++ ){
-        protocol = self.protocols[ keys[i] ];
-        protocol.initialize(view);
-      }
+  };
+  Coordinator.prototype.createAlgorithms = function(){
+    var algosNames = Object.keys(opts.gossipAlgos), algOpts, worker;
+    for(var i = 0; i < algosNames.length; i++){
+      algOpts = opts.gossipAlgos[ algosNames[i] ];
+      this.factory.createProtocol(algosNames[i], algOpts);
+      worker = this.factory.inventory[ algosNames[i] ];
+      if(worker !== 'undefined')
+        this.setWorkerEvents(worker);
+      else
+        console.error('worker: ' + algosNames[i] + ' is not defined');
+    }
+    this.workers = this.factory.inventory;
+    this.plotterObj = new Plotter(this.log, opts.peerId);
+    /** 
+    * This method fires the constructor of the [Peer]{@link Peer} object. */
+    Peer.call(this, opts.peerId, opts.peerJsOpts);
+    /** 
+    * @event Coordinator#open
+    * Once the [PeerServe]{@link PeerServer} gives an [id]{@link id} to the local peer
+    * the function in this event is performed. */
+    var self = this;
+    this.on('open', function(id){
+      self.peerId
+      console.log('Peer is ready to listen external messages');
+      console.log('posting profile...');
+      self.postProfile();
+      console.log('Getting first view...');
+      window.setTimeout(function(){ self.getFirstView(); }, 5000);
       window.setInterval( function(){
-        var keys = Object.keys(self.protocols);
-        for( var i = 0; i < keys.length; i++ )
-          self.doActiveThread( self.protocols[ keys[i] ] );
-      }, 10000 );
+        self.getGraph();
+        self.plotterObj.loop++;
+      }, 12000);
     });
-  }
+    /**
+    * @event Coordinator#connection
+    * @description This event is fired when a remote peer contacts the local peer via 
+    * [the method]{@link DataConnection#send}. The actions of this event are linked with 
+    * [the method]{@link ClusteringExecutor#handleConnection}. */
+    this.on('connection', function(c){ self.handleConnection(c); });
+  };
+  Coordinator.prototype.checkConfFile = function(confObj){
+    console.info('Cecking configuration file...');
+    try{
+      var opts = confObj.peerJsOpts;
+      if(!opts.hasOwnProperty('host') || !opts.hasOwnProperty('port'))
+        throw 'Host and/or port of signaling server is absent';
+      var keys = Object.keys(opts.gossipAlgos);
+      for(var i = 0; i < keys.length; i++){
+        if(!opts.gossipAlgos[ keys[i] ].hasOwnProperty('class'))
+          throw 'Class name of the protocol is absent';
+      }
+      if(!confObj.hasOwnProperty('usingWebWorkers'))
+        throw 'Option for using web-workers or not is missing';
+      console.info('configuration file is well formed');
+    }catch(e){
+      console.error('Configuration file is malformed. ' + e.message);
+      return;
+    }
+    return true;
+  };
   
-  util.inherits(Coordinator, Peer);
+  Coordinator.prototype.setWorkerEvents = function(worker){
+    var self = this;
+    worker.addEventListener('message', function(e){
+      var msg = e.data, worker;
+      self.log.info('local message received: ' + JSON.stringify(msg));
+      switch(msg.header){
+        case 'activeMsg':
+          self.sendTo(msg);
+          break;
+        case 'getDep':
+          worker = self.workers[msg.depId];
+          if(worker !== 'undefined')
+            worker.postMessage(msg);
+          else
+            self.log.error('there is not a worker for algorithm: ' + msg.depId);
+          break;
+        case 'setDep':
+          worker = self.workers[msg.emitter];
+          if(worker !== 'undefined'){
+            msg.header = 'applyDep';
+            worker.postMessage(msg);
+          }else
+            self.log.error('there is not a worker for algorithm: ' + msg.emitter);
+          break;
+        case 'drawGraph':
+          self.plotterObj.buildGraph(msg.type, msg.graph, msg.view);
+          break;
+        default:
+          break;
+      }
+    }, false);
+    
+    worker.addEventListener('error', function(e){
+      self.log.error('In Worker: ' + e.message + ', lineno: ' + e.lineno);
+    }, false);
+  };
   
+  Coordinator.prototype.sendTo = function(msg){
+    var self = this;
+    var connection = this.connect(msg.receiver, {label: msg.algoId});
+    connection.on('error', function(e){
+      self.log.error('while sending view to: ' + msg.receiver + ', in protocol: ' + msg.algoId);
+    });
+    connection.on('open', function(){
+      connection.send(msg.payload);
+    });
+  };
   /**
   * @method handleConnection
   * @description This method performs the passive thread of each gossip-based protocol in the object 
   * Coordinator.protocols
   * @param {DataConnection} connection - This connection allows the exchange of meesages amog peers. */
   Coordinator.prototype.handleConnection = function(connection){
-    var protocol = this.protocols[connection.label];
+    var worker = this.workers[connection.label];
     var self = this;
     connection.on('data', function(data){
-      protocol.selectItemsToKeep(self.id, data);
-    });
-    connection.on('open', function(){
-      if( protocol.propagationPolicy.pull ){
-        var payload = protocol.getItemsToSend(self.id, connection.peer, 'passive');
-        connection.send(payload);
-      }
+      self.log.info('worker: ' + connection.label + ', msg received: ' + JSON.stringify(data));
+      var msg = {
+        header: 'passiveMsg',
+        emitter: connection.peer,
+        payload: data
+      };
+      worker.postMessage(msg);
     });
     connection.on('error', function(err){
-      self.log.error('During the reception of a ' + protocol.class + ' message');
-      self.log.error(err);
+      self.log.error('During the reception of a ' + protocol.protoId + ' message');
     });
   };
   /** 
@@ -95,72 +201,33 @@
   * @description This method performs the active thread of each gossip-based protocol in the 
   * Coordinator.protocols object.*/
   Coordinator.prototype.doActiveThread = function(protocol){
-    var log = protocol.protoId + '_' + protocol.loop + '_' + this.id + '_' + protocol.getLog();
-    this.log.info( '{' + log + '}' );
-    if( this.plotter ){
-      var msg = protocol.getPlotInfo(this.id);
-      this.sendToPlotter( msg, protocol.class );
-    }
+    var logi = protocol.protoId + '_' + protocol.loop + '_' + this.id + '_' + protocol.getLog();
+    this.log.info(logi);
     protocol.loop++;
-    var dstPeer = protocol.selectPeer();
     protocol.increaseAge();
-    var connection = this.connect(dstPeer, { label: protocol.protoId });
-    var self = this;
-    /** As soon as the connection is ready to send data, this event will be fired. */
-    connection.on('open', function(){
-      var payload = {};
-      if( protocol.propagationPolicy.push )
-        payload = protocol.getItemsToSend(self.id, connection.peer, 'active');
-      connection.send( payload );
-    });
-    /** This event is fired when a response of a remote peer is expected. */
-    connection.on('data', function(data){
-      if( protocol.propagationPolicy.pull )
-        protocol.selectItemsToKeep(self.id, data);
-    });
-    /** This event is fired when there is an error in the connection. */
-    connection.on('error', function(err){
-      self.log.error('During the emition of a ' + protocol.class + ' message. ' + err);
-    });
-  };
-  /**
-  * @method sendToPlotter
-  * @description This method sends the peer's neighbours of each protocol. For 
-  * instance, in a clustering protocol two kind of neighbours could be sent: i)
-  * the neighbours of the random overlay and ii) the most similar neighbours (
-  * peers of a cluster) */ 
-  Coordinator.prototype.sendToPlotter = function(msg, algoType){
-    if( this.plotterId !== 'undefined' ){
-      var self = this;
-      var connection = this.connect(this.plotterId, { label: algoType });
-      connection.on('open', function(){
-        connection.send( msg );
-        self.log.info('Payload was sent to Plotter');
-      });
-      connection.on('error', function(err){
-        self.log.error('During the transmition to Plotter. ' + err);
-      });
-    }else{
-      this.log.error('There is no plotter identifier');
+    if(protocol.propagationPolicy.push){
+      this.log.info('active thread...');
+      protocol.selectItemsToSend(this.id, protocol.selectPeer(), 'active');
     }
   };
   
-  /**
-  * @method getPeers
-  * @desc This method gets the view GossipProtocol.view of each gossip protocol in the 
-  * Coordinator.protocols object. The view of each protocol is identified in a unique way 
-  * by a string.
-  * @returns {Object} Object that contains the view of each gossip protocol in the 
-  * Coordinator.protocols object. */ 
-  Coordinator.prototype.getPeers = function(){
-    var result = {}, keys = this.protocols.Object.keys();
-    var key, value;
-    for( var i = 0; i < keys.length; i++ ){
-      key = this.protocols[i].class;
-      value = this.protocols[i].view;
-      result[ key ] = value;
-    }
-    return result;
+  Coordinator.prototype.postProfile = function(){
+    var xhr = new XMLHttpRequest();
+    var protocol = this.options.secure ? 'https://' : 'http://';
+    var url = protocol + this.options.host + ':' + this.options.port + '/profile';
+    var self = this;
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-type', 'text/plain');
+    xhr.onreadystatechange = function(){
+      if (xhr.readyState !== 4){ return; }
+      if (xhr.status !== 200) { xhr.onerror(); return; }
+      self.log.info('profile was posted properly');
+    };
+    xhr.onerror = function(){
+      self.log.error('while posting profile on server');
+    };
+    var msg = {id: this.id, profile: this.profile};
+    xhr.send(JSON.stringify(msg));
   };
   /**
   * @method getFirstView
@@ -169,8 +236,8 @@
   Coordinator.prototype.getFirstView = function() {
     var http = new XMLHttpRequest();
     var protocol = this.options.secure ? 'https://' : 'http://';
-    var url = protocol + this.options.host + ':' + this.options.port + '/' + this.options.key + 
-      '/' + this.id + '/view';
+    var url = protocol + this.options.host + ':' + this.options.port + '/' +
+      this.options.key + '/' + this.id + '/view';
     http.open('get', url, true);
     var self = this;
     http.onerror = function(e) {
@@ -178,21 +245,48 @@
       self._abort('server-error', 'Could not get the random view');
     };
     http.onreadystatechange = function() {
-      if (http.readyState !== 4) {
-        return;
-      }
-      if (http.status !== 200) {
-        http.onerror();
-        return;
-      }
-      /** 
-      * @fires Coordinator#doActiveThread */
+      if (http.readyState !== 4){ return; }
+      if (http.status !== 200) { http.onerror(); return; }
+      console.log('First view: ' + http.responseText);
       var data = JSON.parse(http.responseText);
-      self.plotterId = data.plotterId;
-      self.emit('doActiveThread', data.view);
+      if(data.view.length !== 0){
+        var algoIds = Object.keys(self.workers);
+        for(var i = 0; i < algoIds.length; i++){
+          console.log('Sending view to worker: ' + algoIds[i]);
+          self.workers[ algoIds[i] ].postMessage({header: 'firstView', view: data.view});
+        }
+      }else{
+        console.error('First view request failed');
+        //TODO schedule a new request
+      }
     };
     http.send(null);
   };
   
+  Coordinator.prototype.getGraph = function() {
+    var http = new XMLHttpRequest();
+    var url = 'http://' + this.options.host + ':' + this.options.port + '/getGraph';
+    var self = this;
+    http.open('get', url, true);
+    http.onerror = function(e) {
+      self.log.error('Trying to get graph for loop ' + self.plotterObj.loop);
+    };
+    http.onreadystatechange = function() {
+      if (http.readyState !== 4) { return; }
+      if (http.status !== 200) {
+        http.onerror();
+        return;
+      }
+      self.log.info('Graph ' + http.responseText + ' for loop ' + self.plotterObj.loop);
+      var nodes = JSON.parse(http.responseText);
+      var msg = {header: 'view', graph: nodes};
+      var keys = Object.keys(self.workers), worker;
+      for(var i = 0; i < keys.length; i++){
+        worker = self.workers[ keys[i] ];
+        worker.postMessage(msg);
+      }
+    };
+    http.send(null);
+  };
   exports.Coordinator = Coordinator;
 })(this);
