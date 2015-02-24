@@ -13,24 +13,24 @@
   * Peer object is lunched a "get identifier" request is performed.
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Coordinator(opts, profile, peerId){
-    if( !this.checkConfigFile(opts) ) return;
+    if( !this.checkConfFile(opts) ) return;
     this.profile = profile;
     this.peerId = peerId;
     //opts.logOpts.header = 'Coordinator_' + opts.peerId;
     this.log = new Logger(opts.logOpts);
     this.gossipUtil = new GossipUtil(this.log);
-    this.gossipUtil.inherits(Coordinator, Peer);
     this.factory = new GossipFactory({ 'log': this.log, 'gossipUtil': this.gossipUtil });
     this.peerJsOpts = opts.peerJsOpts;
     this.gossipAlgos = opts.gossipAlgos;
     this.withWw = opts.usingWebWorkers;
   }
   
-  //util.inherits(Coordinator, Peer);
+  util.inherits(Coordinator, Peer);
+  
   Coordinator.prototype.listen = function(){
     var self = this;
     this.isIdRandom = false;
-    /** 
+    /**
     * This method fires the constructor of the [Peer]{@link Peer} object.*/
     if(typeof this.peerId !== 'undefined'){
       Peer.call(this, this.peerId, this.peerJsOpts);
@@ -40,7 +40,7 @@
       Peer.call(this, this.peerJsOpts);
       this.isIdRandom = true;
     }
-    /** 
+    /**
     * @event Coordinator#open
     * Once the [PeerServe]{@link PeerServer} gives an [id]{@link id} to the local peer
     * the function in this event is performed. */
@@ -50,15 +50,13 @@
         self.log.header = 'Coordinator_' + id;
         self.factory.peerId = id;
       }
-      console.log('Peer is ready to listen external messages');
-      console.log('posting profile...');
+      self.log.info('Peer is ready to listen external messages');
+      self.log.info('Algorithms initialization...');
+      self.createAlgorithms();
+      self.log.info('posting profile...');
       self.postProfile();
-      console.log('Getting first view...');
+      self.log.info('Getting first view...');
       window.setTimeout(function(){ self.getFirstView(); }, 5000);
-      window.setInterval( function(){
-        self.getGraph();
-        self.plotterObj.loop++;
-      }, 12000);
     });
     /**
     * @event Coordinator#connection
@@ -67,55 +65,31 @@
     * [the method]{@link ClusteringExecutor#handleConnection}. */
     this.on('connection', function(c){ self.handleConnection(c); });
   };
+  //
   Coordinator.prototype.createAlgorithms = function(){
-    var algosNames = Object.keys(opts.gossipAlgos), algOpts, worker;
+    var algosNames = Object.keys(this.gossipAlgos), algOpts, worker;
     for(var i = 0; i < algosNames.length; i++){
-      algOpts = opts.gossipAlgos[ algosNames[i] ];
+      algOpts = this.gossipAlgos[ algosNames[i] ];
+      algOpts.data = this.profile;
       this.factory.createProtocol(algosNames[i], algOpts);
       worker = this.factory.inventory[ algosNames[i] ];
       if(worker !== 'undefined')
         this.setWorkerEvents(worker);
       else
-        console.error('worker: ' + algosNames[i] + ' is not defined');
+        this.log.error('worker: ' + algosNames[i] + ' is not defined');
     }
     this.workers = this.factory.inventory;
-    this.plotterObj = new Plotter(this.log, opts.peerId);
-    /** 
-    * This method fires the constructor of the [Peer]{@link Peer} object. */
-    Peer.call(this, opts.peerId, opts.peerJsOpts);
-    /** 
-    * @event Coordinator#open
-    * Once the [PeerServe]{@link PeerServer} gives an [id]{@link id} to the local peer
-    * the function in this event is performed. */
-    var self = this;
-    this.on('open', function(id){
-      self.peerId
-      console.log('Peer is ready to listen external messages');
-      console.log('posting profile...');
-      self.postProfile();
-      console.log('Getting first view...');
-      window.setTimeout(function(){ self.getFirstView(); }, 5000);
-      window.setInterval( function(){
-        self.getGraph();
-        self.plotterObj.loop++;
-      }, 12000);
-    });
-    /**
-    * @event Coordinator#connection
-    * @description This event is fired when a remote peer contacts the local peer via 
-    * [the method]{@link DataConnection#send}. The actions of this event are linked with 
-    * [the method]{@link ClusteringExecutor#handleConnection}. */
-    this.on('connection', function(c){ self.handleConnection(c); });
   };
+  //
   Coordinator.prototype.checkConfFile = function(confObj){
     console.info('Cecking configuration file...');
     try{
       var opts = confObj.peerJsOpts;
       if(!opts.hasOwnProperty('host') || !opts.hasOwnProperty('port'))
         throw 'Host and/or port of signaling server is absent';
-      var keys = Object.keys(opts.gossipAlgos);
+      var keys = Object.keys(confObj.gossipAlgos);
       for(var i = 0; i < keys.length; i++){
-        if(!opts.gossipAlgos[ keys[i] ].hasOwnProperty('class'))
+        if(!confObj.gossipAlgos[ keys[i] ].hasOwnProperty('class'))
           throw 'Class name of the protocol is absent';
       }
       if(!confObj.hasOwnProperty('usingWebWorkers'))
@@ -127,7 +101,7 @@
     }
     return true;
   };
-  
+  //
   Coordinator.prototype.setWorkerEvents = function(worker){
     var self = this;
     worker.addEventListener('message', function(e){
@@ -200,16 +174,16 @@
   * @method doActiveThread
   * @description This method performs the active thread of each gossip-based protocol in the 
   * Coordinator.protocols object.*/
-  Coordinator.prototype.doActiveThread = function(protocol){
-    var logi = protocol.protoId + '_' + protocol.loop + '_' + this.id + '_' + protocol.getLog();
-    this.log.info(logi);
-    protocol.loop++;
-    protocol.increaseAge();
-    if(protocol.propagationPolicy.push){
-      this.log.info('active thread...');
-      protocol.selectItemsToSend(this.id, protocol.selectPeer(), 'active');
-    }
-  };
+  //Coordinator.prototype.doActiveThread = function(protocol){
+  //  var logi = protocol.protoId + '_' + protocol.loop + '_' + this.id + '_' + protocol.getLog();
+  //  this.log.info(logi);
+  //  protocol.loop++;
+  //  protocol.increaseAge();
+  //  if(protocol.propagationPolicy.push){
+  //    this.log.info('active thread...');
+  //    protocol.selectItemsToSend(this.id, protocol.selectPeer(), 'active');
+  //  }
+  //};
   
   Coordinator.prototype.postProfile = function(){
     var xhr = new XMLHttpRequest();
@@ -232,7 +206,7 @@
   /**
   * @method getFirstView
   * @desc This method gets from a remote PeerServer a set of remote peer identifiers. This 
-  * set of identifiers allows to bootstrap the gossip protocols. */
+  * set of identifiers allows to bootstrap the gossip protocols.*/
   Coordinator.prototype.getFirstView = function() {
     var http = new XMLHttpRequest();
     var protocol = this.options.secure ? 'https://' : 'http://';
@@ -263,30 +237,5 @@
     http.send(null);
   };
   
-  Coordinator.prototype.getGraph = function() {
-    var http = new XMLHttpRequest();
-    var url = 'http://' + this.options.host + ':' + this.options.port + '/getGraph';
-    var self = this;
-    http.open('get', url, true);
-    http.onerror = function(e) {
-      self.log.error('Trying to get graph for loop ' + self.plotterObj.loop);
-    };
-    http.onreadystatechange = function() {
-      if (http.readyState !== 4) { return; }
-      if (http.status !== 200) {
-        http.onerror();
-        return;
-      }
-      self.log.info('Graph ' + http.responseText + ' for loop ' + self.plotterObj.loop);
-      var nodes = JSON.parse(http.responseText);
-      var msg = {header: 'view', graph: nodes};
-      var keys = Object.keys(self.workers), worker;
-      for(var i = 0; i < keys.length; i++){
-        worker = self.workers[ keys[i] ];
-        worker.postMessage(msg);
-      }
-    };
-    http.send(null);
-  };
   exports.Coordinator = Coordinator;
 })(this);

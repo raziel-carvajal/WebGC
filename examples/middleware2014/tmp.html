@@ -7,7 +7,6 @@
   <script type="text/javascript" src="../../bower_components/jquery/dist/jquery.min.js"></script> 
   <script type="text/javascript" src="../../bower_components/peerjs/peer.js"></script>
   <script type="text/javascript" src="../../bower_components/cytoscape/dist/cytoscape.js"></script>
-  <script type="text/javascript" src="../../bower_components/log4javascript/log4javascript.js"></script>
   <script type="text/javascript" src="../../src/utils/LoggerForWebWorker.js"></script>
   <script type="text/javascript" src="../../src/utils/GossipUtil.js"></script>
   <script type="text/javascript" src="../../src/patterns/GossipFactory.js"></script>
@@ -15,120 +14,50 @@
   <script type="text/javascript" src="../../src/algorithms/Vicinity.js"></script> 
   <script type="text/javascript" src="../../src/algorithms/Cyclon.js"></script>
   <script type="text/javascript" src="../../src/algorithms/RandomPeerSampling.js"></script>
+  <script type="text/javascript" src="../../src/controllers/Coordinator.js"></script>
   <script type="text/javascript" src="./Plotter.js"></script>
-  <script type="text/javascript" src="./Coordinator.js"></script>
   <script type="text/javascript" src="./confObj.js"></script>
   <script>
+    function getGraph(host, port, plotterLoop, workers){
+      var http = new XMLHttpRequest();
+      var url = 'http://' + host + ':' + port + '/getGraph';
+      var self = this;
+      http.open('get', url, true);
+      http.onerror = function(e) {
+        self.log.error('Trying to get graph for loop ' + plotterLoop);
+      };
+      http.onreadystatechange = function() {
+        if (http.readyState !== 4) { return; }
+        if (http.status !== 200) {
+          http.onerror();
+          return;
+        }
+        console.log('Graph ' + http.responseText + ' for loop ' + plotterLoop);
+        var nodes = JSON.parse(http.responseText);
+        var msg = {header: 'view', graph: nodes};
+        var keys = Object.keys(workers), worker;
+        for(var i = 0; i < keys.length; i++){
+          worker = workers[ keys[i] ];
+          worker.postMessage(msg);
+        }
+      };
+      http.send(null);
+    }
     //main
     $(document).ready(function(){
-      var gRef = {};
-      //first function to be executed
-      //$('#start').click( function(){
-        var userName = '#userId';
-        if( userName === '' )
-          alert("Type your name please");
-        else{
-          $('#start').attr('disabled', 'disabled');
-          var index = #userProfile; 
-          configurationObj['peerId'] = userName;
-          configurationObj.gossipAlgos.cyclon1['data'] = index;
-          configurationObj.gossipAlgos.vicinity1['data'] = index;
-          //document.getElementById('profile').style.color = 'black';
-          //document.getElementById('profile').innerHTML = 'Getting data for plotting...';
-          //gRef.pool = window.setInterval(function(){
-          //  isFirstGraphDrawn(gRef.coord.first);
-          //  }, 2000);
-          gRef.coord = new Coordinator(configurationObj);
-        }
-      //});
-      //shows text when graphs load
-      function isFirstGraphDrawn(first){
-        console.debug('isFirstGraphDrawn: ?');
-        if(first === 1){
-          console.debug('isFirstGraphDrawn: YES');
-          document.getElementById('profile').style.color = 'black';
-          document.getElementById('profile').innerHTML = 'Graphs were created!';
-          clearInterval(gRef.pool);
-        }else{
-          console.debug('isFirstGraphDrawn: NO');
-          if(document.getElementById('profile').style.color === 'black'){
-            document.getElementById('profile').style.color = 'white'; 
-          }else{
-            document.getElementById('profile').style.color = 'black';
-          }
-        }
-      }
-
-
-      $('#connect').click(function() {
-        var peer = gRef.coord;
-        var requestedPeer = $('#rid').val();
-        if(!peer.connectedPeers[requestedPeer]){
-          var c = peer.connect(requestedPeer, {
-            label: 'chat',
-            serialization: 'none',
-            metadata: {message: 'hi i want to chat with you!'}
-          });
-          c.on('open', function() {
-            peer.handleChatMsg(c);
-          });
-          c.on('error', function(err) { alert(err); });
-        }
-        peer.connectedPeers[requestedPeer] = 1;
-      });
-      // Close a connection.
-      $('#close').click(function() {
-        eachActiveConnection(function(c) {
-          c.close();
-        });
-      });
-      // Send a chat message to all active connections.
-      $('#send').submit(function(e) {
-        e.preventDefault();
-        // For each active connection, send the message.
-        var msg = $('#text').val();
-        eachActiveConnection(function(c, $c) {
-          if (c.label === 'chat') {
-            c.send(msg);
-            $c.find('.messages').append('<div><span class="you">You: </span>' + msg + '</div>');
-          }
-        });
-        $('#text').val('');
-        $('#text').focus();
-      });
-      // Goes through each active peer and calls FN on its connections.
-      function eachActiveConnection(fn) {
-        var peer = gRef.coord;
-        var actives = $('.active');
-        var checkedIds = {};
-        actives.each(function() {
-          var peerId = $(this).attr('id');
-          if (!checkedIds[peerId]) {
-            var conns = peer.connections[peerId];
-            for (var i = 0, ii = conns.length; i < ii; i += 1) {
-              var conn = conns[i];
-              fn(conn, $(this));
-            }
-          }
-          checkedIds[peerId] = 1;
-        });
-      }
-      function isFirstGraphDrawn(first){
-        console.debug('isFirstGraphDrawn: ?');
-        if(first === 1){
-          console.debug('isFirstGraphDrawn: YES');
-          document.getElementById('profile').style.color = 'black';
-          document.getElementById('profile').innerHTML = 'Graphs were created!';
-          clearInterval(gRef.pool);
-        }else{
-          console.debug('isFirstGraphDrawn: NO');
-          if(document.getElementById('profile').style.color === 'black'){
-            document.getElementById('profile').style.color = 'white'; 
-          }else{
-            document.getElementById('profile').style.color = 'black';
-          }
-        }
-      }
+      var peerId = '#userId';
+      var profile = #userProfile;
+      var controller = new Coordinator(configurationObj, profile, peerId);
+      var plotter = new Plotter(controller.log, controller.factory.peerId);
+      controller.plotterObj = plotter;
+      controller.listen();
+      var self = this;
+      window.setInterval( function(){
+        var host = configurationObj.peerJsOpts.host;
+        var port = configurationObj.peerJsOpts.port;
+        getGraph(host, port, plotter.loop, controller.workers);
+        plotter.loop++;
+      }, 17000);
     });
   </script>
 </head>
