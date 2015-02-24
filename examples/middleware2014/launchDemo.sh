@@ -72,6 +72,9 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   mkdir $testDir/$peerDir
   data=$(( $COUNTER % $simLim ))
   htmlFile=$peerDir".html"
+  #random peerId
+  #cat "tmp.html" | sed "s/#userProfile/$data/;" >$htmlFile
+  #peerId predefined
   cat "tmp.html" | sed "s/#userProfile/$data/;s/#userId/$peerDir/;" >$htmlFile
   "$chromeCommand" $chromeStr$testDir/$peerDir $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!

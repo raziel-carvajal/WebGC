@@ -16,7 +16,6 @@
     if( !this.checkConfFile(opts) ) return;
     this.profile = profile;
     this.peerId = peerId;
-    //opts.logOpts.header = 'Coordinator_' + opts.peerId;
     this.log = new Logger(opts.logOpts);
     this.gossipUtil = new GossipUtil(this.log);
     this.factory = new GossipFactory({ 'log': this.log, 'gossipUtil': this.gossipUtil });
@@ -28,10 +27,7 @@
   util.inherits(Coordinator, Peer);
   
   Coordinator.prototype.listen = function(){
-    var self = this;
     this.isIdRandom = false;
-    /**
-    * This method fires the constructor of the [Peer]{@link Peer} object.*/
     if(typeof this.peerId !== 'undefined'){
       Peer.call(this, this.peerId, this.peerJsOpts);
       this.log.header = 'Coordinator_' + this.peerId;
@@ -40,10 +36,11 @@
       Peer.call(this, this.peerJsOpts);
       this.isIdRandom = true;
     }
+    var self = this;
     /**
-    * @event Coordinator#open
-    * Once the [PeerServe]{@link PeerServer} gives an [id]{@link id} to the local peer
-    * the function in this event is performed. */
+    * @event open
+    * @description When the peer is ready to communicate this event is fired. Events are
+    * possible because the Coordinator inherits from Peer.EventEmitter of PeerJS.*/
     this.on('open', function(id){
       if(self.isIdRandom){
         self.peerId = id;
@@ -59,10 +56,8 @@
       window.setTimeout(function(){ self.getFirstView(); }, 5000);
     });
     /**
-    * @event Coordinator#connection
-    * @description This event is fired when a remote peer contacts the local peer via 
-    * [the method]{@link DataConnection#send}. The actions of this event are linked with 
-    * [the method]{@link ClusteringExecutor#handleConnection}. */
+    * @event connection
+    * @description This event is fired when an external message is received.*/
     this.on('connection', function(c){ self.handleConnection(c); });
   };
   //
@@ -104,6 +99,7 @@
   //
   Coordinator.prototype.setWorkerEvents = function(worker){
     var self = this;
+    
     worker.addEventListener('message', function(e){
       var msg = e.data, worker;
       self.log.info('local message received: ' + JSON.stringify(msg));
@@ -142,11 +138,11 @@
   Coordinator.prototype.sendTo = function(msg){
     var self = this;
     var connection = this.connect(msg.receiver, {label: msg.algoId});
+    
+    connection.on('open', function(){ connection.send(msg.payload); });
+    
     connection.on('error', function(e){
       self.log.error('while sending view to: ' + msg.receiver + ', in protocol: ' + msg.algoId);
-    });
-    connection.on('open', function(){
-      connection.send(msg.payload);
     });
   };
   /**
@@ -157,6 +153,7 @@
   Coordinator.prototype.handleConnection = function(connection){
     var worker = this.workers[connection.label];
     var self = this;
+    
     connection.on('data', function(data){
       self.log.info('worker: ' + connection.label + ', msg received: ' + JSON.stringify(data));
       var msg = {
@@ -166,24 +163,11 @@
       };
       worker.postMessage(msg);
     });
+    
     connection.on('error', function(err){
-      self.log.error('During the reception of a ' + protocol.protoId + ' message');
+      self.log.error('Trying to handle one msg of: ' + protocol.protoId);
     });
   };
-  /** 
-  * @method doActiveThread
-  * @description This method performs the active thread of each gossip-based protocol in the 
-  * Coordinator.protocols object.*/
-  //Coordinator.prototype.doActiveThread = function(protocol){
-  //  var logi = protocol.protoId + '_' + protocol.loop + '_' + this.id + '_' + protocol.getLog();
-  //  this.log.info(logi);
-  //  protocol.loop++;
-  //  protocol.increaseAge();
-  //  if(protocol.propagationPolicy.push){
-  //    this.log.info('active thread...');
-  //    protocol.selectItemsToSend(this.id, protocol.selectPeer(), 'active');
-  //  }
-  //};
   
   Coordinator.prototype.postProfile = function(){
     var xhr = new XMLHttpRequest();

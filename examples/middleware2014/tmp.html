@@ -48,11 +48,12 @@
       var peerId = '#userId';
       var profile = #userProfile;
       var controller = new Coordinator(configurationObj, profile, peerId);
-      var plotter = new Plotter(controller.log, controller.factory.peerId);
-      controller.plotterObj = plotter;
       controller.listen();
+      var plotter = new Plotter(controller.log, peerId);
+      controller.plotterObj = plotter;
       var self = this;
       window.setInterval( function(){
+        plotter.ref = controller.id;
         var host = configurationObj.peerJsOpts.host;
         var port = configurationObj.peerJsOpts.port;
         getGraph(host, port, plotter.loop, controller.workers);
