@@ -45,20 +45,23 @@
     }
     //main
     $(document).ready(function(){
+      //peerId will be chosen in a randomly way
+      //var peerId;
+      //values with # are changed by the script
       var peerId = '#userId';
       var profile = #userProfile;
       var controller = new Coordinator(configurationObj, profile, peerId);
       controller.listen();
-      var plotter = new Plotter(controller.log, peerId);
-      controller.plotterObj = plotter;
-      var self = this;
-      window.setInterval( function(){
-        plotter.ref = controller.id;
-        var host = configurationObj.peerJsOpts.host;
-        var port = configurationObj.peerJsOpts.port;
-        getGraph(host, port, plotter.loop, controller.workers);
-        plotter.loop++;
-      }, 17000);
+      //var plotter = new Plotter(controller.log, peerId);
+      //controller.plotterObj = plotter;
+      //var self = this;
+      //window.setInterval( function(){
+      //  plotter.ref = controller.id;
+      //  var host = configurationObj.peerJsOpts.host;
+      //  var port = configurationObj.peerJsOpts.port;
+      //  getGraph(host, port, plotter.loop, controller.workers);
+      //  plotter.loop++;
+      //}, 17000);
     });
   </script>
 </head>

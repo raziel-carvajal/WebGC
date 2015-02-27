@@ -123,7 +123,10 @@
             self.log.error('there is not a worker for algorithm: ' + msg.emitter);
           break;
         case 'drawGraph':
-          self.plotterObj.buildGraph(msg.type, msg.graph, msg.view);
+          if(typeof self.plotterObj !== 'undefined')
+            self.plotterObj.buildGraph(msg.type, msg.graph, msg.view);
+          else
+            self.log.warn('graph obj is not defined, msg to graph was: ' + JSON.stringify(msg));
           break;
         default:
           break;

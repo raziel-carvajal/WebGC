@@ -46,6 +46,25 @@ var configurationObj = {
       dependencies:[
         { algoId: 'cyclon1', algoAttribute: 'view' }
       ]
+    }, 
+    vicinity2: { 
+      class: 'Vicinity',
+      viewSize: 4,
+      fanout: 4,
+      gossipPeriod: 10000,
+      propagationPolicy: { push: true, pull: true },
+      selectionPolicy: 'biased', // random OR biased OR agr-biased
+      similarityFunction: function(a, b, log){
+        log.info('a: ' + a + ' - b: ' + b);
+        if( !(typeof a === 'number' && typeof b === 'number') ){
+          log.warn('ProximityFunc: eval() with non numbers');
+          return null;
+        }
+        return Math.abs(a - b);
+      },
+      dependencies:[
+        { algoId: 'cyclon1', algoAttribute: 'view' }
+      ]
     }
   },
   usingWebWorkers: true,

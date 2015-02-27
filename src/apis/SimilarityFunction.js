@@ -47,22 +47,6 @@
     return result;
   };
   
-  //SimilarityFunction.prototype.updateClusteringView = function(n, rcView, view){
-  //  this.log.info('updateClusteringView()');
-  //  var keys = Object.keys(rcView), i;
-  //  var result = this.checkBaseCase(n, rcView, null, null, null, keys, true);
-  //  if(result === null || Object.keys(result).length === 0)
-  //    result = this.getNsimilarPeers(rcView, n, keys);
-  //  this.log.info('cluView before update: ' + JSON.stringify(view));
-  //  keys = Object.keys(view);
-  //  for(i = 0; i < keys.length; i++)
-  //    delete view[ keys[i] ];
-  //  keys = Object.keys(result);
-  //  for(i = 0; i < keys.length; i++)
-  //    view[ keys[i] ] = result[ keys[i] ];
-  //  this.log.info('cluView after update: ' + JSON.stringify(view));
-  //};
-  
   SimilarityFunction.prototype.getNsimilarPeers = function(view, n, keys){
     var values = [], i;
     for(i = 0; i < keys.length; i++ ){
