@@ -19,21 +19,14 @@
   GossipMediator.prototype.scheduleActiveThread = function(){
     var self = this;
     setInterval(function(){
-      var s = 'activeThread data: ' + self.algo.data + ', loop: ' + 
-        self.algo.loop + ', view: ' + JSON.stringify(self.algo.view);
+      var s = 'active thread at loop: ' + self.algo.loop + ', algoId: ' + self.algo.algoId +
+        ', profile: ' + self.algo.data + ', view: ' + JSON.stringify(self.algo.view);
       self.log.info(s);
       self.algo.selectItemsToSend('active');
       self.algo.loop++;
       self.algo.increaseAge();
     }, this.algo.gossipPeriod);
   };
-  
-  /***/
-  //GossipMediator.prototype.doGossipCallback = function(msg){
-  //  var funcToCall = this.algo[msg.funcToExe];
-  //  if(funcToCall === 'function')
-  //    funcToCall(msg.params);
-  //};
   
   /***/
   GossipMediator.prototype.applyDependency = function(msg){
