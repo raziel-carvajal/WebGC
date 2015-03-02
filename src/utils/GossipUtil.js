@@ -78,16 +78,11 @@
   *@param {Object} dict - source object
   *@returns {String} key - random key of the obj */
   GossipUtil.prototype.getRandomKey = function(dict){
-    var key = null; var keys = Object.keys(dict);
-    var dicSize = keys.length;
-    if( dicSize === 0 )
+    var keys = Object.keys(dict), key;
+    if( keys.length === 0 ){
       this.log.error('No way to return a key from an empty dictionary');
-    else{
-      var rNum;
-      if( dicSize === 1 )
-        rNum = 0;
-      else
-        rNum = Math.floor(Math.random() * dicSize);
+    }else{
+      var rNum = keys.length === 1 ? 0 : Math.floor(Math.random() * keys.length);
       key = keys[rNum];
     }
     return key;

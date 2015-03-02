@@ -2,7 +2,7 @@
 * @module lib/utils
 * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>*/
 (function(exports){
- /** 
+  /** 
   * @class DumbProximityFunc
   * @description This class implements a basic similarity function. The result of applying
   * this function amog two peers is computing the difference of the preferences of both peers.
@@ -31,4 +31,5 @@
   };
   
   exports.DumbProximityFunc = DumbProximityFunc;
+  
 })(this);

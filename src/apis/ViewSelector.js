@@ -2,18 +2,18 @@
 *@module src/apis*/
 (function(exp){
   /**
-  * @class SimilarityFunction
+  * @class ViewSelector
   * @description "Abstract class" for any implementation of a similarit 
   * @param profile - Profile of the local peer; this parame
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */ 
-  function SimilarityFunction(profile, log, simFunc){
+  function ViewSelector(profile, log, simFunc){
     this.profile = profile;
     this.log = log;
     this.simFunc = simFunc;
     this.noImMsg = 'It is required to provide an implementation for this method';
   }
   
-  SimilarityFunction.prototype.checkBaseCase = function(n, view, newItem, keys){
+  ViewSelector.prototype.checkBaseCase = function(n, view, newItem, keys){
     if(newItem !== null)
       view[newItem.k] = newItem.v;
     var msg;
@@ -34,7 +34,7 @@
   * @param {Integer} n - Number of the most similar items to the local peer.
   * @param {Dictonary} view - Source where the most similar items are taken.
   * @returns {Dictionary} Subset of [view]{@link view}.*/
-  SimilarityFunction.prototype.getClosestNeighbours = function(n, view, newItem){
+  ViewSelector.prototype.getClosestNeighbours = function(n, view, newItem){
     this.log.info('getClosestNeighbours()');
     var keys = Object.keys(view);
     var result = this.checkBaseCase(n, view, newItem, keys);
@@ -47,7 +47,7 @@
     return result;
   };
   
-  SimilarityFunction.prototype.getNsimilarPeers = function(view, n, keys){
+  ViewSelector.prototype.getNsimilarPeers = function(view, n, keys){
     var values = [], i;
     for(i = 0; i < keys.length; i++ ){
       values.push({
@@ -65,5 +65,5 @@
     return result;
   };
   
-  exp.SimilarityFunction = SimilarityFunction;
+  exp.ViewSelector = ViewSelector;
 })(this);
