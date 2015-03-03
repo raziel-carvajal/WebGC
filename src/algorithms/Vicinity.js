@@ -90,7 +90,7 @@
         if(newItem !== null)
           subDict[this.peerId] = newItem;
         msg = {
-          header: 'activeMsg',
+          header: 'outgoingMsg',
           emitter: this.peerId,
           receiver: dstPeer,
           payload: subDict,
@@ -103,7 +103,7 @@
         if(newItem !== null)
           subDict[this.peerId] = newItem;
         msg = {
-          header: 'activeMsg',
+          header: 'outgoingMsg',
           emitter: this.peerId,
           receiver: dstPeer,
           payload: subDict,
@@ -136,7 +136,7 @@
     var mergedViews = this.gossipUtil.mergeViews(msg.cluView, msg.result);
     var similarNeig = this.selector.getClosestNeighbours(msg.n, mergedViews, {k: this.peerId, v: msg.newItem});
     var payload = {
-      header: 'activeMsg',
+      header: 'outgoingMsg',
       emitter: this.peerId,
       receiver: msg.receiver,
       'payload': similarNeig,

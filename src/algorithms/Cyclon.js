@@ -70,7 +70,7 @@
         break;
     }
     var msg = {
-      header: 'activeMsg',
+      header: 'outgoingMsg',
       emitter: this.peerId,
       receiver: dstPeer,
       payload: subDict,

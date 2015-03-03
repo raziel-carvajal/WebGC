@@ -104,7 +104,7 @@
       var msg = e.data, worker;
       self.log.info('local message received: ' + JSON.stringify(msg));
       switch(msg.header){
-        case 'activeMsg':
+        case 'outgoingMsg':
           self.sendTo(msg);
           break;
         case 'getDep':
@@ -160,7 +160,7 @@
     connection.on('data', function(data){
       self.log.info('worker: ' + connection.label + ', msg received: ' + JSON.stringify(data));
       var msg = {
-        header: 'passiveMsg',
+        header: 'incomingMsg',
         emitter: connection.peer,
         payload: data
       };

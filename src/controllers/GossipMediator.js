@@ -57,7 +57,7 @@
           self.algo.initialize(msg.view);
           self.scheduleActiveThread();
           break;
-        case 'passiveMsg':
+        case 'incomingMsg':
           self.algo.selectItemsToKeep(msg.payload);
           break;
         case 'getDep':
