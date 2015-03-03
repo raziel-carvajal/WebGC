@@ -30,7 +30,7 @@ function getData ()
 modNum=$1
 n=$2
 data="["
-for (( COUNTER=0; COUNTER<n-1; COUNTER++ )); do
+for (( COUNTER1=0; COUNTER1<n-1; COUNTER1++ )); do
   data=$data$(($RANDOM%modNum))", "
 done
 data=$data$(($RANDOM%modNum))"]"

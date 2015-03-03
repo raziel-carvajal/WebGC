@@ -18,7 +18,7 @@
     this.dependencies = algOpts.dependencies;
   }
   
-  GossipUtil.inherits(Vicinity, GossipProtocol);
+  //GossipUtil.inherits(Vicinity, GossipProtocol);
   
   /**
   * @description This object represents the configuration by default of this protocol. During the

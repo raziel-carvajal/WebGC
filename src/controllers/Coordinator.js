@@ -24,7 +24,7 @@
     this.withWw = opts.usingWebWorkers;
   }
   
-  GossipUtil.inherits(Coordinator, Peer);
+  util.inherits(Coordinator, Peer);
   
   Coordinator.prototype.listen = function(){
     this.isIdRandom = false;

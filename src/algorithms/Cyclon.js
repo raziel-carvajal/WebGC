@@ -14,7 +14,7 @@
     GossipProtocol.call(this, algOpts, log, gossipUtil);
   }
   
-  GossipUtil.inherits(Cyclon, GossipProtocol);
+  //GossipUtil.inherits(Cyclon, GossipProtocol);
   /**
   * @description This object represents the configuration by default of this protocol. During the
   * instantiation of this object (via the Factory object) if the options are not defined
