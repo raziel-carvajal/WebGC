@@ -11,9 +11,10 @@
   * @param opts {Object} - properties to set by the object Cyclon
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Cyclon(algOpts, log, gossipUtil){
-    //gossipUtil.inherits(Cyclon, GossipProtocol);
     GossipProtocol.call(this, algOpts, log, gossipUtil);
   }
+  
+  GossipUtil.inherits(Cyclon, GossipProtocol);
   /**
   * @description This object represents the configuration by default of this protocol. During the
   * instantiation of this object (via the Factory object) if the options are not defined
@@ -124,12 +125,6 @@
   * @param {String} key - ID of the item to update.
   * @param {Object} data - New value for the data property*/
   Cyclon.prototype.setData = function(key, data){ this.view[key].data = data; };
-  /**
-  * @method getPlotInfo
-  * @description See method GossipProtocol.getPlotInfo for more information*/
-  Cyclon.prototype.getPlotInfo = function(peerId){ 
-    return {peer: peerId, profile: this.data, loop: this.loop, view: Object.keys(this.view)};
-  };
   
   exports.Cyclon = Cyclon;
   

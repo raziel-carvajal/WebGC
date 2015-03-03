@@ -78,7 +78,7 @@
     
     var keysWithFunc = this.searchFunctions(algOpts), i;
     if(keysWithFunc.length > 0){
-      statements  += "importScripts('" + origin + "src/apis/SimilarityFunction.js');\n";
+      statements  += "importScripts('" + origin + "src/apis/ViewSelector.js');\n";
       for(i = 0; i < keysWithFunc.length; i++)
         algOpts[ keysWithFunc[i] ] = String(algOpts[ keysWithFunc[i] ]);
     }
@@ -89,7 +89,7 @@
     for(i = 0; i < keysWithFunc.length; i++)
       statements  += "algOpts[" + "'" + keysWithFunc[i] + "'" + "] = eval(" + algOpts[ keysWithFunc[i]] + ");\n";
     statements    += "var algo = new " + algOpts.class + "(algOpts, log, gossipUtil);\n";
-    statements    += "importScripts('" + origin + "src/workers/GossipMediator.js');\n";
+    statements    += "importScripts('" + origin + "src/controllers/GossipMediator.js');\n";
     //"this" referes the web-worker
     statements    += "var m = new GossipMediator(algo, log, this);\n";
     statements    += "algo.setMediator(m);\n";

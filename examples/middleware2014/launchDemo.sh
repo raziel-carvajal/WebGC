@@ -20,6 +20,23 @@
 
 
 #===  FUNCTION  ================================================================
+#          NAME:  
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#===============================================================================
+function getData ()
+{
+modNum=$1
+n=$2
+data="["
+for (( COUNTER=0; COUNTER<n-1; COUNTER++ )); do
+  data=$data$(($RANDOM%modNum))", "
+done
+data=$data$(($RANDOM%modNum))"]"
+}    # ----------  end of function getData  ----------
+
+#===  FUNCTION  ================================================================
 #          NAME:  isChromeInstalled
 #   DESCRIPTION:  Verifies if the Chrome browser is available
 #    PARAMETERS:  
@@ -70,7 +87,8 @@ cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   peerDir="peer_$COUNTER"
   mkdir $testDir/$peerDir
-  data=$(( $COUNTER % $simLim ))
+  #calling getData fills var "data"
+  getData $simLim $simLim
   htmlFile=$peerDir".html"
   #random peerId
   #cat "tmp.html" | sed "s/#userProfile/$data/;" >$htmlFile

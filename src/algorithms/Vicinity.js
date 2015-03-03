@@ -14,9 +14,12 @@
     gossipUtil.inherits(Vicinity, GossipProtocol);
     GossipProtocol.call(this, algOpts, log, gossipUtil);
     this.selectionPolicy = algOpts.selectionPolicy;
-    this.simObj = new SimilarityFunction(this.data, log, algOpts.similarityFunction);
+    this.selector = new ViewSelector(this.data, log, algOpts.similarityFunction);
     this.dependencies = algOpts.dependencies;
   }
+  
+  GossipUtil.inherits(Vicinity, GossipProtocol);
+  
   /**
   * @description This object represents the configuration by default of this protocol. During the
   * instantiation of this object (via the Factory object) if the options are not defined
@@ -46,12 +49,11 @@
     }
     this.log.info('initialization of view: ' + JSON.stringify(this.view));
   };
+  //
   Vicinity.prototype.setMediator = function(mediator){
     mediator.setDependencies(this.dependencies);
     this.gossipMediator = mediator;
   };
-  // the util object belongs to PeerJS
-  //util.inherits(Vicinity, GossipProtocol);
   /** 
   * @method selectPeer
   * @description This method selects the remote peer's identifier with the oldest age. See method 
@@ -81,7 +83,7 @@
         itmsNum = 0;
       break;
     }
-    var newItem = thread === 'active' ? this.gossipUtil.newItem(0, this.simObj.profile) : null;
+    var newItem = thread === 'active' ? this.gossipUtil.newItem(0, this.selector.profile) : null;
     switch( this.selectionPolicy ){
       case 'random':
         subDict = this.gossipUtil.getRandomSubDict(itmsNum, clone);
@@ -97,7 +99,7 @@
         this.gossipMediator.postInMainThread(msg);
         break;
       case 'biased':
-        subDict = this.simObj.getClosestNeighbours(itmsNum, clone, {k: this.peerId, v: newItem});
+        subDict = this.selector.getClosestNeighbours(itmsNum, clone, {k: this.peerId, v: newItem});
         if(newItem !== null)
           subDict[this.peerId] = newItem;
         msg = {
@@ -132,7 +134,7 @@
   };
   Vicinity.prototype.doAgrBiasedSelection = function(msg){
     var mergedViews = this.gossipUtil.mergeViews(msg.cluView, msg.result);
-    var similarNeig = this.simObj.getClosestNeighbours(msg.n, mergedViews, {k: this.peerId, v: msg.newItem});
+    var similarNeig = this.selector.getClosestNeighbours(msg.n, mergedViews, {k: this.peerId, v: msg.newItem});
     var payload = {
       header: 'activeMsg',
       emitter: this.peerId,
@@ -165,7 +167,7 @@
     var mergedViews = this.gossipUtil.mergeViews(msg.cluView, msg.result);
     if(this.peerId in mergedViews)
       delete mergedViews[this.peerId];
-    var similarNeig = this.simObj.getClosestNeighbours(this.viewSize, mergedViews, null);
+    var similarNeig = this.selector.getClosestNeighbours(this.viewSize, mergedViews, null);
     var keys = Object.keys(this.view), i;
     for(i = 0; i < keys.length; i++){ delete this.view[ keys[i] ]; }
     keys = Object.keys(similarNeig);
@@ -197,34 +199,7 @@
       return result;
     }
   };
-  /** 
-  * @method getLog
-  * @description See method GossipProtocol.getLog() for more information. */
-  Vicinity.prototype.getLog = function(){
-    var cacheTrace = '[', limit, similarity, neigVal;
-    var cacheKeys = Object.keys(this.view);
-    if(cacheKeys.length === 0)
-      cacheTrace += ']';
-    else{
-      limit = cacheKeys.length - 1;
-      for(var i = 0; i < limit; i++){
-        neigVal = this.view[ cacheKeys[i] ].data;
-        similarity = '?';
-        //similarity = this.proximityFunc.compute(this.proximityFunc.profile, neigVal);
-        cacheTrace += '(' + cacheKeys[i] + ', ' + similarity + ', ' + this.view[ cacheKeys[i] ].age + '), ';
-      }
-      neigVal = this.view[ cacheKeys[limit] ].data;
-      similarity = '?';
-      //similarity = this.proximityFunc.compute(this.proximityFunc.profile, neigVal);
-      cacheTrace += '(' + cacheKeys[limit] + ', ' + similarity + ', ' + this.view[ cacheKeys[limit] ].age + ')]';
-    }
-    return this.proximityFunc.profile + '_' + cacheTrace;
-  };
-  /**
-  * @description See method GossipProtocol.getPlotInfo() for more information.*/
-  Vicinity.prototype.getPlotInfo = function(peerId){
-    return { peer: peerId, profile: this.proximityFunc.profile, loop: this.loop, 'view': Object.keys(this.view) };
-  };
   
   exports.Vicinity = Vicinity;
+  
 })(this);

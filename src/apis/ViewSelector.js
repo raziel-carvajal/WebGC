@@ -56,6 +56,7 @@
       });
     }
     values.sort( function(a,b){return a.v - b.v;} );
+    values.reverse();
     var result = {};
     i = 0;
     while(i < n && i < values.length){
