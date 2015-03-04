@@ -128,7 +128,14 @@
           else
             self.log.warn('graph obj is not defined, msg to graph was: ' + JSON.stringify(msg));
           break;
+        case 'log':
+          if(typeof self.logFunc !== 'undefined')
+            self.logFunc(msg.log);
+          else
+            self.log.warn('LogFunction is not defined');
+          break;
         default:
+          self.log.warn('message: ' + msg.header + ' is not recoginized');
           break;
       }
     }, false);
@@ -137,6 +144,8 @@
       self.log.error('In Worker: ' + e.message + ', lineno: ' + e.lineno);
     }, false);
   };
+  
+  Coordinator.prototype.setLogFunction = function(func){ this.logFunc = func; };
   
   Coordinator.prototype.sendTo = function(msg){
     var self = this;

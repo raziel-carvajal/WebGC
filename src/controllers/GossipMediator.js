@@ -19,10 +19,19 @@
   GossipMediator.prototype.scheduleActiveThread = function(){
     var self = this;
     setInterval(function(){
-      var s = 'active thread at loop: ' + self.algo.loop + ', algoId: ' + self.algo.algoId +
-        ', profile: ' + self.algo.data + ', view: ' + JSON.stringify(self.algo.view);
-      self.log.info(s);
+      //var s = 'active thread at loop: ' + self.algo.loop + ', algoId: ' + self.algo.algoId +
+      //  ', profile: ' + self.algo.data + ', view: ' + JSON.stringify(self.algo.view);
+      //self.log.info(s);
       self.algo.selectItemsToSend('active');
+      var msg = {
+        header: 'log',
+        log: {
+          algoId: self.algo.algoId,
+          cycle: self.algo.loop,
+          view: JSON.stringify(self.algo.view)
+        }
+      };
+      self.postInMainThread(msg);
       self.algo.loop++;
       self.algo.increaseAge();
     }, this.algo.gossipPeriod);

@@ -57,10 +57,12 @@
     }
     values.sort( function(a,b){return a.v - b.v;} );
     values.reverse();
-    var result = {};
+    var result = {}, itm;
     i = 0;
     while(i < n && i < values.length){
-      result[ values[i].k ] = view[ values[i].k ];
+      itm = view[ values[i].k ];
+      itm.evalu = values[i].v;
+      result[ values[i].k ] = itm;
       i++;
     }
     return result;
