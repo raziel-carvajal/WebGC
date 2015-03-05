@@ -61,7 +61,8 @@
     i = 0;
     while(i < n && i < values.length){
       itm = view[ values[i].k ];
-      itm.evalu = values[i].v;
+      itm.ev = values[i].v;
+      itm.ev = itm.ev.toFixed(3);
       result[ values[i].k ] = itm;
       i++;
     }

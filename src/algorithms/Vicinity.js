@@ -187,11 +187,9 @@
   * @param {Integer} n - Number of the required peer IDs.
   * @returns {Array} Array of n peer IDs. */ 
   Vicinity.prototype.getSimilarPeerIds = function(n){
-    if( n <= 0)
-      return [];
+    if( n <= 0){ return []; }
     var iDs = Object.keys(this.view);
-    if( n >= iDs.length )
-      return iDs;
+    if( n >= iDs.length ){ return iDs; }
     else{
       var result = [];
       for(var i = 0; i < n; i++)
