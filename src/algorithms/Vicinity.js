@@ -43,7 +43,7 @@
     if(keys.length > 0){
       var i = 0;
       while(i < this.viewSize && i < keys.length){
-        this.view[ keys[i].id ] = this.gossipUtil.newItem(0, keys[i].profile);
+        this.view[ keys[i].id ] = this.gossipUtil.newItem(0, keys[i].profile[this.algoId]);
         i++;
       }
     }
@@ -133,7 +133,10 @@
     }
   };
   Vicinity.prototype.doAgrBiasedSelection = function(msg){
-    var mergedViews = this.gossipUtil.mergeViews(msg.cluView, msg.result);
+    var keys = Object.keys(msg.result), result = {};
+    for(var i = 0; i < keys.length; i++)
+      result[ keys[i] ] = msg.result[ keys[i] ][this.algoId];
+    var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result);
     var similarNeig = this.selector.getClosestNeighbours(msg.n, mergedViews, {k: this.peerId, v: msg.newItem});
     var payload = {
       header: 'outgoingMsg',
@@ -165,11 +168,14 @@
   };
   /***/
   Vicinity.prototype.doItemsToKeepWithDep = function(msg){
-    var mergedViews = this.gossipUtil.mergeViews(msg.cluView, msg.result);
+    var keys = Object.keys(msg.result), result = {}, i;
+    for(i = 0; i < keys.length; i++)
+      result[ keys[i] ] = msg.result[ keys[i] ][this.algoId];
+    var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result);
     if(this.peerId in mergedViews)
       delete mergedViews[this.peerId];
     var similarNeig = this.selector.getClosestNeighbours(this.viewSize, mergedViews, null);
-    var keys = Object.keys(this.view), i;
+    keys = Object.keys(this.view);
     for(i = 0; i < keys.length; i++){ delete this.view[ keys[i] ]; }
     keys = Object.keys(similarNeig);
     for(i = 0; i < keys.length; i++){ this.view[ keys[i] ] = similarNeig[ keys[i] ]; }

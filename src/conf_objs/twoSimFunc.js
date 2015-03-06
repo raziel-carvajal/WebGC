@@ -23,7 +23,7 @@ var configurationObj = {
       gossipPeriod: 10000,
       propagationPolicy: { push: true, pull: true }
     },
-    vicinity1: { 
+    vicinity1: {
       class: 'Vicinity',
       viewSize: 4,
       fanout: 4,
@@ -31,13 +31,47 @@ var configurationObj = {
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'biased', // random OR biased OR agr-biased
       //implementation of the cosine similarity
+      //it is considered that len(a) = len(b)
       similarityFunction: function(a, b, log){
+        var a1 = [], b1 = [], i;
+        for(i = 0; i < a.length; i++){
+          a1.push(a[i] !== 'undefined' ? 1 : 0);
+          b1.push(b[i] !== 'undefined' ? 1 : 0);
+        }
         var prSum = 0, aSqrtSum = 0, bSqrtSum = 0;
-        var minLength = Math.min(a.length, b.length);
-        for(var i = 0; i < minLength; i++){
-          prSum += a[i] * b[i];
-          aSqrtSum += a[i] * a[i];
-          bSqrtSum += b[i] * b[i];
+        for(i = 0; i < a1.length; i++){
+          prSum += a1[i] * b1[i];
+          aSqrtSum += a1[i] * a1[i];
+          bSqrtSum += b1[i] * b1[i];
+        }
+        var r = prSum / (Math.sqrt(aSqrtSum) * Math.sqrt(bSqrtSum));
+        log.info('CosineSim: ' + r + ', with vectors: ' + JSON.stringify({'a': a, 'b': b}));
+        return r;
+      },
+      dependencies:[
+        { algoId: 'cyclon1', algoAttribute: 'view' }
+      ]
+    },
+    vicinity2: { 
+      class: 'Vicinity',
+      viewSize: 4,
+      fanout: 4,
+      gossipPeriod: 10000,
+      propagationPolicy: { push: true, pull: true },
+      selectionPolicy: 'biased', // random OR biased OR agr-biased
+      //implementation of the cosine similarity
+      //it is considered that len(a) = len(b)
+      similarityFunction: function(a, b, log){
+        var a1 = [], b1 = [], i;
+        for(i = 0; i < a.length; i++){
+          a1.push(a[i] !== 'undefined' ? 1 : 0);
+          b1.push(b[i] !== 'undefined' ? 1 : 0);
+        }
+        var prSum = 0, aSqrtSum = 0, bSqrtSum = 0;
+        for(i = 0; i < a1.length; i++){
+          prSum += a1[i] * b1[i];
+          aSqrtSum += a1[i] * a1[i];
+          bSqrtSum += b1[i] * b1[i];
         }
         var r = prSum / (Math.sqrt(aSqrtSum) * Math.sqrt(bSqrtSum));
         log.info('CosineSim: ' + r + ', with vectors: ' + JSON.stringify({'a': a, 'b': b}));
