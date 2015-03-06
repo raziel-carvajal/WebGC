@@ -81,25 +81,25 @@
   /**
   * @method selectItemsToKeep
   * @description See method GossipProtocol.selectItemsToKeep() for more information.*/
-  Cyclon.prototype.selectItemsToKeep = function(rcvCache){
-    var rcvKeys = Object.keys(rcvCache);
+  Cyclon.prototype.selectItemsToKeep = function(msg){
+    var rcvKeys = Object.keys(msg.payload);
     if( rcvKeys.length === 0 ){ return; }
     var i, currentKeys = Object.keys(this.view);
     if( currentKeys.length === 0 ){
       i = 0;
       do{
-        this.view[ rcvKeys[i] ] = rcvCache[ rcvKeys[i] ];
+        this.view[ rcvKeys[i] ] = msg.payload[ rcvKeys[i] ];
         i += 1;
       }while(i < rcvKeys.length && Object.keys(this.view).length < this.viewSize);
     }else{
       var newCache = {};
-      if(this.algoId in rcvCache){
-        delete rcvCache[this.algoId];
-        rcvKeys = Object.keys(rcvCache);
+      if(this.algoId in msg.payload){
+        delete msg.payload[this.algoId];
+        rcvKeys = Object.keys(msg.payload);
       }
       for(i = 0; i < rcvKeys.length; i++){
         if( !(rcvKeys[i] in this.view) )
-          newCache[ rcvKeys[i] ] = rcvCache[ rcvKeys[i] ];
+          newCache[ rcvKeys[i] ] = msg.payload[ rcvKeys[i] ];
       }
       i = 0;
       while( Object.keys(newCache).length < this.viewSize && i < currentKeys.length ){
@@ -110,6 +110,23 @@
       for(i = 0; i < keys.length; i++){ delete this.view[ keys[i] ]; }
       keys = Object.keys(newCache);
       for(i = 0; i < keys.length; i++){ this.view[ keys[i] ] = newCache[ keys[i] ];}
+      //Logging information of view update
+      var viewUpdOffset = (new Date()).getMilliseconds() - msg.receptionTime;
+      var msgToSend = {
+        trace: {
+          algoId: this.algoId,
+          loop: this.loop,
+          view: JSON.stringify(this.view),
+          'viewUpdOffset': viewUpdOffset
+        }
+      };
+      if(!this.log.isActivated){
+        this.gossipMediator.logHistoryKey++;
+        msgToSend.header = 'trace';
+        msgToSend.historyKey = this.gossipMediator.logHistoryKey;
+        this.gossipMediator.postInMainThread(msgToSend);
+      }else
+        this.log.info(JSON.stringify(msgToSend));
     }
   };
   /** 

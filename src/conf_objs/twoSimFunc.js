@@ -48,10 +48,11 @@ var configurationObj = {
       ]
     }
   },
-  usingWebWorkers: true,
   logOpts: {
     host: '127.0.0.1',
     //host: '131.254.213.42',
-    port: 9991
+    port: 9991,
+    activated: false,
+    feedbackPeriod: 15000
   }
 };

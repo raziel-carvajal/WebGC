@@ -147,19 +147,20 @@
   /**
   * @method selectItemsToKeep
   * @description See method GossipProtocol.selectItemsToKeep() for more information. */
-  Vicinity.prototype.selectItemsToKeep = function(rcvCache){
-    this.log.info('selectItemsToKeep() rcvView: ' + JSON.stringify(rcvCache));
-    var mergedViews = this.gossipUtil.mergeViews(this.view, rcvCache);
-    var msg = {
+  Vicinity.prototype.selectItemsToKeep = function(msg){
+    this.log.info('selectItemsToKeep() rcvView: ' + JSON.stringify(msg.payload));
+    var mergedViews = this.gossipUtil.mergeViews(this.view, msg.payload);
+    var msg1 = {
       header: 'getDep',
       cluView: mergedViews,
       emitter: this.algoId,
-      callback: 'doItemsToKeepWithDep'
+      callback: 'doItemsToKeepWithDep',
+      receptionTime: msg.receptionTime
     };
     for(var i = 0; i < this.dependencies.length; i++){
-      msg.depId = this.dependencies[i].algoId;
-      msg.depAtt = this.dependencies[i].algoAttribute;
-      this.gossipMediator.applyDependency(msg);
+      msg1.depId = this.dependencies[i].algoId;
+      msg1.depAtt = this.dependencies[i].algoAttribute;
+      this.gossipMediator.applyDependency(msg1);
     }
   };
   /***/
@@ -172,6 +173,23 @@
     for(i = 0; i < keys.length; i++){ delete this.view[ keys[i] ]; }
     keys = Object.keys(similarNeig);
     for(i = 0; i < keys.length; i++){ this.view[ keys[i] ] = similarNeig[ keys[i] ]; }
+    //Logging information of view update
+    var viewUpdOffset = (new Date()).getMilliseconds() - msg.receptionTime;
+    var msgToSend = {
+      trace: {
+        algoId: this.algoId,
+        loop: this.loop,
+        view: JSON.stringify(this.view),
+        'viewUpdOffset': viewUpdOffset
+      }
+    };
+    if(!this.log.isActivated){
+      this.gossipMediator.logHistoryKey++;
+      msgToSend.header = 'trace';
+      msgToSend.historyKey = this.gossipMediator.logHistoryKey;
+      this.gossipMediator.postInMainThread(msgToSend);
+    }else
+      this.log.info(JSON.stringify(msgToSend));
   };
   /** 
   * @method increaseAge

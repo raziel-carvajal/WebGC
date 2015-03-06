@@ -16,7 +16,6 @@
   <script>
     
     function addLogToTable(trace){
-      if(typeof trace.coSi === 'undefined'){ trace.coSi = "-"; }
       var keys = Object.keys(trace), field;
       var row = document.createElement("tr");
       for(var i = 0; i < keys.length; i++){
@@ -25,6 +24,17 @@
         row.appendChild(field);
       }
       document.getElementById(trace.algoId).appendChild(row);
+    }
+    
+    function addStatsToTable(trace){
+      var keys = Object.keys(trace), field;
+      var row = document.createElement("tr");
+      for(var i = 0; i < keys.length; i++){
+        field = document.createElement("th");
+        field.appendChild(document.createTextNode(trace[ keys[i] ]));
+        row.appendChild(field);
+      }
+      document.getElementById(trace.algoId + '-stats').appendChild(row);
     }
     
     function appendLogSection(algoId){
@@ -51,6 +61,33 @@
       document.getElementById('logSec').appendChild(divEl);
     }
     
+    function appendStatsSection(algoId){
+      var c1 = document.createElement('th');
+      c1.appendChild(document.createTextNode('ProtocolId'));
+      var c2 = document.createElement('th');
+      c2.appendChild(document.createTextNode('Gossip Cycle'));
+      var c3 = document.createElement('th');
+      c3.appendChild(document.createTextNode('View'));
+      var c4 = document.createElement('th');
+      c4.appendChild(document.createTextNode('ViewUpd Offset'));
+      
+      var trEl = document.createElement('tr');
+      trEl.appendChild(c1);
+      trEl.appendChild(c2);
+      trEl.appendChild(c3);
+      trEl.appendChild(c4);
+      
+      var tableEl = document.createElement('table');
+      var idAtt = document.createAttribute('id');
+      idAtt.value = algoId + '-stats';
+      tableEl.setAttributeNode(idAtt);
+      tableEl.appendChild(trEl);
+      
+      var divEl = document.createElement('div');
+      divEl.appendChild(tableEl);
+      document.getElementById('logSec').appendChild(divEl);
+    }
+    
     document.addEventListener('DOMContentLoaded', function(event){
       var peerId = '#userId';
       var profile = #userProfile;
@@ -61,11 +98,28 @@
       hEl.appendChild(document.createElement('br'));
       document.getElementById('peerInfo').appendChild(hEl);
       var atts = Object.keys(configurationObj.gossipAlgos);
-      for(var i = 0; i < atts.length; i++)
-        appendLogSection(atts[i]);
+      for(var i = 0; i < atts.length; i++){
+        //appendLogSection(atts[i]);
+        appendStatsSection(atts[i]);
+      }
       var controller = new Coordinator(configurationObj, profile, peerId);
-      controller.setLogFunction(addLogToTable);
+      //controller.setLogFunction(addLogToTable);
       controller.listen();
+      if(!configurationObj.logOpts.activated){
+        window.setInterval(function(){
+          var histo = controller.getHistoryOfTraces();
+          var keys = Object.keys(histo);
+          for(var i = 0; i < keys.length; i++){
+            var traces = histo[ keys[i] ];
+            var ks = Object.keys(traces);
+            for(var j = 0; j < ks.length; j++){
+              console.log('Entry: ' + ks[j] + ', Algo: ' + keys[i]);
+              addStatsToTable(traces[ ks[j] ]);
+            }
+          }
+          controller.emptyHistoryOfTraces();
+        }, configurationObj.logOpts.feedbackPeriod);
+      }
     });
     
   </script>

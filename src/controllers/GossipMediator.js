@@ -4,6 +4,7 @@
     this.log = log;
     this.worker = worker;
     this.dependencies = {};
+    if(!this.log.isActivated){ this.logHistoryKey = 0; }
   }
   
   /***/
@@ -67,7 +68,7 @@
           self.scheduleActiveThread();
           break;
         case 'incomingMsg':
-          self.algo.selectItemsToKeep(msg.payload);
+          self.algo.selectItemsToKeep(msg);
           break;
         case 'getDep':
           var obj = self.algo[msg.depAtt];

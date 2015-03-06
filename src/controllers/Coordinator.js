@@ -22,6 +22,7 @@
     this.peerJsOpts = opts.peerJsOpts;
     this.gossipAlgos = opts.gossipAlgos;
     this.withWw = opts.usingWebWorkers;
+    if(!this.log.isActivated){ this.logHistory = {}; }
   }
   
   util.inherits(Coordinator, Peer);
@@ -72,6 +73,7 @@
         this.setWorkerEvents(worker);
       else
         this.log.error('worker: ' + algosNames[i] + ' is not defined');
+      if(!this.log.isActivated){ this.logHistory[ algosNames[i] ] = {}; }
     }
     this.workers = this.factory.inventory;
   };
@@ -87,8 +89,6 @@
         if(!confObj.gossipAlgos[ keys[i] ].hasOwnProperty('class'))
           throw 'Class name of the protocol is absent';
       }
-      if(!confObj.hasOwnProperty('usingWebWorkers'))
-        throw 'Option for using web-workers or not is missing';
       console.info('configuration file is well formed');
     }catch(e){
       console.error('Configuration file is malformed. ' + e.message);
@@ -134,6 +134,9 @@
           else
             self.log.warn('LogFunction is not defined');
           break;
+        case 'trace':
+          self.logHistory[msg.trace.algoId][msg.historyKey] = msg.trace;
+          break;
         default:
           self.log.warn('message: ' + msg.header + ' is not recoginized');
           break;
@@ -143,6 +146,16 @@
     worker.addEventListener('error', function(e){
       self.log.error('In Worker: ' + e.message + ', lineno: ' + e.lineno);
     }, false);
+  };
+  
+  Coordinator.prototype.getHistoryOfTraces = function(){ return this.logHistory; };
+  
+  Coordinator.prototype.emptyHistoryOfTraces = function(){
+    var keys = Object.keys(this.logHistory);
+    for(var i = 0; i < keys.length; i++){
+      delete this.logHistory[ keys[i] ];
+      this.logHistory[ keys[i] ] = {};
+    }
   };
   
   Coordinator.prototype.setLogFunction = function(func){ this.logFunc = func; };
@@ -170,8 +183,8 @@
       self.log.info('worker: ' + connection.label + ', msg received: ' + JSON.stringify(data));
       var msg = {
         header: 'incomingMsg',
-        emitter: connection.peer,
-        payload: data
+        payload: data,
+        receptionTime: (new Date()).getMilliseconds()
       };
       worker.postMessage(msg);
     });
