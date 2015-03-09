@@ -69,6 +69,8 @@
           self.scheduleActiveThread();
           break;
         case 'incomingMsg':
+          self.log.info('View before update: ' + JSON.stringify(self.algo.view));
+          self.log.info('View to merge with: ' + JSON.stringify(msg.payload));
           self.algo.selectItemsToKeep(msg);
           break;
         case 'getDep':
