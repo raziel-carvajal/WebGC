@@ -47,7 +47,6 @@
         i++;
       }
     }
-    this.log.info('initialization of view: ' + JSON.stringify(this.view));
   };
   /**
   * @method selectItemsToSend

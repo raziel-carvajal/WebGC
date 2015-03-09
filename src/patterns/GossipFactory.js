@@ -55,6 +55,8 @@
       var logOpts = {
         host: this.log.host,
         port: this.log.port,
+        activated: this.log.isActivated,
+        feedbackPeriod: this.log.feedbackPeriod,
         header: algOpts.class + '_' + this.peerId
       };
       if( !this.inventory.hasOwnProperty(algoId) )

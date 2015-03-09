@@ -14,7 +14,7 @@
     gossipUtil.inherits(Vicinity, GossipProtocol);
     GossipProtocol.call(this, algOpts, log, gossipUtil);
     this.selectionPolicy = algOpts.selectionPolicy;
-    this.selector = new ViewSelector(this.data, log, algOpts.similarityFunction);
+    this.selector = new ViewSelector(this.data[this.algoId], log, algOpts.similarityFunction);
     this.dependencies = algOpts.dependencies;
   }
   
@@ -151,7 +151,6 @@
   * @method selectItemsToKeep
   * @description See method GossipProtocol.selectItemsToKeep() for more information. */
   Vicinity.prototype.selectItemsToKeep = function(msg){
-    this.log.info('selectItemsToKeep() rcvView: ' + JSON.stringify(msg.payload));
     var mergedViews = this.gossipUtil.mergeViews(this.view, msg.payload);
     var msg1 = {
       header: 'getDep',
@@ -179,6 +178,7 @@
     for(i = 0; i < keys.length; i++){ delete this.view[ keys[i] ]; }
     keys = Object.keys(similarNeig);
     for(i = 0; i < keys.length; i++){ this.view[ keys[i] ] = similarNeig[ keys[i] ]; }
+    this.log.info('viewUpdate: ' + JSON.stringify(this.view));
     //Logging information of view update
     var viewUpdOffset = (new Date()).getMilliseconds() - msg.receptionTime;
     var msgToSend = {
@@ -194,8 +194,7 @@
       msgToSend.header = 'trace';
       msgToSend.historyKey = this.gossipMediator.logHistoryKey;
       this.gossipMediator.postInMainThread(msgToSend);
-    }else
-      this.log.info(JSON.stringify(msgToSend));
+    }
   };
   /** 
   * @method increaseAge

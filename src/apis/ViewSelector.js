@@ -35,7 +35,6 @@
   * @param {Dictonary} view - Source where the most similar items are taken.
   * @returns {Dictionary} Subset of [view]{@link view}.*/
   ViewSelector.prototype.getClosestNeighbours = function(n, view, newItem){
-    this.log.info('getClosestNeighbours()');
     var keys = Object.keys(view);
     var result = this.checkBaseCase(n, view, newItem, keys);
     if(result === null){
@@ -43,7 +42,6 @@
       if(newItem !== null)
         result[newItem.k] = newItem.v;
     }
-    this.log.info('simFun.getCloNeigh() closestNeigh: ' + JSON.stringify(result));
     return result;
   };
   

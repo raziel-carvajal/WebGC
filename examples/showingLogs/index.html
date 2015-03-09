@@ -94,7 +94,7 @@
       var hEl = document.createElement('h1');
       hEl.appendChild(document.createTextNode('PeerID : ' + peerId));
       hEl.appendChild(document.createElement('br'));
-      hEl.appendChild(document.createTextNode('Profile: [' + profile + ']'));
+      hEl.appendChild(document.createTextNode('Profile: ' + JSON.stringify(profile)));
       hEl.appendChild(document.createElement('br'));
       document.getElementById('peerInfo').appendChild(hEl);
       var atts = Object.keys(configurationObj.gossipAlgos);

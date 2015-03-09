@@ -102,7 +102,6 @@
     
     worker.addEventListener('message', function(e){
       var msg = e.data, worker;
-      self.log.info('local message received: ' + JSON.stringify(msg));
       switch(msg.header){
         case 'outgoingMsg':
           self.sendTo(msg);
@@ -162,6 +161,7 @@
   
   Coordinator.prototype.sendTo = function(msg){
     var self = this;
+    this.log.info('Msg to send: ' + JSON.stringify(msg));
     var connection = this.connect(msg.receiver, {label: msg.algoId});
     
     connection.on('open', function(){ connection.send(msg.payload); });
@@ -230,16 +230,15 @@
     http.onreadystatechange = function() {
       if (http.readyState !== 4){ return; }
       if (http.status !== 200) { http.onerror(); return; }
-      console.log('First view: ' + http.responseText);
+      self.log.info('First view: ' + http.responseText);
       var data = JSON.parse(http.responseText);
       if(data.view.length !== 0){
         var algoIds = Object.keys(self.workers);
         for(var i = 0; i < algoIds.length; i++){
-          console.log('Sending view to worker: ' + algoIds[i]);
           self.workers[ algoIds[i] ].postMessage({header: 'firstView', view: data.view});
         }
       }else{
-        console.error('First view request failed');
+        self.log.error('First view request failed');
         //TODO schedule a new request
       }
     };

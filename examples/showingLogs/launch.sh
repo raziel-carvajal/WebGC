@@ -18,22 +18,27 @@
 #      REVISION:  ---
 #===============================================================================
 
-
+#===  FUNCTION  ================================================================
+#          NAME:  generateProfile
+#   DESCRIPTION:  
+#    PARAMETERS:  
+#       RETURNS:  
+#===============================================================================
 function generateProfile ()
 {
   doubleProf=""
-  for (( COUNTER2=1; COUNTER2<3; COUNTER2++ )); do
+  for (( COUNTER2=1; COUNTER2<=$profilesNum; COUNTER2++ )); do
     doubleProf=$doubleProf"vicinity"$COUNTER2": ["
-    lines=`cat ./preferences$COUNTER2 | wc -l`
-    for (( COUNTER3=1; COUNTER3<$lines - 1; COUNTER3++ )); do
-      pref=`head -$COUNTER3 | tail -1`
+    lines=`cat preferences$COUNTER2 | wc -l`
+    for (( COUNTER3=1; COUNTER3<$lines; COUNTER3++ )); do
+      pref=`head -$COUNTER3 preferences$COUNTER2 | tail -1`
       if [ $(( $RANDOM%2 )) = 1 ] ; then
         doubleProf=$doubleProf$pref", "
       else
         doubleProf=$doubleProf"'undefined', "
       fi
     done
-    pref=`head -$lines | tail -1`
+    pref=`head -$lines preferences$COUNTER2 | tail -1`
     if [ $(( $RANDOM%2 )) = 1 ] ; then
       doubleProf=$doubleProf$pref"], "
     else
@@ -85,14 +90,15 @@ else
 fi
 chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --allow-file-access-from-files --user-data-dir="
 }    # ----------  end of function isChromeInstalled  ----------
+
 isChromeInstalled
 peers=$1
 exeTime=$2
 serverDir=$3
+profilesNum=$4
 testDir="output"
 origin=`pwd`
 simLim=4
-
 rm -fr $testDir peer_*
 mkdir $testDir
 cd $serverDir
@@ -104,20 +110,28 @@ cd ../examples/middleware2014
 echo "Launching PeerServer..."
 node server.js 9990 4 >/dev/null &
 nodePid=$!
-
 echo "Launching instances of Chrome (one of them represents one peer)..."
 declare -a chromePids
 cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   peerDir="peer_$COUNTER"
   mkdir $testDir/$peerDir
-  #calling getData fills var "data"
-  getData $simLim $simLim
   htmlFile=$peerDir".html"
-  #random peerId
-  #cat "tmp.html" | sed "s/#userProfile/$data/;" >$htmlFile
-  #peerId predefined
-  cat "index.html" | sed "s/#userProfile/$data/;s/#userId/$peerDir/;" >$htmlFile
+  
+  ##calling getData fills var "data"
+  ##getData $simLim $simLim
+  
+  ##random peerId (changes in the html file must be done)
+  ##cat "index.html" | sed "s/#userProfile/$data/;" >$htmlFile
+  
+  ##peerId predefined
+  ##cat "index.html" | sed "s/#userProfile/$data/;s/#userId/$peerDir/;" >$htmlFile
+  
+  #creation of two list of profiles for two instances of vicinity
+  #the call to this function sets the variable "doubleProf"
+  generateProfile
+  cat "index.html" | sed "s/#userProfile/$doubleProf/;s/#userId/$peerDir/;" >$htmlFile
+  
   "$chromeCommand" $chromeStr$testDir/$peerDir $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
 done
