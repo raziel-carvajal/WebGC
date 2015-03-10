@@ -22,7 +22,10 @@
     this.peerJsOpts = opts.peerJsOpts;
     this.gossipAlgos = opts.gossipAlgos;
     this.withWw = opts.usingWebWorkers;
-    if(!this.log.isActivated){ this.logHistory = {}; }
+    if(!this.log.isActivated){
+      this.actCycHistory = {};
+      this.vieUpdHistory = {};
+    }
   }
   
   util.inherits(Coordinator, Peer);
@@ -73,7 +76,10 @@
         this.setWorkerEvents(worker);
       else
         this.log.error('worker: ' + algosNames[i] + ' is not defined');
-      if(!this.log.isActivated){ this.logHistory[ algosNames[i] ] = {}; }
+      if(!this.log.isActivated){
+        this.actCycHistory[ algosNames[i] ] = {};
+        this.vieUpdHistory[ algosNames[i] ] = {};
+      }
     }
     this.workers = this.factory.inventory;
   };
@@ -127,16 +133,20 @@
           else
             self.log.warn('graph obj is not defined, msg to graph was: ' + JSON.stringify(msg));
           break;
-        case 'log':
-          if(typeof self.logFunc !== 'undefined')
-            self.logFunc(msg.log);
-          else
-            self.log.warn('LogFunction is not defined');
+        //Logging to which extend the view of each algo is updated and, with the load
+        //of web workers, if the period of each gossip cycle is respected
+        case 'actCycLog':
+          self.actCycHistory[msg.algoId][msg.counter] = {
+            algoId: msg.algoId,
+            loop: msg.loop,
+            offset: msg.offset
+          };
           break;
-        case 'trace':
-          self.logHistory[msg.trace.algoId][msg.historyKey] = msg.trace;
+        case 'viewUpdsLog':
+          self.vieUpdHistory[msg.trace.algoId][msg.counter] = msg.trace;
           break;
         default:
+          console.error('message: ' + msg.header + ' is not recoginized');
           self.log.warn('message: ' + msg.header + ' is not recoginized');
           break;
       }
@@ -147,13 +157,19 @@
     }, false);
   };
   
-  Coordinator.prototype.getHistoryOfTraces = function(){ return this.logHistory; };
+  Coordinator.prototype.getViewUpdHistory = function(){ return this.vieUpdHistory; };
+  Coordinator.prototype.getActiCycHistory = function(){ return this.actCycHistory; };
   
-  Coordinator.prototype.emptyHistoryOfTraces = function(){
-    var keys = Object.keys(this.logHistory);
+  Coordinator.prototype.emptyHistoryOfLogs = function(){
+    var keys = Object.keys(this.vieUpdHistory);
     for(var i = 0; i < keys.length; i++){
-      delete this.logHistory[ keys[i] ];
-      this.logHistory[ keys[i] ] = {};
+      delete this.vieUpdHistory[ keys[i] ];
+      this.vieUpdHistory[ keys[i] ] = {};
+    }
+    keys = Object.keys(this.actCycHistory);
+    for(i = 0; i < keys.length; i++){
+      delete this.actCycHistory[ keys[i] ];
+      this.actCycHistory[ keys[i] ] = {};
     }
   };
   
@@ -184,7 +200,7 @@
       var msg = {
         header: 'incomingMsg',
         payload: data,
-        receptionTime: (new Date()).getMilliseconds()
+        receptionTime: new Date()
       };
       worker.postMessage(msg);
     });

@@ -4,7 +4,10 @@
     this.log = log;
     this.worker = worker;
     this.dependencies = {};
-    if(!this.log.isActivated){ this.logHistoryKey = 0; }
+    if(!this.log.isActivated){
+      this.viewUpdsLogCounter = 0;
+      this.activCycLogCounter = 0;
+    }
   }
   
   /***/
@@ -17,23 +20,32 @@
     }
   };
   
+  GossipMediator.prototype.sentActiveCycleStats = function(){
+    this.activCycLogCounter++;
+    var now = new Date();
+    var msg = {
+      header: 'actCycLog',
+      algoId: this.algo.algoId,
+      loop: this.algo.loop,
+      counter: this.activCycLogCounter,
+      'offset': (now - this.lastActCycTime) / 1000,
+    };
+    this.lastActCycTime = now;
+    this.postInMainThread(msg);
+  };
+  
   GossipMediator.prototype.scheduleActiveThread = function(){
+    this.lastActCycTime = new Date();
     var self = this;
     setInterval(function(){
-      self.log.info('Doing active thread...');
       var s = 'active thread at loop: ' + self.algo.loop + ', algoId: ' + self.algo.algoId +
         ', profile: ' + JSON.stringify(self.algo.data) + ', view: ' + JSON.stringify(self.algo.view);
+      //Logging view current state
       self.log.info(s);
+      //first try for mesuring stats (not a good idea)
+      //self.sentActiveCycleStats();
+      //performing periodic gossip selection (no changes in view are done)
       self.algo.selectItemsToSend('active');
-      //var msg = {
-      //  header: 'log',
-      //  log: {
-      //    algoId: self.algo.algoId,
-      //    cycle: self.algo.loop,
-      //    view: JSON.stringify(self.algo.view)
-      //  }
-      //};
-      //self.postInMainThread(msg);
       self.algo.loop++;
       self.algo.increaseAge();
     }, this.algo.gossipPeriod);

@@ -39,11 +39,11 @@
     
     function appendLogSection(algoId){
       var c1 = document.createElement('th');
-      c1.appendChild(document.createTextNode('ProtocolId'));
+      c1.appendChild(document.createTextNode('Algo ID'));
       var c2 = document.createElement('th');
       c2.appendChild(document.createTextNode('Gossip Cycle'));
       var c3 = document.createElement('th');
-      c3.appendChild(document.createTextNode('View'));
+      c3.appendChild(document.createTextNode('Active Cycle Offset'));
       
       var trEl = document.createElement('tr');
       trEl.appendChild(c1);
@@ -58,6 +58,7 @@
       
       var divEl = document.createElement('div');
       divEl.appendChild(tableEl);
+      document.getElementById('logSec').appendChild(document.createTextNode('Active Cycle Statistics'));
       document.getElementById('logSec').appendChild(divEl);
     }
     
@@ -85,6 +86,7 @@
       
       var divEl = document.createElement('div');
       divEl.appendChild(tableEl);
+      document.getElementById('logSec').appendChild(document.createTextNode('View Updates Statistics'));
       document.getElementById('logSec').appendChild(divEl);
     }
     
@@ -99,7 +101,7 @@
       document.getElementById('peerInfo').appendChild(hEl);
       var atts = Object.keys(configurationObj.gossipAlgos);
       for(var i = 0; i < atts.length; i++){
-        //appendLogSection(atts[i]);
+        appendLogSection(atts[i]);
         appendStatsSection(atts[i]);
       }
       var controller = new Coordinator(configurationObj, profile, peerId);
@@ -107,17 +109,21 @@
       controller.listen();
       if(!configurationObj.logOpts.activated){
         window.setInterval(function(){
-          var histo = controller.getHistoryOfTraces();
-          var keys = Object.keys(histo);
-          for(var i = 0; i < keys.length; i++){
-            var traces = histo[ keys[i] ];
-            var ks = Object.keys(traces);
-            for(var j = 0; j < ks.length; j++){
-              console.log('Entry: ' + ks[j] + ', Algo: ' + keys[i]);
-              addStatsToTable(traces[ ks[j] ]);
-            }
+          var histo = controller.getViewUpdHistory();
+          var keys = Object.keys(histo), traces, ks, i, j;
+          for(i = 0; i < keys.length; i++){
+            traces = histo[ keys[i] ];
+            ks = Object.keys(traces);
+            for(j = 0; j < ks.length; j++){ addStatsToTable(traces[ ks[j] ]); }
           }
-          controller.emptyHistoryOfTraces();
+          histo = controller.getActiCycHistory();
+          keys = Object.keys(histo);
+          for(i = 0; i < keys.length; i++){
+            traces = histo[ keys[i] ];
+            ks = Object.keys(traces);
+            for(j = 0; j < ks.length; j++){ addLogToTable(traces[ ks[j] ]); }
+          }
+          controller.emptyHistoryOfLogs();
         }, configurationObj.logOpts.feedbackPeriod);
       }
     });

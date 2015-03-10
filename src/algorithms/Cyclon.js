@@ -110,7 +110,7 @@
       keys = Object.keys(newCache);
       for(i = 0; i < keys.length; i++){ this.view[ keys[i] ] = newCache[ keys[i] ];}
       //Logging information of view update
-      var viewUpdOffset = (new Date()).getMilliseconds() - msg.receptionTime;
+      var viewUpdOffset = new Date() - msg.receptionTime;
       var msgToSend = {
         trace: {
           algoId: this.algoId,
@@ -120,9 +120,9 @@
         }
       };
       if(!this.log.isActivated){
-        this.gossipMediator.logHistoryKey++;
-        msgToSend.header = 'trace';
-        msgToSend.historyKey = this.gossipMediator.logHistoryKey;
+        this.gossipMediator.viewUpdsLogCounter++;
+        msgToSend.header = 'viewUpdsLog';
+        msgToSend.counter = this.gossipMediator.viewUpdsLogCounter;
         this.gossipMediator.postInMainThread(msgToSend);
       }else
         this.log.info(JSON.stringify(msgToSend));

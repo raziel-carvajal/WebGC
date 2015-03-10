@@ -20,24 +20,30 @@ var configurationObj = {
       class: 'Cyclon',
       viewSize: 4,
       fanout: 4,
-      gossipPeriod: 10000,
+      gossipPeriod: 5000,
       propagationPolicy: { push: true, pull: true }
     },
     vicinity1: {
       class: 'Vicinity',
       viewSize: 4,
       fanout: 4,
-      gossipPeriod: 10000,
+      gossipPeriod: 5000,
       propagationPolicy: { push: true, pull: true },
-      selectionPolicy: 'biased', // random OR biased OR agr-biased
+      selectionPolicy: 'agr-biased', // random OR biased OR agr-biased
       //implementation of the cosine similarity
-      //it is considered that len(a) = len(b)
+      //it is considered that: a.length = b.length
       similarityFunction: function(a, b, log){
-        var a1 = [], b1 = [], i;
+        var a1 = [], b1 = [], i, tmpA, tmpB, sumA = 0, sumB = 0;
         for(i = 0; i < a.length; i++){
-          a1.push(a[i] !== 'undefined' ? 1 : 0);
-          b1.push(b[i] !== 'undefined' ? 1 : 0);
+          tmpA = a[i] !== 'undefined' ? 1 : 0;
+          tmpB = b[i] !== 'undefined' ? 1 : 0;
+          a1.push(tmpA);
+          b1.push(tmpB);
+          sumA += tmpA;
+          sumB += tmpB;
         }
+        if(sumA === 0){ for(i = 0; i < a.length; i++){ a1[i] = 1; } }
+        if(sumB === 0){ for(i = 0; i < a.length; i++){ b1[i] = 1; } }
         var prSum = 0, aSqrtSum = 0, bSqrtSum = 0;
         for(i = 0; i < a1.length; i++){
           prSum += a1[i] * b1[i];
@@ -56,17 +62,23 @@ var configurationObj = {
       class: 'Vicinity',
       viewSize: 4,
       fanout: 4,
-      gossipPeriod: 10000,
+      gossipPeriod: 5000,
       propagationPolicy: { push: true, pull: true },
-      selectionPolicy: 'biased', // random OR biased OR agr-biased
+      selectionPolicy: 'agr-biased', // random OR biased OR agr-biased
       //implementation of the cosine similarity
       //it is considered that len(a) = len(b)
       similarityFunction: function(a, b, log){
-        var a1 = [], b1 = [], i;
+        var a1 = [], b1 = [], i, tmpA, tmpB, sumA = 0, sumB = 0;
         for(i = 0; i < a.length; i++){
-          a1.push(a[i] !== 'undefined' ? 1 : 0);
-          b1.push(b[i] !== 'undefined' ? 1 : 0);
+          tmpA = a[i] !== 'undefined' ? 1 : 0;
+          tmpB = b[i] !== 'undefined' ? 1 : 0;
+          a1.push(tmpA);
+          b1.push(tmpB);
+          sumA += tmpA;
+          sumB += tmpB;
         }
+        if(sumA === 0){ for(i = 0; i < a.length; i++){ a1[i] = 1; } }
+        if(sumB === 0){ for(i = 0; i < a.length; i++){ b1[i] = 1; } }
         var prSum = 0, aSqrtSum = 0, bSqrtSum = 0;
         for(i = 0; i < a1.length; i++){
           prSum += a1[i] * b1[i];
@@ -87,6 +99,6 @@ var configurationObj = {
     //host: '131.254.213.42',
     port: 9991,
     activated: false,
-    feedbackPeriod: 15000
+    feedbackPeriod: 10000
   }
 };

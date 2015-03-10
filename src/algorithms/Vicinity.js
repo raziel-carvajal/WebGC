@@ -97,6 +97,7 @@
           algoId: this.algoId
         };
         this.gossipMediator.postInMainThread(msg);
+        this.gossipMediator.sentActiveCycleStats();
         break;
       case 'biased':
         subDict = this.selector.getClosestNeighbours(itmsNum, clone, {k: this.peerId, v: newItem});
@@ -110,6 +111,7 @@
           algoId: this.algoId
         };
         this.gossipMediator.postInMainThread(msg);
+        this.gossipMediator.sentActiveCycleStats();
         break;
       case 'agr-biased':
         msg = {
@@ -148,6 +150,7 @@
       algoId: this.algoId
     };
     this.gossipMediator.postInMainThread(payload);
+    this.gossipMediator.sentActiveCycleStats();
   };
   /**
   * @method selectItemsToKeep
@@ -178,8 +181,7 @@
     this.log.info('rps view: ' + JSON.stringify(result));
     var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result);
     this.log.info('merge of views merge1 and rps: ' + JSON.stringify(mergedViews));
-    if(this.peerId in mergedViews)
-      delete mergedViews[this.peerId];
+    if(this.peerId in mergedViews){ delete mergedViews[this.peerId]; }
     var similarNeig = this.selector.getClosestNeighbours(this.viewSize, mergedViews, null);
     keys = Object.keys(this.view);
     for(i = 0; i < keys.length; i++){ delete this.view[ keys[i] ]; }
@@ -187,7 +189,7 @@
     for(i = 0; i < keys.length; i++){ this.view[ keys[i] ] = similarNeig[ keys[i] ]; }
     this.log.info('View after update: ' + JSON.stringify(this.view));
     //Logging information of view update
-    var viewUpdOffset = (new Date()).getMilliseconds() - msg.receptionTime;
+    var viewUpdOffset = new Date() - msg.receptionTime;
     var msgToSend = {
       trace: {
         algoId: this.algoId,
@@ -197,11 +199,12 @@
       }
     };
     if(!this.log.isActivated){
-      this.gossipMediator.logHistoryKey++;
-      msgToSend.header = 'trace';
-      msgToSend.historyKey = this.gossipMediator.logHistoryKey;
+      this.gossipMediator.viewUpdsLogCounter++;
+      msgToSend.header = 'viewUpdsLog';
+      msgToSend.counter = this.gossipMediator.viewUpdsLogCounter;
       this.gossipMediator.postInMainThread(msgToSend);
-    }
+    }else
+      this.log.info(JSON.stringify(msgToSend));
   };
   /** 
   * @method increaseAge
