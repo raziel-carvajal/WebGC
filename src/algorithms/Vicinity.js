@@ -154,6 +154,7 @@
   * @description See method GossipProtocol.selectItemsToKeep() for more information. */
   Vicinity.prototype.selectItemsToKeep = function(msg){
     var mergedViews = this.gossipUtil.mergeViews(this.view, msg.payload);
+    this.log.info('View after merge1: ' + JSON.stringify(mergedViews));
     var msg1 = {
       header: 'getDep',
       cluView: mergedViews,
@@ -174,9 +175,9 @@
       itm =  msg.result[ keys[i] ];
       result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data[this.algoId]);
     }
-    this.log.info('rps: ' + JSON.stringify(result));
+    this.log.info('rps view: ' + JSON.stringify(result));
     var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result);
-    this.log.info('merge with rps: ' + JSON.stringify(mergedViews));
+    this.log.info('merge of views merge1 and rps: ' + JSON.stringify(mergedViews));
     if(this.peerId in mergedViews)
       delete mergedViews[this.peerId];
     var similarNeig = this.selector.getClosestNeighbours(this.viewSize, mergedViews, null);

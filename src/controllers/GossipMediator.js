@@ -20,10 +20,10 @@
   GossipMediator.prototype.scheduleActiveThread = function(){
     var self = this;
     setInterval(function(){
-      //self.log.info('Doing active thread...');
-      //var s = 'active thread at loop: ' + self.algo.loop + ', algoId: ' + self.algo.algoId +
-      //  ', profile: ' + self.algo.data + ', view: ' + JSON.stringify(self.algo.view);
-      //self.log.info(s);
+      self.log.info('Doing active thread...');
+      var s = 'active thread at loop: ' + self.algo.loop + ', algoId: ' + self.algo.algoId +
+        ', profile: ' + JSON.stringify(self.algo.data) + ', view: ' + JSON.stringify(self.algo.view);
+      self.log.info(s);
       self.algo.selectItemsToSend('active');
       //var msg = {
       //  header: 'log',
@@ -69,8 +69,9 @@
           self.scheduleActiveThread();
           break;
         case 'incomingMsg':
-          self.log.info('View before update: ' + JSON.stringify(self.algo.view));
-          self.log.info('View to merge with: ' + JSON.stringify(msg.payload));
+          self.log.info('Updating view...');
+          self.log.info('Current view: ' + JSON.stringify(self.algo.view));
+          self.log.info('Merge with  : ' + JSON.stringify(msg.payload));
           self.algo.selectItemsToKeep(msg);
           break;
         case 'getDep':
