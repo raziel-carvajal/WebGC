@@ -57,7 +57,7 @@
       self.log.info('posting profile...');
       self.postProfile();
       self.log.info('Getting first view...');
-      window.setTimeout(function(){ self.getFirstView(); }, 5000);
+      window.setTimeout(function(){ self.getFirstView(); }, 10000);
     });
     /**
     * @event connection
@@ -129,7 +129,7 @@
           break;
         case 'drawGraph':
           if(typeof self.plotterObj !== 'undefined')
-            self.plotterObj.buildGraph(msg.type, msg.graph, msg.view);
+            self.plotterObj.buildGraph(msg.algoId, msg.graph, msg.view);
           else
             self.log.warn('graph obj is not defined, msg to graph was: ' + JSON.stringify(msg));
           break;

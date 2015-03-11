@@ -99,6 +99,6 @@ var configurationObj = {
     //host: '131.254.213.42',
     port: 9991,
     activated: false,
-    feedbackPeriod: 10000
+    feedbackPeriod: 15000
   }
 };

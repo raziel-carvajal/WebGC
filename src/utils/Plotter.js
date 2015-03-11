@@ -51,7 +51,7 @@
         } 
       });
     }
-    keys = Object.keys(view);
+    keys = view;
     s = String(peers[emitter]);
     for(i = 0; i < keys.length; i++){
       edges.push({
@@ -65,7 +65,7 @@
     return { 'nodes': nodes, 'edges': edges };
   };
   
-  Plotter.prototype.buildGraph = function(viewType, nodes, view){
+  Plotter.prototype.buildGraph = function(algoId, nodes, view){
     //this.logger.info('Building graph of type ' + viewType);
     var eles = this.getGraphFormat(this.ref, nodes, view);
     //this.logger.info('For view ' + viewType + ' the elements are ' + JSON.stringify(eles));
@@ -95,15 +95,15 @@
       'width': 12,
       'line-color': 'data(color)'
     };
-    var graphContainer;
-    if(viewType === 'clu'){
-      this.cluLoop++;
-      graphContainer = 'clu-section';
-    }
-    if(viewType === 'rps'){
-      this.currentLoop++;
-      graphContainer = 'rps-section';
-    }
+    var graphContainer = algoId;
+    //if(viewType === 'clu'){
+    //  this.cluLoop++;
+    //  graphContainer = 'clu-section';
+    //}
+    //if(viewType === 'rps'){
+    //  this.currentLoop++;
+    //  graphContainer = 'rps-section';
+    //}
     //this.logger.info('graphcontainer is ' + graphContainer);
     var input = {
       container: document.getElementById(graphContainer),

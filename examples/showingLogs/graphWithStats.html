@@ -1,9 +1,7 @@
 <!DOCTYPE html PUBLIC>
 <html lang="en">
 <head>
-  <style>
-    table {border:1;width:100%}
-  </style>
+   <link href="webgc_demo.css" rel="stylesheet" type="text/css">
   <script type="text/javascript" src="../../bower_components/peerjs/peer.js"></script>
   <script type="text/javascript" src="../../src/utils/LoggerForWebWorker.js"></script>
   <script type="text/javascript" src="../../src/utils/GossipUtil.js"></script>
@@ -12,8 +10,35 @@
   <script type="text/javascript" src="../../src/algorithms/Vicinity.js"></script>
   <script type="text/javascript" src="../../src/algorithms/Cyclon.js"></script>
   <script type="text/javascript" src="../../src/controllers/Coordinator.js"></script>
+  <script type="text/javascript" src="../../src/utils/Plotter.js"></script>
   <script type="text/javascript" src="../../src/conf_objs/twoSimFunc.js"></script>
   <script>
+   
+    function getGraph(host, port, plotterLoop, workers){
+      var http = new XMLHttpRequest();
+      var url = 'http://' + host + ':' + port + '/getGraph';
+      var self = this;
+      http.open('get', url, true);
+      http.onerror = function(e) {
+        self.log.error('Trying to get graph for loop ' + plotterLoop);
+      };
+      http.onreadystatechange = function() {
+        if (http.readyState !== 4) { return; }
+        if (http.status !== 200) {
+          http.onerror();
+          return;
+        }
+        console.log('Graph ' + http.responseText + ' for loop ' + plotterLoop);
+        var nodes = JSON.parse(http.responseText);
+        var msg = {header: 'view', graph: nodes};
+        var keys = Object.keys(workers), worker;
+        for(var i = 0; i < keys.length; i++){
+          worker = workers[ keys[i] ];
+          worker.postMessage(msg);
+        }
+      };
+      http.send(null);
+    }
     
     function addLogToTable(trace){
       var keys = Object.keys(trace), field;
@@ -90,77 +115,104 @@
       document.getElementById('logSec').appendChild(divEl);
     }
     
-    document.addEventListener('DOMContentLoaded', function(event){
-      //var peerId = '#userId';
-      //var profile = #userProfile;
-      //var hEl = document.createElement('h1');
-      //hEl.appendChild(document.createTextNode('PeerID : ' + peerId));
-      //hEl.appendChild(document.createElement('br'));
-      //hEl.appendChild(document.createTextNode('Profile: ' + JSON.stringify(profile)));
-      //hEl.appendChild(document.createElement('br'));
-      //document.getElementById('peerInfo').appendChild(hEl);
-      //var atts = Object.keys(configurationObj.gossipAlgos);
-      //for(var i = 0; i < atts.length; i++){
-      //  appendLogSection(atts[i]);
-      //  appendStatsSection(atts[i]);
-      //}
-      //var controller = new Coordinator(configurationObj, profile, peerId);
-      //controller.setLogFunction(addLogToTable);
-      //controller.listen();
-      //if(!configurationObj.logOpts.activated){
-      //  window.setInterval(function(){
-      //    var histo = controller.getViewUpdHistory();
-      //    var keys = Object.keys(histo), traces, ks, i, j;
-      //    for(i = 0; i < keys.length; i++){
-      //      traces = histo[ keys[i] ];
-      //      ks = Object.keys(traces);
-      //      for(j = 0; j < ks.length; j++){ addStatsToTable(traces[ ks[j] ]); }
-      //    }
-      //    histo = controller.getActiCycHistory();
-      //    keys = Object.keys(histo);
-      //    for(i = 0; i < keys.length; i++){
-      //      traces = histo[ keys[i] ];
-      //      ks = Object.keys(traces);
-      //      for(j = 0; j < ks.length; j++){ addLogToTable(traces[ ks[j] ]); }
-      //    }
-      //    controller.emptyHistoryOfLogs();
-      //  }, configurationObj.logOpts.feedbackPeriod);
-      //}
-    });
+    function start(){
+      var peerId = document.getElementById('user').value;
+      if(peerId === '')
+        alert("Type a peer ID");
+      else{
+        document.getElementById('start').disabled = true;
+        var listObj = document.getElementById('list');
+        var profile = {vicinity1: [], vicinity2: []}, i, j, limit, elem;
+        var listsLen = {1: 7, 2: 9};
+        for(i = 1; i <= 2; i++ ){
+          limit = listsLen[i];
+          for(j = 1; j <= limit; j++){
+            elem = document.getElementById('p' + i + '_' + j);
+            profile['vicinity' + i].push(elem.checked === true ? elem.value : 'undefined');
+          }
+        }
+        var atts = Object.keys(configurationObj.gossipAlgos);
+        for(i = 0; i < atts.length; i++){
+          appendLogSection(atts[i]);
+          appendStatsSection(atts[i]);
+        }
+        var controller = new Coordinator(configurationObj, profile, peerId);
+        controller.setLogFunction(addLogToTable);
+        controller.listen();
+        if(!configurationObj.logOpts.activated){
+          window.setInterval(function(){
+            var histo = controller.getViewUpdHistory();
+            var keys = Object.keys(histo), traces, ks, i, j;
+            for(i = 0; i < keys.length; i++){
+              traces = histo[ keys[i] ];
+              ks = Object.keys(traces);
+              for(j = 0; j < ks.length; j++){ addStatsToTable(traces[ ks[j] ]); }
+            }
+            histo = controller.getActiCycHistory();
+            keys = Object.keys(histo);
+            for(i = 0; i < keys.length; i++){
+              traces = histo[ keys[i] ];
+              ks = Object.keys(traces);
+              for(j = 0; j < ks.length; j++){ addLogToTable(traces[ ks[j] ]); }
+            }
+            controller.emptyHistoryOfLogs();
+          }, configurationObj.logOpts.feedbackPeriod);
+        }
+        var plotter = new Plotter(controller.log, peerId);
+        controller.plotterObj = plotter;
+        window.setInterval( function(){
+          plotter.ref = controller.id;
+          var host = configurationObj.peerJsOpts.host;
+          var port = configurationObj.peerJsOpts.port;
+          getGraph(host, port, plotter.loop, controller.workers);
+          plotter.loop++;
+        }, configurationObj.logOpts.feedbackPeriod);
+      }
+    }
+    
+    //Not Used
+    document.addEventListener('DOMContentLoaded', function(event){ });
     
   </script>
 </head>
 <body>
   <div id="main" class="mainContainer">
     <div id="form" class="formContainer">
-      <h2>Preferences</h2>
+      <h2>User ID and preferences</h2>
+      User ID: <input type="text" id="user" placeholder="Write your ID, here!">
+      <br>
+      First profile: 
       <p>
-      <input type="checkbox" name="demo" value="one" />Step One
-      <input type="checkbox" name="demo" value="two" />Step Two
-      </p>
-        Your peer ID: <input type="text" id="user" placeholder="Write your ID, here!">
-        Your preference is :
-        <select id="list">
-          <option value="v1">Internet of Things</option>
-          <option value="v2">P2P Systems</option>
-          <option value="v3">Cloud Computing</option>
-          <option value="v4">Big Data</option>
-        </select>
-        <input class="button" type="button" value="START" id="start">
-        <div id="statusSec" class="status_section">
-          <div id="profile" class="profiile_cls"></div>
-          <div id="info" class="info_cls">
-            <img src="legend.png" alt="" style="width:800px;height:100px;align:middle">
-          </div>
-        </div> 
+        <input type="checkbox" id="p1_1" value="Internet of Things"/>Internet of Things
+        <input type="checkbox" id="p1_2" value="P2P Systems"  />P2P Systems
+        <input type="checkbox" id="p1_3" value="Cloud Computing"/>Cloud Computing
+        <input type="checkbox" id="p1_4" value="Big Data"/>Big Data
+        <input type="checkbox" id="p1_5" value="Gossiping"/>Gossiping
+        <input type="checkbox" id="p1_6" value="Optimization"/>Optimization
+        <input type="checkbox" id="p1_7" value="Recommendation Systems"/>Recommendation Systems
+      </p><br>
+      Second profile:
+      <p>
+        <input type="checkbox" id="p2_1" value="Metaheuristics"/>Metaheuristics
+        <input type="checkbox" id="p2_2" value="Fuzzy Systems"/>Fuzzy Systems
+        <input type="checkbox" id="p2_3" value="Emerging Applications"/>Emerging Applications
+        <input type="checkbox" id="p2_4" value="Computational Neuroscience"/>Computational Neuroscience
+        <input type="checkbox" id="p2_5" value="Algorithms"/>Algorithms
+        <input type="checkbox" id="p2_6" value="Emerging Technology"/>Emerging Technology
+        <input type="checkbox" id="p2_7" value="Multi-Agent Systems"/>Multi-Agent Systems
+        <input type="checkbox" id="p2_8" value="Cellular Automata"/>Cellular Automata
+        <input type="checkbox" id="p2_9" value="Scalable Numerical Algorithms"/>Scalable Numerical Algorithms
+      </p><br>
+      <input class="button" type="button" value="START" id="start" onclick="start()">
     </div>
     <div id="graphs" class="graphsContainer">
-      <div id="rps-section" class="rpsContainer"></div>
-      <div id="clu-section" class="cluContainer"></div>
+      <div id="cyclon1" class="rpsContainer"></div>
+      <div id="vicinity1" class="cluContainer"></div>
+      <div id="vicinity2" class="rpsContainer"></div>
     </div>
+    <div id="peerInfo"></div>
+    <br><br><br>
+    <div id="logSec"></div>
   </div>
-  <div id="peerInfo"></div>
-  <br><br><br>
-  <div id="logSec"></div>
 </body>
 </html>

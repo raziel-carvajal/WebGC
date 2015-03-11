@@ -100,9 +100,8 @@
           break;
         case 'view':
           msg.header = 'drawGraph';
-          msg.view = self.algo.view;
-          var t = self.algo.class === 'Vicinity' ? 'clu' : 'rps';
-          msg.type = t;
+          msg.view = Object.keys(self.algo.view);
+          msg.algoId = self.algo.algoId;
           self.worker.postMessage(msg);
           break;
         default:
