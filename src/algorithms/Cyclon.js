@@ -76,6 +76,7 @@
       algoId: this.algoId
     };
     this.gossipMediator.postInMainThread(msg);
+    this.gossipMediator.sentActiveCycleStats();
   };
   /**
   * @method selectItemsToKeep
