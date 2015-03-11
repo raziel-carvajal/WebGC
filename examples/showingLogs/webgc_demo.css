@@ -1,9 +1,17 @@
 @import "fancy.css";
 
-.table{
+.tableStyle{
   border:1;
   width:100%;
+  position: relative;
+  float: center;
 }
+
+.headerStyle{
+  position: relative;
+  float: center;
+}
+
 .mainContainer{
   margin:0px auto;
 }
@@ -11,7 +19,7 @@
 .graphsContainer{
   float: left;
   width: 96%;
-  height: 650px;
+  /*height: 650px;*/
   margin-top: 15px;
   margin-bottom: 15px;
   margin-left: 15px;
@@ -29,7 +37,7 @@
   border: 3px double #FF7500;
   width: 48%;
   margin: 5px AUTO;
-  height: 96%;
+  height: 50%;
   padding-top: 5px;
   padding-bottom: 5px;
   border-radius: 10px;
@@ -42,7 +50,7 @@
   border: 3px double #FF7500;
   width: 48%;
   margin: 5px AUTO;
-  height: 96%;
+  height: 50%;
   padding-top: 5px;
   padding-bottom: 5px;
   border-radius: 10px;

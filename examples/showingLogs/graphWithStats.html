@@ -1,7 +1,9 @@
 <!DOCTYPE html PUBLIC>
 <html lang="en">
 <head>
-   <link href="webgc_demo.css" rel="stylesheet" type="text/css">
+  <link href="webgc_demo.css" rel="stylesheet" type="text/css">
+  <script type="text/javascript" src="../../bower_components/jquery/dist/jquery.min.js"></script> 
+  <script type="text/javascript" src="../../bower_components/cytoscape/dist/cytoscape.js"></script>
   <script type="text/javascript" src="../../bower_components/peerjs/peer.js"></script>
   <script type="text/javascript" src="../../src/utils/LoggerForWebWorker.js"></script>
   <script type="text/javascript" src="../../src/utils/GossipUtil.js"></script>
@@ -28,7 +30,6 @@
           http.onerror();
           return;
         }
-        console.log('Graph ' + http.responseText + ' for loop ' + plotterLoop);
         var nodes = JSON.parse(http.responseText);
         var msg = {header: 'view', graph: nodes};
         var keys = Object.keys(workers), worker;
@@ -42,24 +43,30 @@
     
     function addLogToTable(trace){
       var keys = Object.keys(trace), field;
-      var row = document.createElement("tr");
+      var row = document.createElement("tr"), att;
       for(var i = 0; i < keys.length; i++){
         field = document.createElement("th");
+        att = document.createAttribute('class');
+        att.value = 'headerStyle';
+        field.setAttributeNode(att);
         field.appendChild(document.createTextNode(trace[ keys[i] ]));
         row.appendChild(field);
       }
-      document.getElementById(trace.algoId).appendChild(row);
+      document.getElementById(trace.algoId + 'Cycle').appendChild(row);
     }
     
     function addStatsToTable(trace){
       var keys = Object.keys(trace), field;
-      var row = document.createElement("tr");
+      var row = document.createElement("tr"), att;
       for(var i = 0; i < keys.length; i++){
         field = document.createElement("th");
+        att = document.createAttribute('class');
+        att.value = 'headerStyle';
+        field.setAttributeNode(att);
         field.appendChild(document.createTextNode(trace[ keys[i] ]));
         row.appendChild(field);
       }
-      document.getElementById(trace.algoId + '-stats').appendChild(row);
+      document.getElementById(trace.algoId + 'View').appendChild(row);
     }
     
     function appendLogSection(algoId){
@@ -77,14 +84,16 @@
       
       var tableEl = document.createElement('table');
       var idAtt = document.createAttribute('id');
-      idAtt.value = algoId;
+      idAtt.value = algoId + 'Cycle';
+      var idAtt1 = document.createAttribute('class');
+      idAtt1.value = 'tableStyle';
       tableEl.setAttributeNode(idAtt);
+      tableEl.setAttributeNode(idAtt1);
       tableEl.appendChild(trEl);
       
-      var divEl = document.createElement('div');
-      divEl.appendChild(tableEl);
-      document.getElementById('logSec').appendChild(document.createTextNode('Active Cycle Statistics'));
-      document.getElementById('logSec').appendChild(divEl);
+      //var divEl = document.createElement('div');
+      //divEl.appendChild(tableEl);
+      document.getElementById('cycleLogs').appendChild(tableEl);
     }
     
     function appendStatsSection(algoId){
@@ -105,14 +114,16 @@
       
       var tableEl = document.createElement('table');
       var idAtt = document.createAttribute('id');
-      idAtt.value = algoId + '-stats';
+      idAtt.value = algoId + 'View';
+      var idAtt1 = document.createAttribute('class');
+      idAtt1.value = 'tableStyle';
       tableEl.setAttributeNode(idAtt);
+      tableEl.setAttributeNode(idAtt1);
       tableEl.appendChild(trEl);
       
-      var divEl = document.createElement('div');
-      divEl.appendChild(tableEl);
-      document.getElementById('logSec').appendChild(document.createTextNode('View Updates Statistics'));
-      document.getElementById('logSec').appendChild(divEl);
+      //var divEl = document.createElement('div');
+      //divEl.appendChild(tableEl);
+      document.getElementById('viewLogs').appendChild(tableEl);
     }
     
     function start(){
@@ -130,11 +141,6 @@
             elem = document.getElementById('p' + i + '_' + j);
             profile['vicinity' + i].push(elem.checked === true ? elem.value : 'undefined');
           }
-        }
-        var atts = Object.keys(configurationObj.gossipAlgos);
-        for(i = 0; i < atts.length; i++){
-          appendLogSection(atts[i]);
-          appendStatsSection(atts[i]);
         }
         var controller = new Coordinator(configurationObj, profile, peerId);
         controller.setLogFunction(addLogToTable);
@@ -171,7 +177,13 @@
     }
     
     //Not Used
-    document.addEventListener('DOMContentLoaded', function(event){ });
+    document.addEventListener('DOMContentLoaded', function(event){
+      var atts = Object.keys(configurationObj.gossipAlgos);
+      for(i = 0; i < atts.length; i++){
+        appendLogSection(atts[i]);
+        appendStatsSection(atts[i]);
+      }
+    });
     
   </script>
 </head>
@@ -210,9 +222,12 @@
       <div id="vicinity1" class="cluContainer"></div>
       <div id="vicinity2" class="rpsContainer"></div>
     </div>
-    <div id="peerInfo"></div>
+    <div id="cycleLogs" class="graphsContainer"></div>
+    <div id="viewLogs" class="graphsContainer"></div>
+    <!--
     <br><br><br>
-    <div id="logSec"></div>
+    <div id="logSec" class></div>
+    -->
   </div>
 </body>
 </html>
