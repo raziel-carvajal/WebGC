@@ -254,8 +254,8 @@
           self.workers[ algoIds[i] ].postMessage({header: 'firstView', view: data.view});
         }
       }else{
-        self.log.error('First view request failed');
-        //TODO schedule a new request
+        //just in case the server has any peer reference
+        window.setTimeout(function(){ self.getFirstView(); }, 5000);
       }
     };
     http.send(null);
