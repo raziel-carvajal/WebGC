@@ -13,6 +13,7 @@
   * Peer object is lunched a "get identifier" request is performed.
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Coordinator(opts, profile, peerId){
+    if(!(this instanceof Coordinator)){ return new Coordinator(opts, profile, peerId); }
     if( !this.checkConfFile(opts) ) return;
     this.profile = profile;
     this.peerId = peerId;
@@ -26,6 +27,8 @@
       this.actCycHistory = {};
       this.vieUpdHistory = {};
     }
+    this.sendTo = opts.usingSs ? this.sendViaSigServer : this.sendViaLookupService;
+    if(!opts.usingSs){ this.lookupService = new LookupService(this.log); }
   }
   
   util.inherits(Coordinator, Peer);
@@ -175,7 +178,7 @@
   
   Coordinator.prototype.setLogFunction = function(func){ this.logFunc = func; };
   
-  Coordinator.prototype.sendTo = function(msg){
+  Coordinator.prototype.sendViaSigServer = function(msg){
     var self = this;
     this.log.info('Msg to send: ' + JSON.stringify(msg));
     var connection = this.connect(msg.receiver, {label: msg.algoId});
@@ -185,6 +188,25 @@
     connection.on('error', function(e){
       self.log.error('while sending view to: ' + msg.receiver + ', in protocol: ' + msg.algoId);
     });
+  };
+  
+  Coordinator.prototype.sendViaLookupService = function(msg){
+    //Peer.connections = this.connections
+    var connectionIds = Object.keys(this.connections[msg.receiver]);
+    var candidate;
+    for(var i = 0; i < connectionIds.length; i++){
+      candidate = this.connections[msg.receiver][ connectionIds[i] ];
+      if(candidate && candidate.open){
+        candidate.send(msg);
+        return;
+      }
+    }
+    candidate = this.lookupService.connections[msg.receiver];
+    if(candidate && candidate.open){
+      candidate.send(msg);
+      return;
+    }
+    this.lookupService.apply(msg);
   };
   /**
   * @method handleConnection
