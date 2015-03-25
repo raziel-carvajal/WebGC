@@ -214,21 +214,32 @@
   * Coordinator.protocols
   * @param {DataConnection} connection - This connection allows the exchange of meesages amog peers. */
   Coordinator.prototype.handleConnection = function(connection){
-    var worker = this.workers[connection.label];
+    var msgType = connection.label;
     var self = this;
     
     connection.on('data', function(data){
-      self.log.info('worker: ' + connection.label + ', msg received: ' + JSON.stringify(data));
-      var msg = {
-        header: 'incomingMsg',
-        payload: data,
-        receptionTime: new Date()
-      };
-      worker.postMessage(msg);
+      switch(msgType){
+        case 'LOOKUP_SERVICE':
+          self.lookupService.dispatch(data);
+          break;
+        case 'GOSSIP':
+          var worker = self.workers[data.algoId];
+          self.log.info('worker: ' + data.algoId + ', msg received: ' + JSON.stringify(data));
+          var msg = {
+            header: 'incomingMsg',
+            payload: data,
+            receptionTime: new Date()
+          };
+          worker.postMessage(msg);
+          break;
+        default:
+          self.log.error('Msg: ' + mysType + ' in DataConnection is not recognized');
+          break;
+      }
     });
     
     connection.on('error', function(err){
-      self.log.error('Trying to handle one msg of: ' + protocol.protoId);
+      self.log.error('Trying to handle message: ' + msgType);
     });
   };
   

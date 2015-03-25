@@ -12,32 +12,69 @@
   }
   
   LookupService.prototype.apply = function(msg){
-
+    var target = msg.receiver;
+    this.broadcast({
+      header: 'LOOKUP',
+      path: [msg.emitter],
+      'target': target,
+      steps: 0,
+      emitter: msg.emitter
+    });
+    if(!this.gossipMsgsToSend[target]){ this.gossipMsgsToSend[target] = []; }
+    this.gossipMsgsToSend[target].push(msg);
   };
+  
   LookupService.prototype.doBroadcastLater = function(msg){
     var self = this;
-    window.setTimeout(function(){ this.broadcast(msg); }, 5000);
+    window.setTimeout(function(){ self.broadcast(msg); }, 5000);
   };
   
   LookupService.prototype.broadcast = function(msg){
-    var keys = Object.keys(this.connections);
+    this.log.info('Doing brodcast');
+    var keys = Object.keys(this.peerCons), i;
     if(keys.length === 0){
-      logger.warn('Any connection has been stablished, scheduling later execution');
+      this.log.warn('Peer.connections is empty, doing brodcast later');
       this.doBroadcastLater(msg);
       return;
     }else{
       var consPerNeig;
-      for(var i = 0; i < keys.length; i++){
+      for(i = 0; i < keys.length; i++){
         consPerNeig = this.connections[ keys[i] ];
         if(consPerNeig[ keys[i] ].length !== 0 && (consPerNeig[ keys[i] ][0]).open){
-          logger.info('Sending broadcast msg to ' + keys[i]);
+          logger.info('Doing broadcast with ' + keys[i] + ' using Peer.con');
           (consPerNeig[ keys[i] ][0]).send(msg);
         }else
-          logger.warn('Connections with ' + keys[i] + ' are still not ready');
+          this.log.warn('Peer.con with ' + keys[i] + ' is not ready');
       }
     }
+    keys = Object.keys(this.connections);
+    if(keys.length === 0){
+      this.log.warn('LookupService.connections is empty, doing broadcast later');
+      this.doBroadcastLater(msg);
+      return;
+    }else{
+      for(i = 0; i < keys.length; i++){
+        if(this.connections[ keys[i] ] && (this.connections[ keys[i] ]).open){
+          this.log.info('Doing broadcast with ' + keys[i] + ' using LookupService.con')
+          (this.connections[ keys[i] ]).send(msg);
+        }else
+          this.log.warn('LookupService.con with ' + keys[i] + ' is not ready');
+      }
+    }
+    this.log.info('Broadcast is done');
   };
   LookupService.prototype.updateConnection = function(c){ this.currentCo = c; };
   LookupService.prototype.broadcast = function(msg){};
+  LookupService.prototype.dispatch = function(msg){
+    switch(msg.header){
+      case 'LOOKUP':
+
+        break;
+      case 'LOOKUP_ANSW':
+        break;
+      default:
+        break;
+    }
+  };
   exports.LookupService = LookupService;
 })(this);
