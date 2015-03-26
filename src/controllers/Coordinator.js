@@ -14,6 +14,8 @@
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Coordinator(opts, profile, peerId){
     if(!(this instanceof Coordinator)){ return new Coordinator(opts, profile, peerId); }
+    //Trying to get offer asap
+    this.setOffer();
     if( !this.checkConfFile(opts) ) return;
     this.profile = profile;
     this.peerId = peerId;
@@ -28,7 +30,7 @@
       this.vieUpdHistory = {};
     }
     this.sendTo = opts.usingSs ? this.sendViaSigServer : this.sendViaLookupService;
-    if(!opts.usingSs){ this.lookupService = new LookupService(this.log); }
+    this.usingSs = opts.usingSs;
   }
   
   util.inherits(Coordinator, Peer);
@@ -42,6 +44,10 @@
     }else{
       Peer.call(this, this.peerJsOpts);
       this.isIdRandom = true;
+    }
+    if(!this.usingSs){
+      this.lookupService = new LookupService(this.log, this.connections,
+        this.sendTo, this.id, this.offer);
     }
     var self = this;
     /**
@@ -180,30 +186,28 @@
   
   Coordinator.prototype.sendViaSigServer = function(msg){
     var self = this;
-    this.log.info('Msg to send: ' + JSON.stringify(msg));
-    var connection = this.connect(msg.receiver, {label: msg.algoId});
-    
+    this.log.info('Outgoing msg: ' + JSON.stringify(msg) + ' to: ' + msg.receiver);
+    //Peer.connect
+    var connection = this.connect(msg.receiver);
     connection.on('open', function(){ connection.send(msg.payload); });
-    
     connection.on('error', function(e){
-      self.log.error('while sending view to: ' + msg.receiver + ', in protocol: ' + msg.algoId);
+      self.log.error('while sending outgoing msg to: ' + msg.receiver);
     });
   };
   
   Coordinator.prototype.sendViaLookupService = function(msg){
     //Peer.connections = this.connections
-    var connectionIds = Object.keys(this.connections[msg.receiver]);
-    var candidate;
-    for(var i = 0; i < connectionIds.length; i++){
-      candidate = this.connections[msg.receiver][ connectionIds[i] ];
-      if(candidate && candidate.open){
-        candidate.send(msg);
+    var connections = Object.keys(this.connections[msg.receiver]), con;
+    for(var i = 0; i < connections.length; i++){
+      con = this.connections[i];
+      if(con && con.open){
+        con.send(msg);
         return;
       }
     }
-    candidate = this.lookupService.connections[msg.receiver];
-    if(candidate && candidate.open){
-      candidate.send(msg);
+    con = this.lookupService.connections[msg.receiver];
+    if(con && con.open){
+      con.send(msg);
       return;
     }
     this.lookupService.apply(msg);
@@ -214,12 +218,10 @@
   * Coordinator.protocols
   * @param {DataConnection} connection - This connection allows the exchange of meesages amog peers. */
   Coordinator.prototype.handleConnection = function(connection){
-    var msgType = connection.label;
     var self = this;
-    
     connection.on('data', function(data){
-      switch(msgType){
-        case 'LOOKUP_SERVICE':
+      switch(data.header){
+        case 'LOOKUP':
           self.lookupService.dispatch(data);
           break;
         case 'GOSSIP':
@@ -233,11 +235,10 @@
           worker.postMessage(msg);
           break;
         default:
-          self.log.error('Msg: ' + mysType + ' in DataConnection is not recognized');
+          self.log.error('Msg: ' + data.header + ' in DataConnection is not recognized');
           break;
       }
     });
-    
     connection.on('error', function(err){
       self.log.error('Trying to handle message: ' + msgType);
     });
@@ -292,6 +293,23 @@
       }
     };
     http.send(null);
+  };
+  
+  Coordinator.prototype.setOffer = function(){
+    var self = this;
+    try{
+      this.emptyCon = new RTCPeerConnection({'iceServers': [{ 'url': 'stun:stun.l.google.com:19302' }]},
+        {optional: [{RtpDataChannels: true}]});
+      pc.createOffer(function(offer){
+        self.log.info('Offer to share via the LookupService was set');
+        self.offer = offer;
+        self.emptyCon.close();
+      },function(err){
+        self.log.error('While creating offer');
+      }, {});
+    }catch(e){
+      this.log.error('Offer to share via the lookup service is not useful');
+    }
   };
   
   exports.Coordinator = Coordinator;
