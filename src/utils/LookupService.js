@@ -51,8 +51,9 @@
         msg.path.push(this.id);
         msg.steps++;
         if(msg.target === this.id){
-          if(!this.targetReachedMsgs[msg.target]){ this.targetReachedMsgs[msg.target] = []; }
-          this.targetReachedMsgs[msg.target].push({ path: msg.path, steps: msg.steps });
+          msg.steps--;
+          if(!this.targetReachedMsgs[msg.emitter]){ this.targetReachedMsgs[msg.emitter] = []; }
+          this.targetReachedMsgs[msg.emitter].push({ path: msg.path, steps: msg.steps });
           this.inOfferReception(msg);
         }else
           this.broadcast(msg);
@@ -98,41 +99,37 @@
     this.iceCandidateSent[msg.emitter] = false;
     this.handleConnection(dc);
   };
+ 
+  LookupService.prototype.createLoUpMsg = function(type, path, steps, target, payload){
+    return{
+      header: 'LOOKUP', 'type': type, 'path': path,
+      'steps': steps, 'target': target, emitter: this.id,
+      'payload': payload
+    };
+  };
   
   LookupService.prototype.send = function(msg){
     this.log.info('Provider.sed was called with msg: ' + JSON.stringify(msg));
-    var outMsg = {};
+    var outMsg;
     switch(msg.type){
       case 'OFFER':
-        outMsg.header = 'LOOKUP';
-        outMsg.type = 'REQ';
-        outMsg.path = [this.id];
-        outMsg.steps = 0;
-        outMsg.target = msg.dst;
-        outMsg.emitter = this.id;
-        outMsg.payload = msg.payload;
+        outMsg = this.createLoUpMsg('REQ', [this.id], 0, msg.dst, msg.payload);
         this.log.info('LookupService.broadcast with msg: ' + JSON.stringify(outMsg));
         this.broadcast(outMsg);
         break;
       case 'ANSWER':
-        //var loUpMsg = this.inOfferReception 
-        //got from peerjs._makeAnswer
-        //type: 'ANSWER',
-        //payload: {
-        //  sdp: answer,
-        //  type: connection.type,
-        //  connectionId: connection.id,
-        //  browser: util.browser
-        //},
-        //dst: connection.peer
-        //TODO stock outgoing msgs for later
-       outMsg.type = 'ANSW';
-          msg.steps--;
-          con = this.getConnection(msg.path[msg.steps]);
-          if(con)
-            con.send({});
-          else
-            this.log.error('LookUp, first ANSW to emitter is lost. Msg: ' + JSON.stringify(msg)); 
+        var loUpMsg = this.targetReachedMsgs[msg.dst].pop();
+        if(loUpMsg){
+          outMsg = this.createLoUpMsg('ANSW', loUpMsg.path, loUpMsg.steps, msg.dst, msg.payload);
+          var connection = this.getConnection( loUpMsg.path[loUpMsg.steps] );
+          if(connection)
+            connection.send(outMsg);
+          else{
+            this.log.error('Link between ' + this.id + ' and ' + loUpMsg.path[loUpMsg.steps]+
+              'is broken. Answer is lost.');
+          }
+        }else
+          this.log.error('Entry for emitter: ' + msg.dst + ' is lost, why?');
         break;
       default:
         break;
