@@ -14,8 +14,6 @@
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Coordinator(opts, profile, peerId){
     if(!(this instanceof Coordinator)){ return new Coordinator(opts, profile, peerId); }
-    //Trying to get offer asap
-    this.setOffer();
     if( !this.checkConfFile(opts) ) return;
     this.profile = profile;
     this.peerId = peerId;
@@ -46,8 +44,9 @@
       this.isIdRandom = true;
     }
     if(!this.usingSs){
-      this.lookupService = new LookupService(this.log, this.connections,
-        this.sendTo, this.id, this.offer);
+      //FIXME PARAMETERS ARE WRONG!!
+      //this.lookupService = new LookupService(this.log, this.connections,
+      //  this.sendTo, this.id, this.offer);
     }
     var self = this;
     /**
@@ -293,23 +292,6 @@
       }
     };
     http.send(null);
-  };
-  
-  Coordinator.prototype.setOffer = function(){
-    var self = this;
-    try{
-      this.emptyCon = new RTCPeerConnection({'iceServers': [{ 'url': 'stun:stun.l.google.com:19302' }]},
-        {optional: [{RtpDataChannels: true}]});
-      pc.createOffer(function(offer){
-        self.log.info('Offer to share via the LookupService was set');
-        self.offer = offer;
-        self.emptyCon.close();
-      },function(err){
-        self.log.error('While creating offer');
-      }, {});
-    }catch(e){
-      this.log.error('Offer to share via the lookup service is not useful');
-    }
   };
   
   exports.Coordinator = Coordinator;

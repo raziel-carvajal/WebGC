@@ -1,29 +1,24 @@
 (function(exports){
-  function Provider(log, path, emitter, target, opts, getConFun){
+  function Provider(target, loUpService){
     if(!(this instanceof Provider))
-      return  new Provider(log, path, emitter, target, opts, getConFun);
-    this.log = log;
-    this.path = path;
-    this.emitter = emitter;
+      return  new Provider(target, loUpService);
+    this.log = loUpService.log;
+    this.emitter = loUpService.id;
     this.target = target;
-    this.opts = opts;
-    this.getConnection = getConFun;
-    //called like that for being compatible with PeerJS
-    this.socket = { send: this.send };
-  }
-  Provider.prototype.send = function(msg){
-    msg.header = 'LOOKUP';
-    msg.path = this.path;
-    msg.step = 0;
-    msg.target = target;
-    this.log.info('Provider sending msg: ' + JSON.stringify(msg));
-    this.connection.send(msg);
-  };
+    this.opts = loUpService.opts;
+    this.loUpService = loUpService;
+    this.wasIceCandidateSent = false;
+      }
+  
+  
   Provider.prototype.emit = function(event, obj){
     if(event === 'error')
     this.log.error('Obj: ' + JSON.stringify(obj));
     else
       this.log.warn('Obj: ' + JSON.stringify(obj));
   };
+  
+  Provider.prototype.getConnection = function(peerId, connectionId){};
   exports.Provider = Provider;
+  
 })(this);
