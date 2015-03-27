@@ -17,25 +17,31 @@
     //called like that for being compatible with PeerJS
     this.socket = {};
     this.socket.send = this.send;
+    this.targetReachedMsgs = {}
   }
   
   LookupService.prototype.apply = function(msg){
     var target = msg.receiver;
+    this.iceCandidateSent[target] = false;
+    this.waitingPathFor[target] = true;
+    if(!this.gossipMsgsToSend[target]){ this.gossipMsgsToSend[target] = []; }
+    this.gossipMsgsToSend[target].push(msg);
     var dc = new DataConnection(target, this);
     this.connections[target] = dc;
-    this.iceCandidateSent[target] = false;
+    
     var self = this;
     dc.on('open', function(){
-      dc.send(self.gossipMsgsToSend[dc.peer].pop());
+      var gossipMsg = self.gossipMsgsToSend[dc.peer].pop();
+      if(gossipMsg){
+        self.log.info('Sending gossip msg: ' + JSON.stringify(gossipMsg));
+        dc.send(gossipMsg);
+      }else
+        self.log.error('Void entry at LookupService.gossipMsgsToSend for peer: ' + dc.peer);
     });
     
     dc.on('error', function(e){
       self.log.error('In connection between ' + self.id + ' and ' + dc.peer);
     });
-    
-    this.waitingPathFor[target] = true;
-    if(!this.gossipMsgsToSend[target]){ this.gossipMsgsToSend[target] = []; }
-    this.gossipMsgsToSend[target].push(msg);
   };
   
   LookupService.prototype.dispatch = function(msg){
@@ -45,12 +51,11 @@
         msg.path.push(this.id);
         msg.steps++;
         if(msg.target === this.id){
+          if(!this.targetReachedMsgs[msg.target]){ this.targetReachedMsgs[msg.target] = []; }
+          this.targetReachedMsgs[msg.target].push({ path: msg.path, steps: msg.steps });
           this.inOfferReception(msg);
-          //TODO CONTINUE !!
-          
-        }else{
+        }else
           this.broadcast(msg);
-        }
         break;
       case 'ANSW':
         msg.steps--;
@@ -78,9 +83,62 @@
         break;
     }
   };
-  LookupService.prototype.doNegotiation = function(peerId){
-    
+  
+  LookupService.prototype.inOfferReception = function(msg){
+    var payload = msg.payload;
+    var dc = new DataConnection(msg.emitter, this, {
+      connectionId: payload.connectionId,
+      _payload: payload,
+      metadata: payload.metadata,
+      label: payload.label,
+      serialization: payload.serialization,
+      reliable: payload.reliable
+    });
+    this.connections[msg.emitter] = dc;
+    this.iceCandidateSent[msg.emitter] = false;
+    this.handleConnection(dc);
   };
+  
+  LookupService.prototype.send = function(msg){
+    this.log.info('Provider.sed was called with msg: ' + JSON.stringify(msg));
+    var outMsg = {};
+    switch(msg.type){
+      case 'OFFER':
+        outMsg.header = 'LOOKUP';
+        outMsg.type = 'REQ';
+        outMsg.path = [this.id];
+        outMsg.steps = 0;
+        outMsg.target = msg.dst;
+        outMsg.emitter = this.id;
+        outMsg.payload = msg.payload;
+        this.log.info('LookupService.broadcast with msg: ' + JSON.stringify(outMsg));
+        this.broadcast(outMsg);
+        break;
+      case 'ANSWER':
+        //var loUpMsg = this.inOfferReception 
+        //got from peerjs._makeAnswer
+        //type: 'ANSWER',
+        //payload: {
+        //  sdp: answer,
+        //  type: connection.type,
+        //  connectionId: connection.id,
+        //  browser: util.browser
+        //},
+        //dst: connection.peer
+        //TODO stock outgoing msgs for later
+       outMsg.type = 'ANSW';
+          msg.steps--;
+          con = this.getConnection(msg.path[msg.steps]);
+          if(con)
+            con.send({});
+          else
+            this.log.error('LookUp, first ANSW to emitter is lost. Msg: ' + JSON.stringify(msg)); 
+        break;
+      default:
+        break;
+    }
+  };
+  
   LookupService.prototype.getConnection = function(peerId){
     if(this.peerCons[peerId] && (this.peerCons[peerId][0]).open)
       return this.peerCons[peerId][0];
@@ -130,59 +188,5 @@
     }
     this.log.info('Broadcast is done');
   };
-  
-  LookupService.prototype.inOfferReception = function(msg){
-    var dc = new DataConnection(msg.emitter, this, {
-      connectionId: msg.connectionId,
-      _payload: msg.payload,
-      metadata: msg.payload.metadata,
-      label: msg.payload.label,
-      serialization: msg.payload.serialization,
-      reliable: msg.payload.reliable
-    });
-    this.connections[msg.emitter] = dc;
-    this.iceCandidateSent[msg.emitter] = false;
-    this.handleConnection(dc);
-  };
-  
-  LookupService.prototype.send = function(msg){
-    this.log.info('Provider.sed was called with msg: ' + JSON.stringify(msg));
-    var outMsg = {};
-    switch(msg.type){
-      case 'OFFER':
-        outMsg.header = 'LOOKUP';
-        outMsg.type = 'REQ';
-        outMsg.path = [this.id];
-        outMsg.steps = 0;
-        outMsg.target = msg.dst;
-        outMsg.emitter = this.id;
-        outMsg.payload = msg.payload;
-        this.log.info('LookupService.broadcast with msg: ' + JSON.stringify(outMsg));
-        this.broadcast(outMsg);
-        break;
-      case 'ANSWER':
-        //got from peerjs._makeAnswer
-        //type: 'ANSWER',
-        //payload: {
-        //  sdp: answer,
-        //  type: connection.type,
-        //  connectionId: connection.id,
-        //  browser: util.browser
-        //},
-        //dst: connection.peer
-        //TODO stock outgoing msgs for later
-       outMsg.type = 'ANSW';
-          msg.steps--;
-          con = this.getConnection(msg.path[msg.steps]);
-          if(con)
-            con.send({});
-          else
-            this.log.error('LookUp, first ANSW to emitter is lost. Msg: ' + JSON.stringify(msg)); 
-        break;
-      default:
-        break;
-    }
-  };
-  
   exports.LookupService = LookupService;
 })(this);
