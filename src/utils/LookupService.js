@@ -7,23 +7,23 @@
     this.peerCons = peerCons;
     this.connections = {};
     this.gossipMsgsToSend = {};
-    this.waitingPathFor = {};
     this.discoveredPaths = {};
     this.handleConnection = handleConFn;
     //Peer.id (local ID)
     this.id = id;
     this.opts = peerJSopts;
-    this.iceCandidateSent = {};
+    this.iceCandidateReceived = {};
     //called like that for being compatible with PeerJS
     this.socket = {};
     this.socket.send = this.send;
-    this.targetReachedMsgs = {}
   }
   
   LookupService.prototype.apply = function(msg){
     var target = msg.receiver;
-    this.iceCandidateSent[target] = false;
-    this.waitingPathFor[target] = true;
+    this.discoveredPaths[target] = {
+      originator: true, path: null, steps: null, firstRec: false
+    };
+    this.iceCandidateReceived[target] = {received: false, candidate: null};
     if(!this.gossipMsgsToSend[target]){ this.gossipMsgsToSend[target] = []; }
     this.gossipMsgsToSend[target].push(msg);
     var dc = new DataConnection(target, this);
@@ -52,22 +52,30 @@
         msg.steps++;
         if(msg.target === this.id){
           msg.steps--;
-          if(!this.targetReachedMsgs[msg.emitter]){ this.targetReachedMsgs[msg.emitter] = []; }
-          this.targetReachedMsgs[msg.emitter].push({ path: msg.path, steps: msg.steps });
+          this.iceCandidateReceived[msg.emitter] = { received: false, candidate: null };
+          this.discoveredPaths[msg.emitter] = {
+            originator: false, path: msg.path, steps: msg.steps
+          };
           this.inOfferReception(msg);
         }else
           this.broadcast(msg);
         break;
       case 'ANSW':
         msg.steps--;
-        if(msg.emitter === id){
-          if(this.waitingPathFor[msg.target]){
-            delete this.waitingPathFor[msg.target];
-            this.discoveredPaths[msg.target] = msg.path;
-            this.doNegotiation(msg.target);
+        if(msg.target === this.id){
+          var pathInfo = this.discoveredPaths[msg.emitter];
+          if(pathInfo.originator && !pathInfo.firstRec){
+            pathInfo.firstRec = true;
+            pathInfo.path = msg.path;
+            msg.type = 'ANSWER';
+            con = this.getConnection(msg.emitter);
+            if(con)
+              con.handleMessage(msg);
+            else
+              this.log.error('ANSWER reception ignored cos the connection dissapears');
           }
           //here the request is igonered because the target was already removed from
-          //this.waitingPathFor. This is actually the end of the lookup.
+          //LookupService.waitingPathFor. This is actually the end of the lookup.
           //TODO maintaining different paths for the same target could be better
           //due to peers dinamicity; in the near future LookupService will could into
           //a DHT or another P2P data structure
@@ -76,12 +84,34 @@
           if(con)
             con.send(msg);
           else
-            this.log.error('Lookup, ANSW transmition to emitter is lost. Msg: ' + JSON.stringify(msg));
+            this.log.error('ANSW transmition to emitter is lost. Msg: ' + JSON.stringify(msg));
         }
+        break;
+      case 'PING':
+        msg.steps++;
+        this.inForwardMsg(msg);
+        break;
+      case 'PONG':
+        msg.steps--;
+        this.inForwardMsg(msg);
         break;
       default:
         this.log.warn('Lookup msg is not recognized. Msg: ' + JSON.stringify(msg));
         break;
+    }
+  };
+  
+  LookupService.prototype.inForwardMsg = function(msg){
+    var con;
+    if(msg.target === this.id){
+      msg.type = 'CANDIDATE';
+      con = this.getConnection(msg.emitter);
+      if(con){ con.handleMessage(msg); }
+      else{ this.log.error('CANDIDATE reception ignored cos the connection dissapears'); }
+    }else{
+      con = this.getConnection(msg.path[msg.steps]);
+      if(con){ con.send(msg); }
+      else{ this.log.error('Forward is lost cos link ' + msg.steps + ' is broken'); }
     }
   };
   
@@ -96,21 +126,20 @@
       reliable: payload.reliable
     });
     this.connections[msg.emitter] = dc;
-    this.iceCandidateSent[msg.emitter] = false;
     this.handleConnection(dc);
   };
  
   LookupService.prototype.createLoUpMsg = function(type, path, steps, target, payload){
     return{
-      header: 'LOOKUP', 'type': type, 'path': path,
+      service: 'LOOKUP', 'type': type, 'path': path,
       'steps': steps, 'target': target, emitter: this.id,
       'payload': payload
     };
   };
   
   LookupService.prototype.send = function(msg){
-    this.log.info('Provider.sed was called with msg: ' + JSON.stringify(msg));
-    var outMsg;
+    this.log.info('Provider.send was called with msg: ' + JSON.stringify(msg));
+    var outMsg, path, steps, connection;
     switch(msg.type){
       case 'OFFER':
         outMsg = this.createLoUpMsg('REQ', [this.id], 0, msg.dst, msg.payload);
@@ -118,10 +147,11 @@
         this.broadcast(outMsg);
         break;
       case 'ANSWER':
-        var loUpMsg = this.targetReachedMsgs[msg.dst].pop();
-        if(loUpMsg){
-          outMsg = this.createLoUpMsg('ANSW', loUpMsg.path, loUpMsg.steps, msg.dst, msg.payload);
-          var connection = this.getConnection( loUpMsg.path[loUpMsg.steps] );
+        path = this.discoveredPaths[msg.dst].path;
+        steps = this.discoveredPaths[msg.dst].steps;
+        if(path && steps){
+          outMsg = this.createLoUpMsg('ANSW', path, steps, msg.dst, msg.payload);
+          connection = this.getConnection( path[steps] );
           if(connection)
             connection.send(outMsg);
           else{
@@ -131,7 +161,35 @@
         }else
           this.log.error('Entry for emitter: ' + msg.dst + ' is lost, why?');
         break;
+      case 'CANDIDATE':
+        path = this.discoveredPaths[msg.dst].path;
+        var ice = this.iceCandidateReceived[msg.dst];
+        if(!ice.received && path){
+          this.ice.received = true;
+          this.ice.candidate = msg.payload;
+          if(this.discoveredPaths[msg.dst].originator){
+            outMsg = this.createLoUpMsg('PING', path, 1, msg.dst, msg.payload);
+            connection = this.getConnection(path[1]);
+            if(connection)
+              connection.send(outMsg);
+            else
+              this.log.error('Ice candidate was not sent, fist link is broken');
+          }else{
+            steps = this.discoveredPaths[msg.dst].steps;
+            outMsg = this.createLoUpMsg('PONG', path, steps, msg.dst, msg.payload);
+            connection = this.getConnection(path[steps]);
+            if(connection)
+              connection.send(outMsg);
+            else
+              this.log.error('Ice candidate was not sent, last link is broken');
+          }
+        }
+        //In both sides of the communication just one ICE candidate is set up,
+        //normally the browser provides a set of ICE candidates and the cost of
+        //forward them via the LookupService is higher
+        break;
       default:
+        this.log.error('PeerJS msg ' + msg.type + ' is not recognized');
         break;
     }
   };
@@ -142,7 +200,7 @@
     else if(this.connections[peerId] && (this.connections[peerId]).open)
       return this.connections[peerId];
     else
-      this.log.error('Connection to ' + peerId + ' is closed besides its presence at path');
+      this.log.error('Connection to ' + peerId + ' is closed or does not exist');
     return;
   };
   

@@ -22,7 +22,7 @@
     this.factory = new GossipFactory({ 'log': this.log, 'gossipUtil': this.gossipUtil });
     this.peerJsOpts = opts.peerJsOpts;
     this.gossipAlgos = opts.gossipAlgos;
-    this.withWw = opts.usingWebWorkers;
+    //this.withWw = opts.usingWebWorkers;
     if(!this.log.isActivated){
       this.actCycHistory = {};
       this.vieUpdHistory = {};
@@ -44,9 +44,9 @@
       this.isIdRandom = true;
     }
     if(!this.usingSs){
-      //FIXME PARAMETERS ARE WRONG!!
-      //this.lookupService = new LookupService(this.log, this.connections,
-      //  this.sendTo, this.id, this.offer);
+      this.isFirstConDone = false;
+      this.lookupService = new LookupService(this.log, this.connections,
+        this.sendTo, this.id, this.peerJsOpts);
     }
     var self = this;
     /**
@@ -188,7 +188,11 @@
     this.log.info('Outgoing msg: ' + JSON.stringify(msg) + ' to: ' + msg.receiver);
     //Peer.connect
     var connection = this.connect(msg.receiver);
-    connection.on('open', function(){ connection.send(msg.payload); });
+    connection.on('open', function(){
+      if(!self.usingSs)
+        self.isFirstConDone = true;
+      connection.send(msg.payload);
+    });
     connection.on('error', function(e){
       self.log.error('while sending outgoing msg to: ' + msg.receiver);
     });
@@ -196,20 +200,25 @@
   
   Coordinator.prototype.sendViaLookupService = function(msg){
     //Peer.connections = this.connections
-    var connections = Object.keys(this.connections[msg.receiver]), con;
-    for(var i = 0; i < connections.length; i++){
-      con = this.connections[i];
+    if(!this.isFirstConDone){
+      this.log.info('Doing first connection via the signaling server');
+      this.sendViaSigServer(msg);
+    }else{
+      var connections = Object.keys(this.connections[msg.receiver]), con;
+      for(var i = 0; i < connections.length; i++){
+        con = this.connections[i];
+        if(con && con.open){
+          con.send(msg);
+          return;
+        }
+      }
+      con = this.lookupService.connections[msg.receiver];
       if(con && con.open){
         con.send(msg);
         return;
       }
+      this.lookupService.apply(msg);
     }
-    con = this.lookupService.connections[msg.receiver];
-    if(con && con.open){
-      con.send(msg);
-      return;
-    }
-    this.lookupService.apply(msg);
   };
   /**
   * @method handleConnection
@@ -219,7 +228,7 @@
   Coordinator.prototype.handleConnection = function(connection){
     var self = this;
     connection.on('data', function(data){
-      switch(data.header){
+      switch(data.service){
         case 'LOOKUP':
           self.lookupService.dispatch(data);
           break;
@@ -227,6 +236,7 @@
           var worker = self.workers[data.algoId];
           self.log.info('worker: ' + data.algoId + ', msg received: ' + JSON.stringify(data));
           var msg = {
+            service: 'GOSSIP',
             header: 'incomingMsg',
             payload: data,
             receptionTime: new Date()
@@ -271,11 +281,14 @@
     var url = protocol + this.options.host + ':' + this.options.port + '/' +
       this.options.key + '/' + this.id + '/view';
     http.open('get', url, true);
+    
     var self = this;
+    
     http.onerror = function(e) {
       self.log.error('Error retrieving the view of IDs');
       self._abort('server-error', 'Could not get the random view');
     };
+    
     http.onreadystatechange = function() {
       if (http.readyState !== 4){ return; }
       if (http.status !== 200) { http.onerror(); return; }
@@ -283,14 +296,12 @@
       var data = JSON.parse(http.responseText);
       if(data.view.length !== 0){
         var algoIds = Object.keys(self.workers);
-        for(var i = 0; i < algoIds.length; i++){
+        for(var i = 0; i < algoIds.length; i++)
           self.workers[ algoIds[i] ].postMessage({header: 'firstView', view: data.view});
-        }
-      }else{
-        //just in case the server has any peer reference
+      }else//just in case the server has any peer reference
         window.setTimeout(function(){ self.getFirstView(); }, 5000);
-      }
     };
+    
     http.send(null);
   };
   

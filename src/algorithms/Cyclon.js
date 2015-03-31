@@ -69,6 +69,7 @@
         break;
     }
     var msg = {
+      service: 'GOSSIP',
       header: 'outgoingMsg',
       emitter: this.peerId,
       receiver: dstPeer,
@@ -113,6 +114,7 @@
       //Logging information of view update
       var viewUpdOffset = new Date() - msg.receptionTime;
       var msgToSend = {
+        service: 'GOSSIP',
         trace: {
           algoId: this.algoId,
           loop: this.loop,
