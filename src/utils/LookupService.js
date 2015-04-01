@@ -27,7 +27,7 @@
     this.iceCandidateReceived[target] = {received: false, candidate: null};
     if(!this.gossipMsgsToSend[target]){ this.gossipMsgsToSend[target] = []; }
     this.gossipMsgsToSend[target].push(msg);
-    var dc = new exports.DataConnection(target, this);
+    var dc = new DataConnection(target, this,{serialization: 'json'});
     this.connections[target] = dc;
     
     var self = this;
@@ -118,7 +118,7 @@
   
   LookupService.prototype.inOfferReception = function(msg){
     var payload = msg.payload;
-    var dc = new exports.DataConnection(msg.emitter, this, {
+    var dc = new DataConnection(msg.emitter, this, {
       connectionId: payload.connectionId,
       _payload: payload,
       metadata: payload.metadata,
@@ -139,9 +139,6 @@
   };
   
   LookupService.prototype.send = function(msg){
-    console.info('LookupService.send');
-    console.info(msg);
-    console.info(this);
     this.log.info('Provider.send was called with msg: ' + JSON.stringify(msg));
     var outMsg, path, steps, connection;
     switch(msg.type){
@@ -199,9 +196,9 @@
   };
   
   LookupService.prototype.getConnection = function(peerId){
-    if(this.peerCons[peerId] && (this.peerCons[peerId][0]).open)
+    if(this.peerCons[peerId] && this.peerCons[peerId][0])
       return this.peerCons[peerId][0];
-    else if(this.connections[peerId] && (this.connections[peerId]).open)
+    else if(this.connections[peerId])
       return this.connections[peerId];
     else
       this.log.error('Connection to ' + peerId + ' is closed or does not exist');
@@ -224,7 +221,7 @@
       var consPerNeig;
       for(i = 0; i < keys.length; i++){
         consPerNeig = this.peerCons[ keys[i] ];
-        if(consPerNeig.length !== 0 && (consPerNeig[0]).open){
+        if(consPerNeig[0]){
           this.log.info('Doing broadcast with ' + keys[i] + ' using Peer.con');
           (consPerNeig[0]).send(msg);
         }else
@@ -238,8 +235,8 @@
       return;
     }else{
       for(i = 0; i < keys.length; i++){
-        if(this.connections[ keys[i] ] && (this.connections[ keys[i] ]).open){
-          this.log.info('Doing broadcast with ' + keys[i] + ' using LookupService.con')
+        if(this.connections[ keys[i] ]){
+          this.log.info('Doing broadcast with ' + keys[i] + ' using LookupService.con');
           (this.connections[ keys[i] ]).send(msg);
         }else
           this.log.warn('LookupService.con with ' + keys[i] + ' is not ready');

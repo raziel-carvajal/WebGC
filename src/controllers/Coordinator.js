@@ -188,7 +188,7 @@
   Coordinator.prototype.sendViaSigServer = function(msg){
     var self = this;
     //Peer.connect
-    var connection = this.connect(msg.receiver);
+    var connection = this.connect(msg.receiver, {serialization: 'json'});
     connection.on('open', function(){
       self.log.info('Connection open, outgoing msg: ' + msg.service + ' to: ' + msg.receiver);
       if(!self.usingSs)
@@ -208,18 +208,20 @@
     }else{
       //Peer.connections
       var connections = this.connections[msg.receiver], con;
-      for(var i = 0; i < connections.length; i++){
-        con = this.connections[i];
-        if(con && con.open){
-          this.log.info('Sending GossipMsg via connection at Peer.connections');
-          con.send(msg);
-          return;
-        }else{
-          this.log.warn('Connection with ' + msg.receiver + 'is not ready yet');
+      if(connections){
+        for(var i = 0; i < connections.length; i++){
+          con = this.connections[i];
+          if(con){
+            this.log.info('Sending GossipMsg via connection at Peer.connections');
+            con.send(msg);
+            return;
+          }else{
+            this.log.warn('Connection with ' + msg.receiver + 'is not ready yet');
+          }
         }
       }
       con = this.lookupService.connections[msg.receiver];
-      if(con && con.open){
+      if(con){
         this.log.info('Sending GossipMsg via connection at lookup service');
         con.send(msg);
         return;
