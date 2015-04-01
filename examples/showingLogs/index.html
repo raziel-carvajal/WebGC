@@ -4,9 +4,10 @@
   <style>
     table {border:1;width:100%}
   </style>
-  <script type="text/javascript" src="../../bower_components/peerjs/peer.js"></script>
+  <script type="text/javascript" src="../../bower_components/peerjs/peer.min.js"></script>
   <script type="text/javascript" src="../../src/utils/LoggerForWebWorker.js"></script>
   <script type="text/javascript" src="../../src/utils/GossipUtil.js"></script>
+  <script type="text/javascript" src="../../src/utils/LookupService.js"></script>
   <script type="text/javascript" src="../../src/patterns/GossipFactory.js"></script>
   <script type="text/javascript" src="../../src/apis/GossipProtocol.js"></script>
   <script type="text/javascript" src="../../src/algorithms/Vicinity.js"></script>
@@ -104,6 +105,12 @@
         appendLogSection(atts[i]);
         appendStatsSection(atts[i]);
       }
+      console.info(Peer);
+      console.info(DataConnection);
+      if(DataConnection)
+        console.info('DC exists');
+      else
+        console.info('DC is not visible');
       var controller = new Coordinator(configurationObj, profile, peerId);
       //controller.setLogFunction(addLogToTable);
       controller.listen();

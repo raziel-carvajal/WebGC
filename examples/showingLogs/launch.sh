@@ -104,11 +104,11 @@ mkdir $testDir
 cd $serverDir
 cd src
 echo "Launching LoggingServer..."
-node LoggingServer.js 9991 >log &
+node LoggingServer.js 9991 >LoggingServer.log &
 logServerPid=$!
 cd ../examples/middleware2014
 echo "Launching PeerServer..."
-node server.js 9990 4 >/dev/null &
+node server.js 9990 4 >PeerServer.log &
 nodePid=$!
 echo "Launching instances of Chrome (one of them represents one peer)..."
 declare -a chromePids

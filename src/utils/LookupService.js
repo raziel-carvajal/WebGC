@@ -26,7 +26,7 @@
     this.iceCandidateReceived[target] = {received: false, candidate: null};
     if(!this.gossipMsgsToSend[target]){ this.gossipMsgsToSend[target] = []; }
     this.gossipMsgsToSend[target].push(msg);
-    var dc = new DataConnection(target, this);
+    var dc = new exports.DataConnection(target, this);
     this.connections[target] = dc;
     
     var self = this;
@@ -117,7 +117,7 @@
   
   LookupService.prototype.inOfferReception = function(msg){
     var payload = msg.payload;
-    var dc = new DataConnection(msg.emitter, this, {
+    var dc = new exports.DataConnection(msg.emitter, this, {
       connectionId: payload.connectionId,
       _payload: payload,
       metadata: payload.metadata,

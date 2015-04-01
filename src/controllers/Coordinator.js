@@ -14,7 +14,7 @@
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Coordinator(opts, profile, peerId){
     if(!(this instanceof Coordinator)){ return new Coordinator(opts, profile, peerId); }
-    if( !this.checkConfFile(opts) ) return;
+    if(!this.checkConfFile(opts)){ return; }
     this.profile = profile;
     this.peerId = peerId;
     this.log = new Logger(opts.logOpts);
@@ -141,14 +141,16 @@
           else
             self.log.warn('graph obj is not defined, msg to graph was: ' + JSON.stringify(msg));
           break;
-        //Logging to which extend the view of each algo is updated and, with the load
-        //of web workers, if the period of each gossip cycle is respected
+        //Logging to which extend the view of each algo is updated and which
+        //is the overload in gossup cycles with the use of web workers
         case 'actCycLog':
-          self.actCycHistory[msg.algoId][msg.counter] = {
-            algoId: msg.algoId,
-            loop: msg.loop,
-            offset: msg.offset
-          };
+          if(self.actCycHistory){
+            self.actCycHistory[msg.algoId][msg.counter] = {
+              algoId: msg.algoId,
+              loop: msg.loop,
+              offset: msg.offset
+            };
+          }
           break;
         case 'viewUpdsLog':
           self.vieUpdHistory[msg.trace.algoId][msg.counter] = msg.trace;
@@ -204,16 +206,21 @@
       this.log.info('Doing first connection via the signaling server');
       this.sendViaSigServer(msg);
     }else{
-      var connections = Object.keys(this.connections[msg.receiver]), con;
+      //Peer.connections
+      var connections = this.connections[msg.receiver], con;
       for(var i = 0; i < connections.length; i++){
         con = this.connections[i];
         if(con && con.open){
+          this.log.info('Sending GossipMsg via connection at Peer.connections');
           con.send(msg);
           return;
+        }else{
+          this.log.warn('Connection with ' + msg.receiver + 'is not ready yet');
         }
       }
       con = this.lookupService.connections[msg.receiver];
       if(con && con.open){
+        this.log.info('Sending GossipMsg via connection at lookup service');
         con.send(msg);
         return;
       }
@@ -227,6 +234,7 @@
   * @param {DataConnection} connection - This connection allows the exchange of meesages amog peers. */
   Coordinator.prototype.handleConnection = function(connection){
     var self = this;
+    
     connection.on('data', function(data){
       switch(data.service){
         case 'LOOKUP':
@@ -236,7 +244,6 @@
           var worker = self.workers[data.algoId];
           self.log.info('worker: ' + data.algoId + ', msg received: ' + JSON.stringify(data));
           var msg = {
-            service: 'GOSSIP',
             header: 'incomingMsg',
             payload: data,
             receptionTime: new Date()
@@ -248,6 +255,7 @@
           break;
       }
     });
+    
     connection.on('error', function(err){
       self.log.error('Trying to handle message: ' + msgType);
     });

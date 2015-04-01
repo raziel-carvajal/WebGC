@@ -10,7 +10,6 @@
     }
   }
   
-  /***/
   GossipMediator.prototype.setDependencies = function(algoDependencies){
     var external, dep;
     for(var i = 0; i < algoDependencies.length; i++){
@@ -51,7 +50,6 @@
     }, this.algo.gossipPeriod);
   };
   
-  /***/
   GossipMediator.prototype.applyDependency = function(msg){
     if(this.dependencies.hasOwnProperty(msg.depId)){
       var dep = this.dependencies[msg.depId];
