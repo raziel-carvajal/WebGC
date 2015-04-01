@@ -189,12 +189,14 @@
     var self = this;
     //Peer.connect
     var connection = this.connect(msg.receiver, {serialization: 'json'});
+    
     connection.on('open', function(){
       self.log.info('Connection open, outgoing msg: ' + msg.service + ' to: ' + msg.receiver);
       if(!self.usingSs)
         self.isFirstConDone = true;
       connection.send(msg);
     });
+    
     connection.on('error', function(e){
       self.log.error('while sending outgoing msg to: ' + msg.receiver);
     });
@@ -202,30 +204,35 @@
   
   Coordinator.prototype.sendViaLookupService = function(msg){
     //Peer.connections = this.connections
+    this.log.info('Trying to send msg: ' + JSON.stringify + ' with existing connections');
     if(!this.isFirstConDone){
       this.log.info('Doing first connection via the signaling server');
       this.sendViaSigServer(msg);
+      return;
     }else{
       //Peer.connections
       var connections = this.connections[msg.receiver], con;
       if(connections){
+        this.log.info('Peer.connections[neighbour] is not empty, searching at least ' +
+          'one connection open');
         for(var i = 0; i < connections.length; i++){
           con = this.connections[i];
-          if(con){
-            this.log.info('Sending GossipMsg via connection at Peer.connections');
+          if(con && con.open){
+            this.log.info('Connectino opet at Peer.connections, sending msg');
             con.send(msg);
             return;
-          }else{
-            this.log.warn('Connection with ' + msg.receiver + 'is not ready yet');
-          }
+          }else
+            this.log.warn('Connection is not ready yet');
         }
       }
+      this.log.info('Any connection open at Peer.connections');
       con = this.lookupService.connections[msg.receiver];
-      if(con){
+      if(con && con.open){
         this.log.info('Sending GossipMsg via connection at lookup service');
         con.send(msg);
         return;
-      }
+      }else
+        this.log.warn('Connection in lookup service is not ready yet');
       this.lookupService.apply(msg);
     }
   };
@@ -235,6 +242,8 @@
   * Coordinator.protocols
   * @param {DataConnection} connection - This connection allows the exchange of meesages amog peers. */
   Coordinator.prototype.handleConnection = function(connection){
+    if(!this.isFirstConDone)
+      this.isFirstConDone = true;
     var self = this;
     
     connection.on('data', function(data){

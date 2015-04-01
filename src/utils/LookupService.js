@@ -34,7 +34,7 @@
     dc.on('open', function(){
       var gossipMsg = self.gossipMsgsToSend[dc.peer].pop();
       if(gossipMsg){
-        self.log.info('Sending gossip msg: ' + JSON.stringify(gossipMsg));
+        self.log.info('Handshake done, sending msg: ' + JSON.stringify(gossipMsg));
         dc.send(gossipMsg);
       }else
         self.log.error('Void entry at LookupService.gossipMsgsToSend for peer: ' + dc.peer);
