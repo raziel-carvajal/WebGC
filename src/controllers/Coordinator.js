@@ -187,13 +187,13 @@
   
   Coordinator.prototype.sendViaSigServer = function(msg){
     var self = this;
-    this.log.info('Outgoing msg: ' + JSON.stringify(msg) + ' to: ' + msg.receiver);
     //Peer.connect
     var connection = this.connect(msg.receiver);
     connection.on('open', function(){
+      self.log.info('Connection open, outgoing msg: ' + msg.service + ' to: ' + msg.receiver);
       if(!self.usingSs)
         self.isFirstConDone = true;
-      connection.send(msg.payload);
+      connection.send(msg);
     });
     connection.on('error', function(e){
       self.log.error('while sending outgoing msg to: ' + msg.receiver);
@@ -236,6 +236,7 @@
     var self = this;
     
     connection.on('data', function(data){
+      self.log.info('External message received, msg: ' + JSON.stringify(data));
       switch(data.service){
         case 'LOOKUP':
           self.lookupService.dispatch(data);
@@ -251,7 +252,7 @@
           worker.postMessage(msg);
           break;
         default:
-          self.log.error('Msg: ' + data.header + ' in DataConnection is not recognized');
+          self.log.error('Msg: ' + JSON.stringify(data) + ' is not recognized');
           break;
       }
     });

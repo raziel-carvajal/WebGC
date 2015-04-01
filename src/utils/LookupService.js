@@ -11,11 +11,12 @@
     this.handleConnection = handleConFn;
     //Peer.id (local ID)
     this.id = id;
-    this.opts = peerJSopts;
+    this.options = peerJSopts;
     this.iceCandidateReceived = {};
     //called like that for being compatible with PeerJS
     this.socket = {};
-    this.socket.send = this.send;
+    var self = this;
+    this.socket.send = function(msg){ self.send(msg); };
   }
   
   LookupService.prototype.apply = function(msg){
@@ -138,6 +139,9 @@
   };
   
   LookupService.prototype.send = function(msg){
+    console.info('LookupService.send');
+    console.info(msg);
+    console.info(this);
     this.log.info('Provider.send was called with msg: ' + JSON.stringify(msg));
     var outMsg, path, steps, connection;
     switch(msg.type){
@@ -221,7 +225,7 @@
       for(i = 0; i < keys.length; i++){
         consPerNeig = this.peerCons[ keys[i] ];
         if(consPerNeig.length !== 0 && (consPerNeig[0]).open){
-          logger.info('Doing broadcast with ' + keys[i] + ' using Peer.con');
+          this.log.info('Doing broadcast with ' + keys[i] + ' using Peer.con');
           (consPerNeig[0]).send(msg);
         }else
           this.log.warn('Peer.con with ' + keys[i] + ' is not ready');
