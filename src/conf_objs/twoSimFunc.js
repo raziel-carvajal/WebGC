@@ -19,7 +19,7 @@ var configurationObj = {
     cyclon1: {
       class: 'Cyclon',
       viewSize: 4,
-      fanout: 4,
+      fanout: 3,
       gossipPeriod: 15000,
       propagationPolicy: { push: true, pull: true }
     },
@@ -101,5 +101,7 @@ var configurationObj = {
     activated: true,
     feedbackPeriod: 15000
   },
-  usingSs: false
+  usingSs: false,
+  lookupMulticast: 2,
+  lookupMsgSTL: 5,
 };

@@ -27,8 +27,16 @@
       this.actCycHistory = {};
       this.vieUpdHistory = {};
     }
-    this.sendTo = opts.usingSs ? this.sendViaSigServer : this.sendViaLookupService;
+    this.lookupMulticast = opts.lookupMulticast;
+    this.lookupMsgSTL = opts.lookupMsgSTL;
     this.usingSs = opts.usingSs;
+    var self = this;
+    this.sendTo = function(msg){
+      if(self.usingSs)
+        self.sendViaSigServer(msg);
+      else
+        self.sendViaLookupService(msg);
+    };
   }
   
   util.inherits(Coordinator, Peer);
@@ -46,7 +54,7 @@
     if(!this.usingSs){
       this.isFirstConDone = false;
       this.lookupService = new LookupService(this.log, this.connections,
-        this.sendTo, this.id, this.peerJsOpts);
+        this.sendTo, this.id, this.peerJsOpts, this.lookupMulticast, this.lookupMsgSTL);
     }
     var self = this;
     /**
@@ -191,20 +199,29 @@
     var connection = this.connect(msg.receiver, {serialization: 'json'});
     
     connection.on('open', function(){
-      self.log.info('Connection open, outgoing msg: ' + msg.service + ' to: ' + msg.receiver);
+      self.log.info('Connection open, sending msg: ' + msg.service +
+        ' to: ' + msg.receiver);
       if(!self.usingSs)
         self.isFirstConDone = true;
       connection.send(msg);
+      
+      connection.on('data', function(data){ self.handleIncomingData(data); });
+      
+      connection.on('error', function(e){
+        self.log.error('In communication with: ' + connection.peer +
+          ' (call sendViaSigServer); ' + e);
+      });
     });
     
     connection.on('error', function(e){
-      self.log.error('while sending outgoing msg to: ' + msg.receiver);
+      self.log.error('Trying to connect with: ' + msg.receiver + '; ' + e);
     });
   };
   
   Coordinator.prototype.sendViaLookupService = function(msg){
     //Peer.connections = this.connections
-    this.log.info('Trying to send msg: ' + JSON.stringify + ' with existing connections');
+    this.log.info('Trying to send msg: ' + msg.service + ' to: ' + msg.receiver +
+      ' with existing connections');
     if(!this.isFirstConDone){
       this.log.info('Doing first connection via the signaling server');
       this.sendViaSigServer(msg);
@@ -213,26 +230,37 @@
       //Peer.connections
       var connections = this.connections[msg.receiver], con;
       if(connections){
-        this.log.info('Peer.connections[neighbour] is not empty, searching at least ' +
-          'one connection open');
+        this.log.info('Peer.connections is not empty, searching at least one connection open');
         for(var i = 0; i < connections.length; i++){
-          con = this.connections[i];
-          if(con && con.open){
-            this.log.info('Connectino opet at Peer.connections, sending msg');
-            con.send(msg);
-            return;
-          }else
-            this.log.warn('Connection is not ready yet');
+          con = connections[i];
+          if(con){
+            this.log.info('Connection with: ' + msg.receiver + ' at Peer was found');
+            if(con.open){
+              this.log.info('Sending message');
+              con.send(msg);
+              return;
+            }else{
+              this.log.info('Connection is not ready');
+              //TODO schedule the message
+              //TODO probably PeerJS do that already
+            }
+          }
         }
       }
-      this.log.info('Any connection open at Peer.connections');
+      this.log.info('Any connection available at Peer, checking LookupService');
       con = this.lookupService.connections[msg.receiver];
-      if(con && con.open){
-        this.log.info('Sending GossipMsg via connection at lookup service');
-        con.send(msg);
-        return;
-      }else
-        this.log.warn('Connection in lookup service is not ready yet');
+      if(con){
+        this.log.info('Connection with: ' + msg.receiver + ' at LookupService was found');
+        if(con.open){
+          this.log.info('Sending message');
+          con.send(msg);
+          return;
+        }else{
+          this.log.info('Connection is not ready');
+          //TODO schedule the message
+          //TODO probably PeerJS do that already
+        }
+      }
       this.lookupService.apply(msg);
     }
   };
@@ -246,31 +274,40 @@
       this.isFirstConDone = true;
     var self = this;
     
-    connection.on('data', function(data){
-      self.log.info('External message received, msg: ' + JSON.stringify(data));
-      switch(data.service){
-        case 'LOOKUP':
-          self.lookupService.dispatch(data);
-          break;
-        case 'GOSSIP':
-          var worker = self.workers[data.algoId];
-          self.log.info('worker: ' + data.algoId + ', msg received: ' + JSON.stringify(data));
-          var msg = {
-            header: 'incomingMsg',
-            payload: data,
-            receptionTime: new Date()
-          };
-          worker.postMessage(msg);
-          break;
-        default:
-          self.log.error('Msg: ' + JSON.stringify(data) + ' is not recognized');
-          break;
-      }
+    connection.on('open', function(){
+      self.log.info('Bi-directional communication with: ' + connection.peer + ' is ready');
+      //adding new flag to DataConnection object
+      //connection.readyToSend = true;
     });
     
+    connection.on('data', function(data){ self.handleIncomingData(data); });
+    
     connection.on('error', function(err){
-      self.log.error('Trying to handle message: ' + msgType);
+      self.log.error('In communication with: ' + connection.peer +
+        ' (call handleConnection); ' + err);
     });
+  };
+  
+  Coordinator.prototype.handleIncomingData = function(data){
+    this.log.info('External message received, msg: ' + JSON.stringify(data));
+    switch(data.service){
+      case 'LOOKUP':
+        this.lookupService.dispatch(data);
+        break;
+      case 'GOSSIP':
+        var worker = this.workers[data.algoId];
+        this.log.info('worker: ' + data.algoId + ', msg received: ' + JSON.stringify(data));
+        var msg = {
+          header: 'incomingMsg',
+          payload: data.payload,
+          receptionTime: new Date()
+        };
+        worker.postMessage(msg);
+        break;
+      default:
+        this.log.error('Msg: ' + JSON.stringify(data) + ' is not recognized');
+        break;
+    }
   };
   
   Coordinator.prototype.postProfile = function(){

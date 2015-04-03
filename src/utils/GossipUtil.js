@@ -12,6 +12,8 @@
   *@param {Object} opts - options of the logger */
   function GossipUtil(log){
     this.log = log;
+    this.cacheSize = 2;
+    this.alreadyChosen = {};
   }
   /**
   *@method newItem
@@ -60,17 +62,18 @@
       this.log.error('Empty dictionary');
       return null;
     }
-    var max = dictio[ keys[0] ].age;
-    var maxIndx = keys[0];
-    var i = 1;
-    while( i < keys.length ){
-      if( dictio[ keys[i] ].age > max ){
-        max = dictio[ keys[i] ].age;
-        maxIndx = keys[i];
+    var i, items = [];
+    if(Object.keys(this.alreadyChosen).length === this.cacheSize)
+      this.alreadyChosen = {};
+    for(i = 0; i < keys.length; i++)
+      items.push({k: keys[i], v: dictio[ keys[i] ].age});
+    items.sort().reverse();
+    for(i = 0; i < items.length; i++){
+      if(!(items[i].k in this.alreadyChosen)){
+        this.alreadyChosen[ items[i].k ] = 1;
+        return items[i].k;
       }
-      i += 1;
     }
-    return maxIndx;
   };
   /**
   *@method getRandomKey

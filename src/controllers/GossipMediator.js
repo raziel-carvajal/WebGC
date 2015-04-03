@@ -37,8 +37,8 @@
     this.lastActCycTime = new Date();
     var self = this;
     setInterval(function(){
-      var s = 'active thread at loop: ' + self.algo.loop + ', algoId: ' + self.algo.algoId +
-        ', profile: ' + JSON.stringify(self.algo.data) + ', view: ' + JSON.stringify(self.algo.view);
+      var s = 'Active cycle at loop: ' + self.algo.loop + ', algoId: ' + self.algo.algoId +
+        ', view: ' + JSON.stringify(self.algo.view);
       //Logging view current state
       self.log.info(s);
       //first try for mesuring stats (not a good idea)

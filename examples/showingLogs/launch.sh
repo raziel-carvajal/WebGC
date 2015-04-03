@@ -147,6 +147,6 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   kill -9 ${chromePids[$COUNTER]}
 done
 echo -e "\tDONE"
-rm -fr $testDir peer_*
+#rm -fr $testDir peer_*
 echo "END OF THE EXECUTION"
 echo "the file: src/log at $serverDir contains the log of each peer"
