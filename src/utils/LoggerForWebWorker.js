@@ -37,24 +37,21 @@
   
   Logger.prototype.warn = function(msg){
     var d = new Date();
-    var dStr = d.toTimeString().split(' ')[0];
-    var log = '[' + dStr + ' - WARN ] ' + this.header + ': ' + msg;
+    var log = d.toISOString().split('T')[1].split('Z')[0] + ' - WARN ] ' + this.header + ': ' + msg;
     if(this.local){ console.warn(log); }
     else{ this.send(log); }
   };
   
   Logger.prototype.info = function(msg){
     var d = new Date();
-    var dStr = d.toTimeString().split(' ')[0];
-    var log = '[' + dStr + ' - INFO ] ' + this.header + ': ' + msg;
+    var log = d.toISOString().split('T')[1].split('Z')[0] + ' - INFO ] ' + this.header + ': ' + msg;
     if(this.local){ console.info(log); }
     else{ this.send(log); }
   };
   
   Logger.prototype.error = function(msg){
     var d = new Date();
-    var dStr = d.toTimeString().split(' ')[0];
-    var log = '[' + dStr + ' - ERROR] ' + this.header + ': ' + msg;
+    var log = d.toISOString().split('T')[1].split('Z')[0] + ' - ERROR] ' + this.header + ': ' + msg;
     if(this.local){ console.error(log); }
     else{ this.send(log); }
   };

@@ -37,6 +37,8 @@
       else
         self.sendViaLookupService(msg);
     };
+    this.inDataFunc = function(msg){ self.handleIncomingData(msg); };
+    this.inHandleCon = function(c){ self.handleConnection(c); };
   }
   
   util.inherits(Coordinator, Peer);
@@ -54,7 +56,8 @@
     if(!this.usingSs){
       this.isFirstConDone = false;
       this.lookupService = new LookupService(this.log, this.connections,
-        this.sendTo, this.id, this.peerJsOpts, this.lookupMulticast, this.lookupMsgSTL);
+        this.inHandleCon, this.id, this.peerJsOpts, this.lookupMulticast,
+        this.lookupMsgSTL, this.inDataFunc);
     }
     var self = this;
     /**
@@ -222,6 +225,11 @@
     //Peer.connections = this.connections
     this.log.info('Trying to send msg: ' + msg.service + ' to: ' + msg.receiver +
       ' with existing connections');
+    //FIXME Check why msg.service and msg.receiver are null (clue: local call)
+    if(!msg.service || !msg.receiver){
+      this.log.error('Service or receiver are null, avoiding msg');
+      return;
+    }
     if(!this.isFirstConDone){
       this.log.info('Doing first connection via the signaling server');
       this.sendViaSigServer(msg);
@@ -260,6 +268,8 @@
           //TODO schedule the message
           //TODO probably PeerJS do that already
         }
+      }else{
+        this.log.info('Any connection available at Lookup, doing lookup service');
       }
       this.lookupService.apply(msg);
     }
