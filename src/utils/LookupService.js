@@ -34,13 +34,12 @@
     
     var self = this;
     dc.on('open', function(){
-      self.log.info('Handshake complete, sending gossip msg');
+      self.log.info('Handshake done, sending msg: ' + JSON.stringify(gossipMsg)+
+        ' to: ' + dc.peer);
       var gossipMsg = self.gossipMsgsToSend[dc.peer].pop();
-      if(gossipMsg){
-        self.log.info('Handshake done, sending msg: ' + JSON.stringify(gossipMsg));
-        dc.send(gossipMsg);
-      }else
-        self.log.error('Void entry at LookupService.gossipMsgsToSend for peer: ' + dc.peer);
+      if(gossipMsg){ dc.send(gossipMsg); }
+      else
+        self.log.error('Void entry at LookupService for peer: ' + dc.peer);
       
       dc.on('data', function(data){
         self.log.info('Msg received via Lookup connection');
@@ -75,9 +74,8 @@
               this.setPathAndIceCandidates(msg.emitter, false, msg.path, msg.steps, true);
               this.inOfferReception(msg);
             }else{
-              //TODO maintaining more than one path could be better
               this.log.warn('There is already a path to: ' + msg.emitter +
-                ', ignoring new path');
+                ', ignoring new path');//TODO maintaining more than one path could be better
             }
           }else{
             msg.steps++;
@@ -91,28 +89,22 @@
             this.log.info('Target reached in ANSW msg, updating path');
             pathInfo = this.discoveredPaths[msg.emitter];
             if(pathInfo.originator && !pathInfo.firstRec){
-              pathInfo.firstRec = true;
-              pathInfo.path = msg.path;
+              pathInfo.firstRec = true;  pathInfo.path = msg.path;
               var ice = this.iceCandidateReceived[msg.emitter];
               if(ice && ice.received){
                 this.log.info('IceCandidate for: ' + msg.emitter + ' exists');
                 var outMsg = this.createLoUpMsg('PING', msg.path, 1, msg.emitter, ice.candidate);
                 con = this.getConnection(msg.path[1]);
-                if(con){
-                  this.log.info('Sending IceCandidate via PING msg');
-                  con.send(outMsg);
-                }else
-                  this.log.warn('No connection for sending IceCandidate, link is broken');
+                this.log.info('Sending IceCandidate via PING msg');
+                if(con){ con.send(outMsg); }
+                else{ this.log.warn('No connection for sending IceCandidate, link is broken'); }
               }else
                 this.log.warn('No IceCandidate for: ' + msg.emitter + ' since the lookup starts');
               msg.type = 'ANSWER';
               con = this.getConnection(msg.emitter);
-              if(con){
-                //DataConnection.handleMessage() in PeerJS
-                this.log.info('Handling answer via DataConnection');
-                con.handleMessage(msg);
-              }else
-                this.log.error('ANSWER reception ignored cos the connection dissapears');
+              this.log.info('Handling answer via DataConnection');
+              if(con){ con.handleMessage(msg); }
+              else{ this.log.error('ANSWER reception ignored cos the connection dissapears'); }
             }else{
               this.log.info('Ignoring messge cos one path was already found');
               //here the request is igonered because the target was already removed from
@@ -126,44 +118,47 @@
             con = this.getConnection(msg.path[msg.steps]);
             this.log.info('Target was not reached for answer, forward message to: '+
               msg.path[msg.steps]);
-            if(con){
-              this.log.info('Forwarding msg via ' + msg.path[msg.steps]);
+            this.log.info('Forwarding msg via ' + msg.path[msg.steps]);
+            if(con)
               con.send(msg);
-            }else
+            else
               this.log.error('ANSW transmition to emitter is lost. Msg: ' + JSON.stringify(msg));
           }
           break;
-        case 'PING':
-          this.inForwardMsg(msg);
-          break;
-        case 'PONG':
-          msg.steps--;
-          this.inForwardMsg(msg);
-          break;
         default:
-          this.log.warn('Lookup msg is not recognized. Msg: ' + JSON.stringify(msg));
+          if(['PONG', 'PING'].indexOf(msg.type) !== -1){ this.inForwardMsg(msg); }
+          else{ this.log.error('Lookup msg is not recognized. Msg: ' + JSON.stringify(msg)); }
           break;
       }
-    }else
-      this.log.warn('The next message will be ignored: ' + JSON.stringify(msg));
+    }else{ this.log.warn('The next message will be ignored: ' + JSON.stringify(msg)); }
   };
   
   LookupService.prototype.inForwardMsg = function(msg){
     var con;
     if(msg.target === this.id){
-      this.log.info('PING was reached, setting IceCandidate for: ' + msg.emitter);
+      this.log.info(msg.type + ' was reached, setting IceCandidate for: ' + msg.emitter);
       msg.type = 'CANDIDATE';
       con = this.getConnection(msg.emitter);
-      if(con){
-        this.log.info('Setting ice via DataConnection.handleMessage');
+      this.log.info('Setting ice via DataConnection.handleMessage');
+      if(con)
         con.handleMessage(msg);
-      }
-      else{ this.log.error('CANDIDATE reception ignored cos the connection dissapears'); }
+      else
+        this.log.error('CANDIDATE reception ignored cos the connection dissapears');
     }else{
-      msg.steps++;
+      if(msg.type === 'PING')
+        msg.steps++;
+      else if(msg.type === 'PONG')
+        msg.steps--;
+      else{
+        this.log.error('Unknown msg: ' + JSON.stringify(msg) + ', aborting forward');
+        return;
+      }
       con = this.getConnection(msg.path[msg.steps]);
-      if(con){ con.send(msg); }
-      else{ this.log.error('PING Forward is lost cos link to ' + msg.target + ' is broken'); }
+      this.log.info('Forwarding ' + msg.type + ' via: ' + msg.path[msg.steps]);
+      if(con)
+        con.send(msg);
+      else
+        this.log.error(msg.type + ' forward failed');
     }
   };
   
@@ -225,20 +220,21 @@
             ice.received = true;
             ice.candidate = msg.payload;
             var pathInfo = this.discoveredPaths[msg.dst];
-            //Target reached and target is not the originator of the connection
-            //if(pathInfo.path){
-            //  this.log.info('Sending ICE candidate to: ' + msg.dst);
-            //  var pathClone = JSON.parse(JSON.stringify(pathInfo.path));
-            //  pathClone.reverse();
-            //  outMsg = this.createLoUpMsg('PING', pathClone, 0, msg.dst, msg.payload);
-            //  connection = this.getConnection(pathClone.array[0]);
-            //  if(connection){
-            //    this.log.info('Doing first PING with: ' + msg.dst);
-            //    connection.send(outMsg);
-            //  }else{
-            //    this.log.error('First PING cancelled cos path is broken');
-            //  }
-            //}
+            //Target is reached and is not the originator of the connection
+            if(pathInfo.path){
+              var indx = pathInfo.path.length - 2;
+              this.log.info('Sending IceCandidate to: ' + msg.dst + ', via: '+
+                pathInfo.path[indx] + ', with PONG msg');
+              outMsg = this.createLoUpMsg('PONG', pathInfo.path, indx,
+                msg.dst, msg.payload);
+              connection = this.getConnection(pathInfo.path[indx]);
+              if(connection){
+                this.log.info('Sending PONG');
+                connection.send(outMsg);
+              }else{
+                this.log.error('First PONG failed');
+              }
+            }
           }
           //In both sides of the communication just one ICE candidate is set up,
           //normally the browser provides a set of ICE candidates and the cost of
