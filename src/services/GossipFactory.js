@@ -76,11 +76,11 @@
     statements    += "var log = new Logger(logOpts);\n";
     statements    += "importScripts('" + origin + "src/utils/GossipUtil.js');\n";
     statements    += "var gossipUtil = new GossipUtil(log);\n";
-    statements    += "importScripts('" + origin + "src/apis/GossipProtocol.js');\n";
+    statements    += "importScripts('" + origin + "src/superObjs/GossipProtocol.js');\n";
     
     var keysWithFunc = this.searchFunctions(algOpts), i;
     if(keysWithFunc.length > 0){
-      statements  += "importScripts('" + origin + "src/apis/ViewSelector.js');\n";
+      statements  += "importScripts('" + origin + "src/superObjs/ViewSelector.js');\n";
       for(i = 0; i < keysWithFunc.length; i++)
         algOpts[ keysWithFunc[i] ] = String(algOpts[ keysWithFunc[i] ]);
     }
