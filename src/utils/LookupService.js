@@ -25,32 +25,38 @@
   }
   
   LookupService.prototype.apply = function(msg){
-    var target = msg.receiver;    
-    this.setPathAndIceCandidates(target, true, undefined, undefined, false);
-    if(!this.gossipMsgsToSend[target]){ this.gossipMsgsToSend[target] = []; }
-    this.gossipMsgsToSend[target].push(msg);
-    var dc = new exports.DataConnection(target, this, {serialization: 'json'});
-    this.connections[target] = dc;
-    
-    var self = this;
-    dc.on('open', function(){
-      self.log.info('Handshake done, sending msg: ' + JSON.stringify(gossipMsg)+
-        ' to: ' + dc.peer);
-      var gossipMsg = self.gossipMsgsToSend[dc.peer].pop();
-      if(gossipMsg){ dc.send(gossipMsg); }
-      else
-        self.log.error('Void entry at LookupService for peer: ' + dc.peer);
+    var target = msg.receiver;
+    if(this.discoveredPaths[target]){
+      this.log.info('Handshake was already initated with: ' + taget +
+        ', enqueueing message');
+      this.gossipMsgsToSend[target].pus(msg);
+    }else{
+      this.setPathAndIceCandidates(target, true, undefined, undefined, false);
+      if(!this.gossipMsgsToSend[target]){ this.gossipMsgsToSend[target] = []; }
+      this.gossipMsgsToSend[target].push(msg);
+      var dc = new exports.DataConnection(target, this, {serialization: 'json'});
+      this.connections[target] = dc;
       
-      dc.on('data', function(data){
-        self.log.info('Msg received via Lookup connection');
-        self.handleIncomingData(data);
+      var self = this;
+      dc.on('open', function(){
+        self.log.info('Handshake done, sending msgs in queue to: ' + dc.peer);
+        var queue = self.gossipMsgsToSend[dc.peer];
+        for(var i = 0; i < queue.length; i++){
+          this.log.info('Sending msg: ' + JSON.stringify(queue[i]));
+          dc.send(queue[i]);
+        }
+        queue = [];
+        
+        dc.on('data', function(data){
+          self.log.info('Msg received via Lookup connection');
+          self.handleIncomingData(data);
+        });
       });
-    });
-    
-    dc.on('error', function(e){
-      self.log.error('In connection between ' + self.id + ' and ' + dc.peer);
-    });
-    
+      
+      dc.on('error', function(e){
+        self.log.error('In connection between ' + self.id + ' and ' + dc.peer);
+      });
+    }
   };
   
   LookupService.prototype.setPathAndIceCandidates = function(target, originator, path, steps, firstRec){

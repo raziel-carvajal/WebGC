@@ -247,11 +247,8 @@
               this.log.info('Sending message');
               con.send(msg);
               return;
-            }else{
-              this.log.info('Connection is not ready');
-              //TODO schedule the message
-              //TODO probably PeerJS do that already
-            }
+            }else
+              this.log.info('Connection in Peer is still not ready');
           }
         }
       }
@@ -263,14 +260,10 @@
           this.log.info('Sending message');
           con.send(msg);
           return;
-        }else{
-          this.log.info('Connection is not ready');
-          //TODO schedule the message
-          //TODO probably PeerJS do that already
-        }
-      }else{
+        }else
+          this.log.info('Connection in LookupService is still not ready');
+      }else
         this.log.info('Any connection available at Lookup, doing lookup service');
-      }
       this.lookupService.apply(msg);
     }
   };
