@@ -30,6 +30,7 @@
     this.lookupMulticast = opts.lookupMulticast;
     this.lookupMsgSTL = opts.lookupMsgSTL;
     this.usingSs = opts.usingSs;
+    this.bootstrapTimeout = opts.bootstrapTimeout;
     var self = this;
     this.sendTo = function(msg){
       if(self.usingSs)
@@ -59,31 +60,31 @@
         this.inHandleCon, this.id, this.peerJsOpts, this.lookupMulticast,
         this.lookupMsgSTL, this.inDataFunc);
     }
+    
     var self = this;
     /**
     * @event open
     * @description When the peer is ready to communicate this event is fired. Events are
     * possible because the Coordinator inherits from Peer.EventEmitter of PeerJS.*/
     this.on('open', function(id){
+      self.bootService = new Bootstrap(self);
       if(self.isIdRandom){
         self.peerId = id;
         self.log.header = 'Coordinator_' + id;
         self.factory.peerId = id;
       }
       self.log.info('Peer is ready to listen external messages');
-      self.log.info('Algorithms initialization...');
+      self.log.info('Algorithms initialization');
       self.createAlgorithms();
-      self.log.info('posting profile...');
-      self.postProfile();
-      self.log.info('Getting first view...');
-      window.setTimeout(function(){ self.getFirstView(); }, 10000);
+      self.log.info('Doing bootstrap');
+      self.bootService.bootstrap();
     });
     /**
     * @event connection
     * @description This event is fired when an external message is received.*/
     this.on('connection', function(c){ self.handleConnection(c); });
   };
-  //
+  
   Coordinator.prototype.createAlgorithms = function(){
     var algosNames = Object.keys(this.gossipAlgos), algOpts, worker;
     for(var i = 0; i < algosNames.length; i++){
@@ -307,62 +308,13 @@
         };
         worker.postMessage(msg);
         break;
+      case 'VOID':
+        this.log.info('VOID was received from: ' + msg.emitter);
+        break;
       default:
         this.log.error('Msg: ' + JSON.stringify(data) + ' is not recognized');
         break;
     }
-  };
-  
-  Coordinator.prototype.postProfile = function(){
-    var xhr = new XMLHttpRequest();
-    var protocol = this.options.secure ? 'https://' : 'http://';
-    var url = protocol + this.options.host + ':' + this.options.port + '/profile';
-    var self = this;
-    xhr.open('POST', url, true);
-    xhr.setRequestHeader('Content-type', 'text/plain');
-    xhr.onreadystatechange = function(){
-      if (xhr.readyState !== 4){ return; }
-      if (xhr.status !== 200) { xhr.onerror(); return; }
-      self.log.info('profile was posted properly');
-    };
-    xhr.onerror = function(){
-      self.log.error('while posting profile on server');
-    };
-    var msg = {id: this.id, profile: this.profile};
-    xhr.send(JSON.stringify(msg));
-  };
-  /**
-  * @method getFirstView
-  * @desc This method gets from a remote PeerServer a set of remote peer identifiers. This 
-  * set of identifiers allows to bootstrap the gossip protocols.*/
-  Coordinator.prototype.getFirstView = function() {
-    var http = new XMLHttpRequest();
-    var protocol = this.options.secure ? 'https://' : 'http://';
-    var url = protocol + this.options.host + ':' + this.options.port + '/' +
-      this.options.key + '/' + this.id + '/view';
-    http.open('get', url, true);
-    
-    var self = this;
-    
-    http.onerror = function(e) {
-      self.log.error('Error retrieving the view of IDs');
-      self._abort('server-error', 'Could not get the random view');
-    };
-    
-    http.onreadystatechange = function() {
-      if (http.readyState !== 4){ return; }
-      if (http.status !== 200) { http.onerror(); return; }
-      self.log.info('First view: ' + http.responseText);
-      var data = JSON.parse(http.responseText);
-      if(data.view.length !== 0){
-        var algoIds = Object.keys(self.workers);
-        for(var i = 0; i < algoIds.length; i++)
-          self.workers[ algoIds[i] ].postMessage({header: 'firstView', view: data.view});
-      }else//just in case the server has any peer reference
-        window.setTimeout(function(){ self.getFirstView(); }, 5000);
-    };
-    
-    http.send(null);
   };
   
   exports.Coordinator = Coordinator;
