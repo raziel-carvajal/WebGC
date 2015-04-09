@@ -35,8 +35,12 @@
     this.sendTo = function(msg){
       if(self.usingSs)
         self.sendViaSigServer(msg);
-      else
-        self.sendViaLookupService(msg);
+      else{
+        if(msg.service !== 'VOID')
+          self.sendViaLookupService(msg);
+        else
+          self.sendViaSigServer(msg);  
+      }
     };
     this.inDataFunc = function(msg){ self.handleIncomingData(msg); };
     this.inHandleCon = function(c){ self.handleConnection(c); };
@@ -226,11 +230,6 @@
     //Peer.connections = this.connections
     this.log.info('Trying to send msg: ' + msg.service + ' to: ' + msg.receiver +
       ' with existing connections');
-    //FIXME Check why msg.service and msg.receiver are null (clue: local call)
-    if(!msg.service || !msg.receiver){
-      this.log.error('Service or receiver are null, avoiding msg');
-      return;
-    }
     if(!this.isFirstConDone){
       this.log.info('Doing first connection via the signaling server');
       this.sendViaSigServer(msg);
@@ -309,7 +308,7 @@
         worker.postMessage(msg);
         break;
       case 'VOID':
-        this.log.info('VOID was received from: ' + msg.emitter);
+        this.log.info('VOID was received from: ' + data.emitter);
         break;
       default:
         this.log.error('Msg: ' + JSON.stringify(data) + ' is not recognized');

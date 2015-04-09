@@ -3,20 +3,20 @@
   function Bootstrap(coordi){
     if(!(this instanceof Bootstrap)){ return new Bootstrap(coordi); }
     this.coordi = coordi;
-    this.url = 'http://' + coordi.host + ':' + coordi.port + '/';
+    this.url = 'http://' + coordi.options.host + ':' + coordi.options.port + '/';
   }
   
   Bootstrap.prototype.bootstrap = function(){
-    this.coordi.log.info('Getting first peer');
-    this.getNeighbour();
     this.coordi.log.info('Posting profile');
     this.postProfile();
-    this.coordi.log.info('Getting first view after: ' +
-      this.coordi.bootstrapTimeout + ' ms');
+    this.coordi.log.info('Wating: ' + this.coordi.bootstrapTimeout + ' ms for peers ' +
+      'being registered in the server');
     var self = this;
     window.setTimeout(function(){
-      self.coordi.log('Getting first view now');
-      self.getFirstView();
+    self.coordi.log.info('Getting first peer');
+    self.getNeighbour();
+    self.coordi.log.info('Getting first view now');
+    self.getFirstView();
     }, this.coordi.bootstrapTimeout);
   };
   
@@ -59,8 +59,10 @@
             header: 'firstView',
             view: data.view
           });
-      }else//just in case the server has any peer reference
+      }else{
+        self.coordi.log.error('First view is empty, scheduling req again');
         window.setTimeout(function(){ self.getFirstView(); }, 5000);
+      }
     };
     
     http.send(null);
@@ -78,16 +80,18 @@
     http.onreadystatechange = function() {
       if (http.readyState !== 4){ return; }
       if (http.status !== 200) { http.onerror(); return; }
-      self.coordi.log.info('First view: ' + http.responseText);
+      self.coordi.log.info('First peer: ' + http.responseText);
       var data = JSON.parse(http.responseText);
       if(data){
         self.coordi.log.info('Doing first connection with: ' + data.neighbour);
-        var msg = {
-          service: 'VOID',
-          emitter: self.coordi.id,
-          receiver: data.neighbour
-        };
-        self.coordi.sendTo(msg);
+        if(data.neighbour !== 'void'){
+          var msg = {
+            service: 'VOID',
+            emitter: self.coordi.id,
+            receiver: data.neighbour
+          };
+          self.coordi.sendTo(msg);
+        }//Peer with "void" as neighbour will be contacted eventually
       }else
         self.coordi.log.error('No peer for doing first connection');
     };

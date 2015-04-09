@@ -27,9 +27,9 @@
   LookupService.prototype.apply = function(msg){
     var target = msg.receiver;
     if(this.discoveredPaths[target]){
-      this.log.info('Handshake was already initated with: ' + taget +
+      this.log.info('Handshake was already initated with: ' + target +
         ', enqueueing message');
-      this.gossipMsgsToSend[target].pus(msg);
+      this.gossipMsgsToSend[target].push(msg);
     }else{
       this.setPathAndIceCandidates(target, true, undefined, undefined, false);
       if(!this.gossipMsgsToSend[target]){ this.gossipMsgsToSend[target] = []; }
@@ -42,7 +42,7 @@
         self.log.info('Handshake done, sending msgs in queue to: ' + dc.peer);
         var queue = self.gossipMsgsToSend[dc.peer];
         for(var i = 0; i < queue.length; i++){
-          this.log.info('Sending msg: ' + JSON.stringify(queue[i]));
+          self.log.info('Sending msg: ' + JSON.stringify(queue[i]));
           dc.send(queue[i]);
         }
         queue = [];
