@@ -29,6 +29,7 @@
     if(this.discoveredPaths[target]){
       this.log.info('Handshake was already initated with: ' + target +
         ', enqueueing message');
+      if(!this.gossipMsgsToSend[target]){ this.gossipMsgsToSend[target] = []; }
       this.gossipMsgsToSend[target].push(msg);
     }else{
       this.setPathAndIceCandidates(target, true, undefined, undefined, false);

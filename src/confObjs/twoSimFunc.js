@@ -20,7 +20,7 @@ var configurationObj = {
       class: 'Cyclon',
       viewSize: 4,
       fanout: 3,
-      gossipPeriod: 15000,
+      gossipPeriod: 10000,
       propagationPolicy: { push: true, pull: true }
     },
     //vicinity1: {
@@ -98,8 +98,8 @@ var configurationObj = {
     host: '127.0.0.1',
     //host: '131.254.213.42',
     port: 9991,
-    activated: true,
-    feedbackPeriod: 15000
+    activated: false,
+    feedbackPeriod: 20000
   },
   usingSs: false,
   lookupMulticast: 2,
