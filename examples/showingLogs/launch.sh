@@ -134,6 +134,7 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   
   "$chromeCommand" $chromeStr$testDir/$peerDir $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
+  echo "Chrome PID: "${chromePids[$COUNTER]}
 done
 echo -e "\tDONE"
 echo "Waiting till the time of the experiment expires..."
