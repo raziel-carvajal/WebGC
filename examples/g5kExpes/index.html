@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC>
+<html lang="en">
+<head>
+  <script type="text/javascript" src="../../bower_components/peerjs/peer.js"></script>
+  <script type="text/javascript" src="../../src/utils/LoggerForWebWorker.js"></script>
+  <script type="text/javascript" src="../../src/utils/GossipUtil.js"></script>
+  <script type="text/javascript" src="../../src/services/LookupService.js"></script>
+  <script type="text/javascript" src="../../src/services/GossipFactory.js"></script>
+  <script type="text/javascript" src="../../src/superObjs/GossipProtocol.js"></script>
+  <script type="text/javascript" src="../../src/algorithms/Vicinity.js"></script>
+  <script type="text/javascript" src="../../src/algorithms/Cyclon.js"></script>
+  <script type="text/javascript" src="../../src/services/Bootstrap.js"></script>
+  <script type="text/javascript" src="../../src/controllers/Coordinator.js"></script>
+  <script type="text/javascript" src="../../src/confObjs/twoSimFunc.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function(event){
+      var peerId = '#userId';
+      var profile = #userProfile;
+      var controller = new Coordinator(configurationObj, profile, peerId);
+      controller.listen();
+    });
+  </script>
+</head>
+<body>
+  <div id="peerInfo"></div>
+  <br><br><br>
+  <div id="logSec"></div>
+</body>
+</html>
