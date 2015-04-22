@@ -17,8 +17,8 @@ var configurationObj = {
   gossipAlgos: {
     cyclon1: {
       class: 'Cyclon',
-      viewSize: 7,
-      fanout: 3,
+      viewSize: 10,
+      fanout: 5,
       gossipPeriod: 10000,
       propagationPolicy: { push: true, pull: true }
     },
@@ -97,11 +97,11 @@ var configurationObj = {
     host: '#HOST',
     //host: '131.254.213.42',
     port: 9991,
-    activated: true,
+    activated: false,
     feedbackPeriod: 20000
   },
   usingSs: false,
   lookupMulticast: 2,
-  lookupMsgSTL: 5,
-  bootstrapTimeout: 10000
+  lookupMsgSTL: 10,
+  bootstrapTimeout: 20000
 };
