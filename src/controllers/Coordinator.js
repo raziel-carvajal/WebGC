@@ -158,7 +158,7 @@
             self.log.warn('graph obj is not defined, msg to graph was: ' + JSON.stringify(msg));
           break;
         //Logging to which extend the view of each algo is updated and which
-        //is the overload in gossup cycles with the use of web workers
+        //is the overload in gossip cycles with the use of web workers
         case 'actCycLog':
           if(self.actCycHistory){
             self.actCycHistory[msg.algoId][msg.counter] = {
@@ -170,6 +170,9 @@
           break;
         case 'viewUpdsLog':
           self.vieUpdHistory[msg.trace.algoId][msg.counter] = msg.trace;
+          break;
+        case 'logInConsole':
+          console.log("WebGClog &&" + msg.log + "&&");
           break;
         default:
           console.error('message: ' + msg.header + ' is not recoginized');

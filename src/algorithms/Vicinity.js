@@ -90,6 +90,7 @@
         if(newItem !== null)
           subDict[this.peerId] = newItem;
         msg = {
+          service: 'GOSSIP',
           header: 'outgoingMsg',
           emitter: this.peerId,
           receiver: dstPeer,
@@ -104,6 +105,7 @@
         if(newItem !== null)
           subDict[this.peerId] = newItem;
         msg = {
+          service: 'GOSSIP',
           header: 'outgoingMsg',
           emitter: this.peerId,
           receiver: dstPeer,
@@ -143,6 +145,7 @@
     var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result);
     var similarNeig = this.selector.getClosestNeighbours(msg.n, mergedViews, {k: this.peerId, v: msg.newItem});
     var payload = {
+      service: 'GOSSIP',
       header: 'outgoingMsg',
       emitter: this.peerId,
       receiver: msg.receiver,
@@ -191,6 +194,7 @@
     //Logging information of view update
     var viewUpdOffset = new Date() - msg.receptionTime;
     var msgToSend = {
+      service: 'GOSSIP',
       trace: {
         algoId: this.algoId,
         loop: this.loop,

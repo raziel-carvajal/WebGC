@@ -37,10 +37,15 @@
     this.lastActCycTime = new Date();
     var self = this;
     setInterval(function(){
-      var s = 'Active cycle at loop: ' + self.algo.loop + ', algoId: ' + self.algo.algoId +
-        ', view: ' + JSON.stringify(self.algo.view);
-      //Logging view current state
-      self.log.info(s);
+      var log = {
+        loop: self.algo.loop,
+        algoId: self.algo.algoId,
+        view: JSON.stringify(self.algo.view)
+      };
+      self.postInMainThread({
+        header: 'logInConsole',
+        log: JSON.stringify(log)
+      });
       //first try for mesuring stats (not a good idea)
       //self.sentActiveCycleStats();
       //performing periodic gossip selection (no changes in view are done)
