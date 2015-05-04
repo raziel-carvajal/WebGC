@@ -4,5 +4,7 @@ examples/vicinity-local-test/output
 examples/multi-protocols-test/output
 examples/multi-protocols-test/plotter
 examples/multi-protocols-test/peer_*
+examples/showingLogs/output
+examples/showingLogs/peer_*
 src/*/.*.swp
 examples/*/.*.swp
