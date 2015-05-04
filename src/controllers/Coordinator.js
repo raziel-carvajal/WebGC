@@ -262,9 +262,9 @@
         if(con.open){
           this.log.info('Sending message');
           con.send(msg);
-          return;
         }else
           this.log.info('Connection in LookupService is still not ready');
+        return;
       }else
         this.log.info('Any connection available at Lookup, doing lookup service');
       this.lookupService.apply(msg);
@@ -302,7 +302,7 @@
         break;
       case 'GOSSIP':
         var worker = this.workers[data.algoId];
-        this.log.info('worker: ' + data.algoId + ', msg received: ' + JSON.stringify(data));
+        //this.log.info('worker: ' + data.algoId + ', msg received: ' + JSON.stringify(data));
         var msg = {
           header: 'incomingMsg',
           payload: data.payload,
