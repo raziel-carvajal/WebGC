@@ -50,7 +50,7 @@
     http.onreadystatechange = function() {
       if (http.readyState !== 4){ return; }
       if (http.status !== 200) { http.onerror(); return; }
-      self.coordi.log.info('First view: ' + http.responseText);
+      //self.coordi.log.info('First view: ' + http.responseText);
       var data = JSON.parse(http.responseText);
       if(data.view.length !== 0){
         var algoIds = Object.keys(self.coordi.workers);

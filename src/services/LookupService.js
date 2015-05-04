@@ -165,7 +165,7 @@
       if(con)
         con.send(msg);
       else
-        this.log.error(msg.type + ' forward failed');
+        this.log.error('Connection with: ' + con.peer + ' does not exists');
     }
   };
   
