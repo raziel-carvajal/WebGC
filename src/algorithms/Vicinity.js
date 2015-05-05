@@ -47,7 +47,7 @@
         i++;
       }
     }
-    this.log.info('initialization of view: ' + JSON.stringify(this.view));
+    //this.log.info('initialization of view: ' + JSON.stringify(this.view));
   };
   //
   Vicinity.prototype.setMediator = function(mediator){

@@ -134,6 +134,7 @@
       var msg = e.data, worker;
       switch(msg.header){
         case 'outgoingMsg':
+          self.log.info('OutgoingMsg to reach: ' + msg.receiver + ' with algoId: ' + msg.algoId);
           self.sendTo(msg);
           break;
         case 'getDep':
@@ -262,9 +263,9 @@
         if(con.open){
           this.log.info('Sending message');
           con.send(msg);
+          return;
         }else
           this.log.info('Connection in LookupService is still not ready');
-        return;
       }else
         this.log.info('Any connection available at Lookup, doing lookup service');
       this.lookupService.apply(msg);

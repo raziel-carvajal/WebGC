@@ -102,7 +102,7 @@
                 this.log.info('IceCandidate for: ' + msg.emitter + ' exists');
                 var outMsg = this.createLoUpMsg('PING', msg.path, 1, msg.emitter, ice.candidate);
                 con = this.getConnection(msg.path[1]);
-                this.log.info('Sending IceCandidate via PING msg');
+                this.log.info('Sending IceCandidate in PING msg via: ' + con.peer);
                 if(con){ con.send(outMsg); }
                 else{ this.log.warn('No connection for sending IceCandidate, link is broken'); }
               }else

@@ -8,7 +8,7 @@ var configurationObj = {
   peerJsOpts: {
     host: '#HOST',
     port: 9990,//port of the PeerServer
-    debug: 1,//Level of the local logging (logs that appears in the console part of each browser)
+    debug: 3,//Level of the local logging (logs that appears in the console part of each browser)
     logFunction: function(){
       var msg = Array.prototype.slice.call(arguments).join(' ');
       console.log(msg);
@@ -97,11 +97,11 @@ var configurationObj = {
     host: '#HOST',
     //host: '131.254.213.42',
     port: 9991,
-    activated: false,
+    activated: true,
     feedbackPeriod: 20000
   },
-  usingSs: true,
-  lookupMulticast: 3,
+  usingSs: false,
+  lookupMulticast: 2,
   lookupMsgSTL: 100,
   bootstrapTimeout: 10000
 };

@@ -76,7 +76,6 @@
       payload: subDict,
       algoId: this.algoId
     };
-    this.log.info('OutgoingMsg to send: ' + JSON.stringify(msg));
     this.gossipMediator.postInMainThread(msg);
     this.gossipMediator.sentActiveCycleStats();
   };
