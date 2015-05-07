@@ -127,8 +127,7 @@
         msgToSend.header = 'viewUpdsLog';
         msgToSend.counter = this.gossipMediator.viewUpdsLogCounter;
         this.gossipMediator.postInMainThread(msgToSend);
-      }else
-        this.log.info('SelectItemsToKeep done, current view: ' + JSON.stringify(this.view));
+      }
     }
   };
   /** 

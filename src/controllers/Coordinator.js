@@ -18,6 +18,7 @@
     this.profile = profile;
     this.peerId = peerId;
     this.log = new Logger(opts.logOpts);
+    this.log.setLocal(true);
     this.gossipUtil = new GossipUtil(this.log);
     this.factory = new GossipFactory({ 'log': this.log, 'gossipUtil': this.gossipUtil });
     this.peerJsOpts = opts.peerJsOpts;
@@ -219,10 +220,6 @@
       
       connection.on('data', function(data){ self.handleIncomingData(data); });
       
-      connection.on('error', function(e){
-        self.log.error('In communication with: ' + connection.peer +
-          ' (call sendViaSigServer); ' + e);
-      });
     });
     
     connection.on('error', function(e){
@@ -283,11 +280,8 @@
     
     connection.on('open', function(){
       self.log.info('Bi-directional communication with: ' + connection.peer + ' is ready');
-      //adding new flag to DataConnection object
-      //connection.readyToSend = true;
+      connection.on('data', function(data){ self.handleIncomingData(data); });
     });
-    
-    connection.on('data', function(data){ self.handleIncomingData(data); });
     
     connection.on('error', function(err){
       self.log.error('In communication with: ' + connection.peer +

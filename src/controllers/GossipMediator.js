@@ -84,9 +84,9 @@
           self.scheduleActiveThread();
           break;
         case 'incomingMsg':
-          self.log.info('Updating view...');
-          self.log.info('Current view: ' + JSON.stringify(self.algo.view));
-          self.log.info('Merge with  : ' + JSON.stringify(msg.payload));
+          //self.log.info('Updating view...');
+          //self.log.info('Current view: ' + JSON.stringify(self.algo.view));
+          //self.log.info('Merge with  : ' + JSON.stringify(msg.payload));
           self.algo.selectItemsToKeep(msg);
           break;
         case 'getDep':
@@ -115,6 +115,5 @@
   };
   
   GossipMediator.prototype.postInMainThread = function(msg){ this.worker.postMessage(msg); };
-  
   exports.GossipMediator = GossipMediator;
 })(this);

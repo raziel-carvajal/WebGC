@@ -100,7 +100,7 @@ var configurationObj = {
     activated: true,
     feedbackPeriod: 20000
   },
-  usingSs: false,
+  usingSs: true,
   lookupMulticast: 2,
   lookupMsgSTL: 100,
   bootstrapTimeout: 10000

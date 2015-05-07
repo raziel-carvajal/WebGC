@@ -57,9 +57,7 @@
   };
   
   Logger.prototype.deactivate = function(){ this.isActivated = false; };
-  
   Logger.prototype.activate = function(){ this.isActivated = true; };
-  
+  Logger.prototype.setLocal = function(local){ this.local = local; };
   exports.Logger = Logger;
-  
 })(this);

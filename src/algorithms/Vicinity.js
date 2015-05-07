@@ -160,7 +160,7 @@
   * @description See method GossipProtocol.selectItemsToKeep() for more information. */
   Vicinity.prototype.selectItemsToKeep = function(msg){
     var mergedViews = this.gossipUtil.mergeViews(this.view, msg.payload);
-    this.log.info('View after merge1: ' + JSON.stringify(mergedViews));
+    //this.log.info('View after merge1: ' + JSON.stringify(mergedViews));
     var msg1 = {
       header: 'getDep',
       cluView: mergedViews,
@@ -181,16 +181,16 @@
       itm =  msg.result[ keys[i] ];
       result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data[this.algoId]);
     }
-    this.log.info('rps view: ' + JSON.stringify(result));
+    //this.log.info('rps view: ' + JSON.stringify(result));
     var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result);
-    this.log.info('merge of views merge1 and rps: ' + JSON.stringify(mergedViews));
+    //this.log.info('merge of views merge1 and rps: ' + JSON.stringify(mergedViews));
     if(this.peerId in mergedViews){ delete mergedViews[this.peerId]; }
     var similarNeig = this.selector.getClosestNeighbours(this.viewSize, mergedViews, null);
     keys = Object.keys(this.view);
     for(i = 0; i < keys.length; i++){ delete this.view[ keys[i] ]; }
     keys = Object.keys(similarNeig);
     for(i = 0; i < keys.length; i++){ this.view[ keys[i] ] = similarNeig[ keys[i] ]; }
-    this.log.info('View after update: ' + JSON.stringify(this.view));
+    //this.log.info('View after update: ' + JSON.stringify(this.view));
     //Logging information of view update
     var viewUpdOffset = new Date() - msg.receptionTime;
     var msgToSend = {
@@ -207,8 +207,8 @@
       msgToSend.header = 'viewUpdsLog';
       msgToSend.counter = this.gossipMediator.viewUpdsLogCounter;
       this.gossipMediator.postInMainThread(msgToSend);
-    }else
-      this.log.info(JSON.stringify(msgToSend));
+    }//else
+      //this.log.info(JSON.stringify(msgToSend));
   };
   /** 
   * @method increaseAge
