@@ -308,11 +308,16 @@
       case 'VOID':
         this.log.info('VOID was received from: ' + data.emitter);
         break;
+      case 'APPLICATION':
+        this.appFn(data.payload);
+        break;
       default:
         this.log.error('Msg: ' + JSON.stringify(data) + ' is not recognized');
         break;
     }
   };
+  
+  Coordinator.prototype.setApplicationLevelFunction = function(fn){ this.appFn = fn; };
   
   exports.Coordinator = Coordinator;
 })(this);
