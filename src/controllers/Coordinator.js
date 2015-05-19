@@ -225,6 +225,7 @@
     connection.on('error', function(e){
       self.log.error('Trying to connect with: ' + msg.receiver + '; ' + e);
     });
+    return connection;
   };
   
   Coordinator.prototype.sendViaLookupService = function(msg){

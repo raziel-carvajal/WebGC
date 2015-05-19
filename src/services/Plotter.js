@@ -4,14 +4,16 @@
 * TODO Finish with the doc of this file*/
 (function(exports){
   
-  function Plotter(log, plotterId){
+  function Plotter(plotterId, extraCons){
     this.loop = 0;
     this.logs = {};
-    this.logger = log;
-    //this.logger.setOutput(plotterId, 'Plotter');
     this.ref = plotterId;
+    this.graphObjs = {};
+    this.cordi = cordi;
+    this.lookupServ = lookupServ;
+    this.extraCons = extraCons;
   }
-
+  
   Plotter.prototype.getShape = function(i){
     if(i === '0'){
       return 'triangle';
@@ -96,15 +98,6 @@
       'line-color': 'data(color)'
     };
     var graphContainer = algoId;
-    //if(viewType === 'clu'){
-    //  this.cluLoop++;
-    //  graphContainer = 'clu-section';
-    //}
-    //if(viewType === 'rps'){
-    //  this.currentLoop++;
-    //  graphContainer = 'rps-section';
-    //}
-    //this.logger.info('graphcontainer is ' + graphContainer);
     var input = {
       container: document.getElementById(graphContainer),
       layout: layoutOpts,
@@ -120,7 +113,42 @@
           .css(edgesOpts),
       elements: eles
     };
-    var cy_instance = cytoscape(input);
+    this.resetGraph(algoId);
+    this.graphObjs[algoId] = cytoscape(input);
+  };
+  
+  Plotter.prototype.resetGraph = function(algoId){
+    if(this.loop !== 0){
+      delete this.graphObjs[algoId];
+      var gCont = document.getElementById('graphs'), sec;
+      if(algoId === 'rps-section'){
+        gCont.removeChild(document.getElementById(algoId));
+        sec = $('<div></div>').addClass('rpsContainer').attr('id', algoId);
+      }else if(algoId === 'clu-section'){
+        gCont.removeChild(document.getElementById(algoId));
+        sec = $('<div></div>').addClass('cluContainer').attr('id', algoId);
+        var consAtChat = document.getElementById('connections').childNodes;
+        var peerIds = [], i;
+        for(i = 0; i < consAtChat.length; i++)
+          peerIds.push(consAtChat[i].getAttribute('id'));
+        gCont = document.getElementById('connections');
+        for(i = 0; i < peerIds.length; i++)
+          gCont.removeChild(document.getElementById(peerIds[i]));
+        $('.filler').show();
+        for(i = 0; i < peerIds.length; i++){
+          if(this.extraCons[ peerIds[i] ]){
+            //DataConnection.close()
+            this.extraCons[ peerIds[i] ].close();
+            delete this.extraCons[ peerIds[i] ];
+          }
+        }
+        this.extraCons = {};
+      }else{
+        console.error('AlgoId is unknown, graph will not be deleted');
+        return;
+      }
+      $('#graphs').append(sec);
+    }
   };
   
   exports.Plotter = Plotter;

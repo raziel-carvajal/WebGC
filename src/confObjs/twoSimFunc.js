@@ -104,5 +104,5 @@ var configurationObj = {
   usingSs: false,
   lookupMulticast: 2,
   lookupMsgSTL: 10,
-  bootstrapTimeout: 10000
+  bootstrapTimeout: 5000
 };

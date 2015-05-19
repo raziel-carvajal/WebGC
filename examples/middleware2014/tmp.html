@@ -9,43 +9,39 @@
   <script type="text/javascript" src="../../bower_components/cytoscape/dist/cytoscape.js"></script>
   <script type="text/javascript" src="../../src/utils/LoggerForWebWorker.js"></script>
   <script type="text/javascript" src="../../src/utils/GossipUtil.js"></script>
-  <script type="text/javascript" src="../../src/patterns/GossipFactory.js"></script>
-  <script type="text/javascript" src="../../src/apis/GossipProtocol.js"></script>
-  <script type="text/javascript" src="../../src/algorithms/Vicinity.js"></script> 
+  <script type="text/javascript" src="../../src/services/LookupService.js"></script>
+  <script type="text/javascript" src="../../src/services/GossipFactory.js"></script>
+  <script type="text/javascript" src="../../src/superObjs/GossipProtocol.js"></script>
+  <script type="text/javascript" src="../../src/algorithms/Vicinity.js"></script>
   <script type="text/javascript" src="../../src/algorithms/Cyclon.js"></script>
+  <script type="text/javascript" src="../../src/services/Bootstrap.js"></script>
+  <script type="text/javascript" src="../../src/services/Plotter.js"></script>
   <script type="text/javascript" src="../../src/controllers/Coordinator.js"></script>
-  <script type="text/javascript" src="../../src/utils/Plotter.js"></script>
-  <script type="text/javascript" src="../../src/conf_objs/confObjCosineSimilarity.js"></script>
+  <script type="text/javascript" src="../../src/confObjs/twoSimFunc.js"></script>
+  
   <script>
-    function addChatSection(){
-      hatbox = $('<div></div>').addClass('connection').addClass('active').attr('id', c.peer);
-      var header = $('<h1></h1>').html('Chat with <strong>' + c.peer + '</strong>');
+    var mainObjs = {};
+    var chatElement = 0;
+    function addChatElement(){
+      var peerId = "peer_" + chatElement;
+      chatElement++;
+      var chatbox = $('<div></div>').addClass('connection').addClass('active').attr('id', peerId);
+      var header = $('<h1></h1>').html('Chat with <strong>' + peerId + '</strong>');
       var messages = $('<div><em>Peer connected.</em></div>').addClass('messages');
       chatbox.append(header);
       chatbox.append(messages);
        
       // Select connection handler.
       chatbox.on('click', function() {
-      if ($(this).attr('class').indexOf('active') === -1) {
-        $(this).addClass('active');
-      } else {
-        $(this).removeClass('active');
-      }
+        if ($(this).attr('class').indexOf('active') === -1) {
+          $(this).addClass('active');
+        } else {
+          $(this).removeClass('active');
+        }
       });
       
       $('.filler').hide();
       $('#connections').append(chatbox);
-      c.on('data', function(data) {
-      messages.append('<div><span class="peer">' + c.peer + '</span>: ' + data + '</div>');
-      });
-      c.on('close', function() {
-        alert(c.peer + ' has left the chat.');
-        chatbox.remove();
-        if ($('.connection').length === 0) {
-          $('.filler').show();
-        }
-        delete connectedPeers[c.peer];
-      });
     }
     function getGraph(host, port, plotterLoop, workers){
       var http = new XMLHttpRequest();
@@ -74,31 +70,29 @@
     }
     //main
     $(document).ready(function(){
-      //peerId will be chosen in a randomly way
-      //var peerId;
-      //values with # are changed by the script
       $('start').click(function(){
+        console.log('Start...');
         var peerId = document.getElementById('user').value;
         if(peerId && peerId != ''){
+          console.log('peerId is not null');
           document.getElementById('start').disabled = true;
           var profile = [];
           for(var i = 1; i<=3; i++)
             profile.push(document.getElementById("list" + i).value);
         var controller = new Coordinator(configurationObj, profile, peerId);
         controller.listen();
+        var plotter = new Plotter(peerId, {});
+        controller.plotterObj = plotter;
+        var self = this;
+        window.setInterval( function(){
+          var host = configurationObj.peerJsOpts.host;
+          var port = configurationObj.peerJsOpts.port;
+          getGraph(host, port, plotter.loop, controller.workers);
+          plotter.loop++;
+        }, 15000);
         }else
           alert("Your PeerID could not be empty");
       });
-      //var plotter = new Plotter(controller.log, peerId);
-      //controller.plotterObj = plotter;
-      //var self = this;
-      //window.setInterval( function(){
-      //  plotter.ref = controller.id;
-      //  var host = configurationObj.peerJsOpts.host;
-      //  var port = configurationObj.peerJsOpts.port;
-      //  getGraph(host, port, plotter.loop, controller.workers);
-      //  plotter.loop++;
-      //}, 17000);
     });
   </script>
 </head>
@@ -109,6 +103,7 @@
       <h2>Preferences</h2>
         Your PeerId: <input type="text" id="user" placeholder="Write your ID, here!">
         <input class="button" type="button" value="START" id="start">
+        <input class="button" type="button" value="AddChatBox" onclick="addChatElement()">
         <br><br>
         Your profile is:
         <select id="list1">
