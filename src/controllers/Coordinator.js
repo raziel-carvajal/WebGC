@@ -310,7 +310,11 @@
         this.log.info('VOID was received from: ' + data.emitter);
         break;
       case 'APPLICATION':
-        this.appFn(data.payload);
+        console.log('Doing App case');
+        if(this.appFn)
+          this.appFn(data);
+        else
+          console.log('No app func. CHAT_MSG: ' + data.payload);
         break;
       default:
         this.log.error('Msg: ' + JSON.stringify(data) + ' is not recognized');

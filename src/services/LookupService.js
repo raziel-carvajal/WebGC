@@ -80,8 +80,6 @@
             pathInfo = this.discoveredPaths[msg.emitter];
             if(!pathInfo){
               this.setPathAndIceCandidates(msg.emitter, false, msg.path, msg.steps, undefined);
-              console.info('RECP');
-              console.info(msg);
               this.inOfferReception(msg);
             }else
               this.log.warn('Already a path to: ' + msg.emitter + ', ignoring path');

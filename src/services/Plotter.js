@@ -4,14 +4,13 @@
 * TODO Finish with the doc of this file*/
 (function(exports){
   
-  function Plotter(plotterId, extraCons){
+  function Plotter(plotterId, extraCons, appDepFn){
     this.loop = 0;
     this.logs = {};
     this.ref = plotterId;
     this.graphObjs = {};
-    this.cordi = cordi;
-    this.lookupServ = lookupServ;
     this.extraCons = extraCons;
+    this.appDepFn = appDepFn;
   }
   
   Plotter.prototype.getShape = function(i){
@@ -68,7 +67,7 @@
   };
   
   Plotter.prototype.buildGraph = function(algoId, nodes, view){
-    //this.logger.info('Building graph of type ' + viewType);
+    this.resetGraph(algoId);
     var eles = this.getGraphFormat(this.ref, nodes, view);
     //this.logger.info('For view ' + viewType + ' the elements are ' + JSON.stringify(eles));
     var layoutOpts = {
@@ -97,9 +96,8 @@
       'width': 12,
       'line-color': 'data(color)'
     };
-    var graphContainer = algoId;
     var input = {
-      container: document.getElementById(graphContainer),
+      container: document.getElementById(algoId),
       layout: layoutOpts,
       style: cytoscape.stylesheet()
         .selector('node')
@@ -113,24 +111,29 @@
           .css(edgesOpts),
       elements: eles
     };
-    this.resetGraph(algoId);
     this.graphObjs[algoId] = cytoscape(input);
+    if( algoId.match('vicinity[0-9]') )
+      this.appDepFn(view);
   };
   
   Plotter.prototype.resetGraph = function(algoId){
     if(this.loop !== 0){
       delete this.graphObjs[algoId];
-      var gCont = document.getElementById('graphs'), sec;
-      if(algoId === 'rps-section'){
+      var gCont = document.getElementById('graphs'), sec, overlayName;
+      if( algoId.match('cyclon[0-9]') ){
         gCont.removeChild(document.getElementById(algoId));
         sec = $('<div></div>').addClass('rpsContainer').attr('id', algoId);
-      }else if(algoId === 'clu-section'){
+        overlayName = 'RPS Overlay';
+      }else if( algoId.match('vicinity[0-9]') ){
         gCont.removeChild(document.getElementById(algoId));
         sec = $('<div></div>').addClass('cluContainer').attr('id', algoId);
+        overlayName = 'Clustering Overlay';
         var consAtChat = document.getElementById('connections').childNodes;
         var peerIds = [], i;
-        for(i = 0; i < consAtChat.length; i++)
-          peerIds.push(consAtChat[i].getAttribute('id'));
+        for(i = 0; i < consAtChat.length; i++){
+          if(consAtChat[i].getAttribute('id'))
+            peerIds.push(consAtChat[i].getAttribute('id'));
+        }
         gCont = document.getElementById('connections');
         for(i = 0; i < peerIds.length; i++)
           gCont.removeChild(document.getElementById(peerIds[i]));
@@ -148,6 +151,7 @@
         return;
       }
       $('#graphs').append(sec);
+      $('#' + algoId).append('<h1><strong>' + overlayName + '</strong></h1>');
     }
   };
   

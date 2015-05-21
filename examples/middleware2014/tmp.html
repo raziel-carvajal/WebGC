@@ -1,3 +1,4 @@
+<!DOCTYPE html PUBLIC>
 <html lang="en">
 <head>
   <title>WebGC demo</title>
@@ -21,16 +22,96 @@
   
   <script>
     var mainObjs = {};
-    var chatElement = 0;
-    function addChatElement(){
-      var peerId = "peer_" + chatElement;
-      chatElement++;
+    mainObjs['chatCons'] = {};
+    mainObjs['coreCons'] = {};
+    
+    function writeDownInChat(msg){
+      if(document.getElementById(msg.emitter)){
+        $('#' + msg.emitter + '_msgs').append(
+          $('<div><span class="peer">' + msg.emitter + ': </span>' + msg.payload + '</div>')
+        );
+      }else
+        addChatElement(msg.emitter, msg.payload, false);
+    }
+    
+    function sendInChat(){
+      var activeCons = $('.active');
+      activeCons.each(function(){
+        var peerId = $(this).attr('id');
+        var txt = document.getElementById('text').value;    
+        var msg = {
+          service: 'APPLICATION',
+          emitter: mainObjs['controller'].id,
+          receiver: peerId,
+          payload: txt
+        };
+        var con = mainObjs['lookup'].getConnection(peerId);
+        if(con)
+          con.send(msg);
+      });
+    }
+    
+    function performConnectionsForChat(peerIds){
+      if( Object.keys(mainObjs['chatCons']).length !== 0 )
+        closeChatCons();
+      var i, con;
+      var initMsg = "Let's have a talk!";
+      var msg = { service: 'APPLICATION', payload: initMsg };
+      mainObjs['currentPeerIds'] = peerIds;
+      mainObjs['msgsForLater'] = {};
+      for(i = 0; i < peerIds.length; i++){
+        con = mainObjs['lookup'].getConnection(peerIds[i]);
+        if( con && !(peerIds[i] in mainObjs['coreCons']) ){
+          mainObjs['coreCons'][ peerIds[i] ] = con;
+          if(con.open){
+            console.info('Ready to send msg to: ' + peerIds[i])
+            con.send(msg);
+          }else{
+            console.info('Connection with: ' + peerIds[i] + ' not ready, doing for later');
+            mainObjs['msgsForLater'][ peerIds[i] ] = {
+              service: msg.service,
+              payload: msg.payload,
+              receiver: peerIds[i]
+            };
+          }
+        }else{
+          msg.receiver = peerIds[i];
+          msg.emitter = mainObjs['controller'].id;
+          mainObjs['chatCons'][ peerIds[i] ] = mainObjs['controller'].sendViaSigServer(msg);
+        }
+        addChatElement(peerIds[i], initMsg, true);
+      }
+      window.setTimeout(function(){
+        var keys = Object.keys(mainObjs['msgsForLater']), con;
+        for(var i = 0; i < keys.length; i++){
+          c = mainObjs['coreCons'][ keys[i] ];
+          c.send(mainObjs['msgsForLater'][ keys[i] ]);
+          delete mainObjs['msgsForLater'][ keys[i] ];
+        }
+        mainObjs['msgsForLater'] = {};
+      }, 3000);
+    }
+    
+    function closeChatCons(){
+      var keys = Object.keys(mainObjs['chatCons']);
+      for(var i = 0; i < keys.length; i++){
+        //DataConnection.close() - PeerJS level
+        (mainObjs['chatCons'][ keys[i] ]).close();
+        delete mainObjs['chatCons'][ keys[i] ];
+      }
+      mainObjs['chatCons'] = {};
+    }
+    
+    function addChatElement(peerId, firstMsg, originator){
       var chatbox = $('<div></div>').addClass('connection').addClass('active').attr('id', peerId);
       var header = $('<h1></h1>').html('Chat with <strong>' + peerId + '</strong>');
-      var messages = $('<div><em>Peer connected.</em></div>').addClass('messages');
+      var messages = $('<div><em>Peer connected.</em></div>').addClass('messages').attr('id', peerId + '_msgs');
+      if(originator)
+        messages.append( $('<div><span class="you">You: </span>' + firstMsg + '</div>') );
+      else
+        messages.append( $('<div><span class="peer">' + peerId + ': </span>' + firstMsg + '</div>') );
       chatbox.append(header);
       chatbox.append(messages);
-       
       // Select connection handler.
       chatbox.on('click', function() {
         if ($(this).attr('class').indexOf('active') === -1) {
@@ -39,10 +120,10 @@
           $(this).removeClass('active');
         }
       });
-      
       $('.filler').hide();
       $('#connections').append(chatbox);
     }
+    
     function getGraph(host, port, plotterLoop, workers){
       var http = new XMLHttpRequest();
       var url = 'http://' + host + ':' + port + '/getGraph';
@@ -68,20 +149,20 @@
       };
       http.send(null);
     }
-    //main
-    $(document).ready(function(){
-      $('start').click(function(){
-        console.log('Start...');
-        var peerId = document.getElementById('user').value;
-        if(peerId && peerId != ''){
-          console.log('peerId is not null');
-          document.getElementById('start').disabled = true;
-          var profile = [];
-          for(var i = 1; i<=3; i++)
-            profile.push(document.getElementById("list" + i).value);
-        var controller = new Coordinator(configurationObj, profile, peerId);
+    
+    function start(){
+      var peerId = document.getElementById('user').value;
+      if(peerId && peerId != ''){
+        document.getElementById('start').disabled = true;
+        var profile = [];
+        for(var i = 1; i<=3; i++)
+          profile.push(document.getElementById("list" + i).value);
+        var controller = new Coordinator(configurationObj,{vicinity1: profile}, peerId);
+        controller.setApplicationLevelFunction(writeDownInChat);
+        mainObjs['controller'] = controller;
         controller.listen();
-        var plotter = new Plotter(peerId, {});
+        mainObjs['lookup'] = controller.lookupService;
+        var plotter = new Plotter(peerId, {}, performConnectionsForChat);
         controller.plotterObj = plotter;
         var self = this;
         window.setInterval( function(){
@@ -89,10 +170,13 @@
           var port = configurationObj.peerJsOpts.port;
           getGraph(host, port, plotter.loop, controller.workers);
           plotter.loop++;
-        }, 15000);
-        }else
-          alert("Your PeerID could not be empty");
-      });
+        }, 25000);
+      }else
+        alert("Your PeerID could not be empty");
+    }
+    
+    document.addEventListener('DOMContentLoaded', function(event){
+      console.log('Page was loaded');
     });
   </script>
 </head>
@@ -102,8 +186,7 @@
     <div id="form" class="formContainer">
       <h2>Preferences</h2>
         Your PeerId: <input type="text" id="user" placeholder="Write your ID, here!">
-        <input class="button" type="button" value="START" id="start">
-        <input class="button" type="button" value="AddChatBox" onclick="addChatElement()">
+        <button class="button" type="button" id="start" onclick="start()">START</button>
         <br><br>
         Your profile is:
         <select id="list1">
@@ -124,23 +207,19 @@
           <option value="v3">Cloud Computing</option>
           <option value="v4">Recommendation protocols</option>
         </select>
-        <!--
-        <div id="statusSec" class="status_section">
-          <div id="profile" class="profiile_cls"></div>
-          <div id="info" class="info_cls">
-            <img src="legend.png" alt="" style="width:800px;height:100px;align:middle">
-          </div>
-        </div> 
-        -->
     </div>
     <div id="graphs" class="graphsContainer">
-      <div id="rps-section" class="rpsContainer"></div>
-      <div id="clu-section" class="cluContainer"></div>
+      <div id="cyclon1" class="rpsContainer">
+        <h1><strong>RPS Overlay </strong></h1>
+      </div>
+      <div id="vicinity1" class="cluContainer">
+        <h1><strong>Clustering Overlay</strong></h1>
+      </div>
     </div>
     <div id="chat" class="chatContainer">
       <div id="actions">
-        Your peer ID is: <span id="pid"></span><br>
         <!--
+        Your peer ID is: <span id="pid"></span><br>
         Connect to a peer: <input type="text" id="rid" 
           placeholder="Someone else's id">
         <input class="button" type="button" value="Connect"
@@ -149,7 +228,7 @@
         -->
         <form id="send">
           <input type="text" id="text" placeholder="Enter message">
-          <input class="button" type="submit" value="Send to selected peers">
+          <button class="button" type="button" onclick='sendInChat()'>Send to selected peers</button>
         </form>
         <!-- <button id="close">Close selected connections</button> -->
       </div>
