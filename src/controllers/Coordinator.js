@@ -275,19 +275,23 @@
   * Coordinator.protocols
   * @param {DataConnection} connection - This connection allows the exchange of meesages amog peers. */
   Coordinator.prototype.handleConnection = function(connection){
-    if(!this.isFirstConDone)
-      this.isFirstConDone = true;
-    var self = this;
-    
-    connection.on('open', function(){
-      self.log.info('Bi-directional communication with: ' + connection.peer + ' is ready');
-      connection.on('data', function(data){ self.handleIncomingData(data); });
-    });
-    
-    connection.on('error', function(err){
-      self.log.error('In communication with: ' + connection.peer +
-        ' (call handleConnection); ' + err);
-    });
+    if(connection.label === 'chat' && this.appFn)
+      this.appFn(connection);
+    else{
+      if(!this.isFirstConDone)
+        this.isFirstConDone = true;
+      var self = this;
+      
+      connection.on('open', function(){
+        self.log.info('Bi-directional communication with: ' + connection.peer + ' is ready');
+        connection.on('data', function(data){ self.handleIncomingData(data); });
+      });
+      
+      connection.on('error', function(err){
+        self.log.error('In communication with: ' + connection.peer +
+          ' (call handleConnection); ' + err);
+      });
+    }
   };
   
   Coordinator.prototype.handleIncomingData = function(data){
@@ -308,13 +312,6 @@
         break;
       case 'VOID':
         this.log.info('VOID was received from: ' + data.emitter);
-        break;
-      case 'APPLICATION':
-        console.log('Doing App case');
-        if(this.appFn)
-          this.appFn(data);
-        else
-          console.log('No app func. CHAT_MSG: ' + data.payload);
         break;
       default:
         this.log.error('Msg: ' + JSON.stringify(data) + ' is not recognized');
