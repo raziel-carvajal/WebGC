@@ -275,12 +275,14 @@
   * Coordinator.protocols
   * @param {DataConnection} connection - This connection allows the exchange of meesages amog peers. */
   Coordinator.prototype.handleConnection = function(connection){
-    if(connection.label === 'chat' && this.appFn)
-      this.appFn(connection);
-    else{
+    var self = this;
+    if(connection.label === 'chat' && this.appFn){
+      connection.on('open', function(){
+        self.appFn(connection);
+      });
+    }else{
       if(!this.isFirstConDone)
         this.isFirstConDone = true;
-      var self = this;
       
       connection.on('open', function(){
         self.log.info('Bi-directional communication with: ' + connection.peer + ' is ready');

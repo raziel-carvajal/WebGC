@@ -33,20 +33,22 @@
     }
     
     function sendInChat(){
-      //var activeCons = $('.active');
-      //activeCons.each(function(){
-      //  var peerId = $(this).attr('id');
-      //  var txt = document.getElementById('text').value;    
-      //  var msg = {
-      //    service: 'APPLICATION',
-      //    emitter: mainObjs['controller'].id,
-      //    receiver: peerId,
-      //    payload: txt
-      //  };
-      //  var con = mainObjs['lookup'].getConnection(peerId);
-      //  if(con)
-      //    con.send(msg);
-      //});
+      var activeCons = $('.active');
+      activeCons.each(function(){
+        var peerId = $(this).attr('id');
+        var txt = document.getElementById('text').value;
+        //document.getElementById('text').value = '';
+        var cons = mainObjs['controller'].connections[peerId];
+        for(var i = 0; i < cons.length; i++){
+          if(cons[i].label === 'chat'){
+            cons[i].send({msg: txt});
+            $('#' + peerId).append('<div><span class="you">You: </span>' + txt + '</div>');
+            break;
+          }
+        }
+      });
+      $('#text').val('');
+      $('#text').focus();
     }
     
     function performConnectionsForChat(peerIds){
@@ -61,38 +63,43 @@
       var cons = mainObjs['controller'].connections, consPerP, peerId;
       for(var i = 0, ii = mainObjs['currentChatCons'].length; i < ii; i++){
         peerId = mainObjs['currentChatCons'][i];
+        $('#' + peerId).remove();
         consPerP = cons[peerId];
         for(var j = 0, jj = consPerP.length; j < jj; j++){
           if(consPerP[j].label === 'chat'){
             consPerP[j].close();
+            consPerP[j] = {};
+            break;
           }
         }
       }
+      $('.filler').show();
     }
     
     function setObjsChatCo(c){
-      var chatbox = $('<div></div>').addClass('connection').addClass('active').attr('id', c.peer);
-      var header = $('<h1></h1>').html('Chat with <strong>' + c.peer + '</strong>');
-      var messages = $('<div><em>Peer connected.</em></div>').addClass('messages');
-      chatbox.append(header);
-      chatbox.append(messages);
-      chatbox.on('click', function() {
-        if ($(this).attr('class').indexOf('active') === -1)
-          $(this).addClass('active');
-        else
-          $(this).removeClass('active');
-      });
-      $('.filler').hide();
-      $('#connections').append(chatbox);
+      //if($('#' + c.peer) === null || $('#' + c.peer) === undefined){
+        var chatbox = $('<div></div>').addClass('connection').attr('id', c.peer);
+        var header = $('<h1></h1>').html('Chat with <strong>' + c.peer + '</strong>');
+        var messages = $('<div><em>Peer connected.</em></div>').addClass('messages');
+        chatbox.append(header);
+        chatbox.append(messages);
+        chatbox.on('click', function() {
+          if ($(this).attr('class').indexOf('active') === -1)
+            $(this).addClass('active');
+          else
+            $(this).removeClass('active');
+        });
+        $('.filler').hide();
+        $('#connections').append(chatbox);
+      //}
       c.on('data', function(data){
+        console.info('MsgFromChatCon');
         console.info(data);
-        messages.append('<div><span class="peer">' + c.peer + '</span>: ' + data + '</div>'); 
+        $('#' + c.peer).append('<div><span class="peer">' + c.peer + '</span>: ' + data.msg + '</div>'); 
       });
       
       c.on('error', function(e){
-        chatbox.remove();
-        if($('.connection').length === 0)
-          $('.filler').show();
+        console.log('In chat connection with: ' + c.peer);
       });
     }
     
@@ -100,8 +107,7 @@
       var contr = mainObjs['controller'];
       var con = contr.connect(receiver, {
         label: 'chat',
-        serialization: 'none',
-        metadata: {message: "Let's have a talk!"}
+        serialization: 'json'
       });
       
       con.on('open', function(){
@@ -113,7 +119,7 @@
       });
     }
     
-    function getGraph(host, port, plotterLoop, workers){
+    function getGraph(host, port, plotterLoop, workers, algoName){
       var http = new XMLHttpRequest();
       var url = 'http://' + host + ':' + port + '/getGraph';
       var self = this;
@@ -132,8 +138,10 @@
         var msg = {header: 'view', graph: nodes};
         var keys = Object.keys(workers), worker;
         for(var i = 0; i < keys.length; i++){
-          worker = workers[ keys[i] ];
-          worker.postMessage(msg);
+          if(keys[i].match(algoName + '[0-9]')){
+            worker = workers[ keys[i] ];
+            worker.postMessage(msg);
+          }
         }
       };
       http.send(null);
@@ -154,18 +162,25 @@
         controller.plotterObj = plotter;
         var self = this;
         window.setInterval( function(){
+          var host = configurationObj.peerJsOpts.host;
+          var port = configurationObj.peerJsOpts.port;
+          getGraph(host, port, plotter.loop, controller.workers, 'cyclon');
+        }, 12000);
+        window.setInterval( function(){
           plotter.loop++;
           var host = configurationObj.peerJsOpts.host;
           var port = configurationObj.peerJsOpts.port;
-          getGraph(host, port, plotter.loop, controller.workers);
-        }, 22000);
+          getGraph(host, port, plotter.loop, controller.workers, 'vicinity');
+        }, 27000);
       }else
         alert("Your PeerID could not be empty");
     }
     
     document.addEventListener('DOMContentLoaded', function(event){
       console.log('Page was loaded');
+      $('#user').focus();
     });
+    
   </script>
 </head>
 <!-- <title>WebGC demo</title> -->
@@ -181,19 +196,28 @@
           <option value="v1">Internet of Things</option>
           <option value="v2">P2P Systems</option>
           <option value="v3">Cloud Computing</option>
-          <option value="v4">Recommendation protocols</option>
+          <option value="v4">Big Data</option>
+          <option value="v5">Gossiping</option>
+          <option value="v6">Optimization</option>
+          <option value="v7">Recommendation Systems</option>
         </select>
         <select id="list2">
           <option value="v1">Internet of Things</option>
           <option value="v2">P2P Systems</option>
           <option value="v3">Cloud Computing</option>
           <option value="v4">Recommendation protocols</option>
+          <option value="v5">Gossiping</option>
+          <option value="v6">Optimization</option>
+          <option value="v7">Recommendation Systems</option>
         </select>
         <select id="list3">
           <option value="v1">Internet of Things</option>
           <option value="v2">P2P Systems</option>
           <option value="v3">Cloud Computing</option>
           <option value="v4">Recommendation protocols</option>
+          <option value="v5">Gossiping</option>
+          <option value="v6">Optimization</option>
+          <option value="v7">Recommendation Systems</option>
         </select>
     </div>
     <div id="graphs" class="graphsContainer">

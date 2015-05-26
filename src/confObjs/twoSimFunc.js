@@ -27,7 +27,7 @@ var configurationObj = {
       class: 'Vicinity',
       viewSize: 4,
       fanout: 3,
-      gossipPeriod: 20000,
+      gossipPeriod: 25000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'agr-biased', // random OR biased OR agr-biased
       //implementation of the cosine similarity
