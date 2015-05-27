@@ -103,13 +103,13 @@ rm -fr $testDir peer_*
 mkdir $testDir
 cd $serverDir
 cd src
-echo "Launching LoggingServer..."
-node LoggingServer.js 9991 >LoggingServer.log &
-logServerPid=$!
-cd ../examples/middleware2014
-echo "Launching PeerServer..."
-node server.js 9990 4 >PeerServer.log &
-nodePid=$!
+#echo "Launching LoggingServer..."
+#node LoggingServer.js 9991 >LoggingServer.log &
+#logServerPid=$!
+#cd ../examples/middleware2014
+#echo "Launching PeerServer..."
+#node server.js 9990 4 >PeerServer.log &
+#nodePid=$!
 echo "Launching instances of Chrome (one of them represents one peer)..."
 declare -a chromePids
 cd $origin
@@ -140,9 +140,9 @@ echo -e "\tDONE"
 echo "Waiting till the time of the experiment expires..."
 timeout=$(( $exeTime * 60 ))
 sleep $timeout
-echo -e "\tKilling node instances..."
-kill -9 $logServerPid $nodePid
-echo -e "\tDONE"
+#echo -e "\tKilling node instances..."
+#kill -9 $logServerPid $nodePid
+#echo -e "\tDONE"
 echo "killing chrome instances..."
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   kill -9 ${chromePids[$COUNTER]}

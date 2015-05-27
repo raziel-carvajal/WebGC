@@ -147,38 +147,98 @@
       http.send(null);
     }
     
+    function postKeepAlive(host, port, peerId){
+      var url = 'http://' + host + ':' + port + '/keepAlive';
+      var xhr = new XMLHttpRequest();
+      var self = this;
+      xhr.open('POST', url, true);
+      xhr.setRequestHeader('Content-type', 'text/plain');
+      xhr.onreadystatechange = function(){
+        if (xhr.readyState !== 4){ return; }
+        if (xhr.status !== 200) { xhr.onerror(); return; }
+        console.info('Keep alive was posted');
+      };
+      xhr.onerror = function(){
+        console.error('While posting keep alive msg');
+      };
+      var msg = {id: peerId};
+      xhr.send(JSON.stringify(msg));
+    }
+    
+    function isPeeridValid(host, port, peerId){
+      var url = 'http://' + host + ':' + port + '/checkPeerId';
+      var xhr = new XMLHttpRequest();
+      var self = this;
+      xhr.open('POST', url, true);
+      xhr.setRequestHeader('Content-type', 'text/plain');
+      xhr.onreadystatechange = function(){
+        if (xhr.readyState !== 4){ return; }
+        if (xhr.status !== 200) { xhr.onerror(); return; }
+        console.info('isPeerValid ? ' + xhr.responseText);
+        var res = JSON.parse(xhr.responseText);
+        if(!res.answer)
+          self.launchPeer(peerId, host, port);
+        else{
+          alert('The peerId you typed was already taken, please give another one');
+          $('#user').val('');
+          $('#user').focus();
+        }
+      };
+      xhr.onerror = function(){
+        console.error('While checking if peerId is valid');
+      };
+      var msg = {id: peerId};
+      xhr.send(JSON.stringify(msg));
+    }
+    
+    function launchPeer(peerId, host, port){
+      document.getElementById('start').disabled = true;
+      var profile = [];
+      for(var i = 1; i <=3 ; i++)
+        profile.push(document.getElementById("list" + i).value);
+      var controller = new Coordinator(configurationObj,{vicinity1: profile}, peerId);
+      controller.setApplicationLevelFunction(setObjsChatCo);
+      mainObjs['controller'] = controller;
+      controller.listen();
+      var plotter = new Plotter(peerId, {}, performConnectionsForChat);
+      controller.plotterObj = plotter;
+      var itC = 1;
+      var self = this;
+      var itPool = window.setInterval(function(){
+        if(itC % 2 === 0)
+          $('#waitMsg').hide();
+        else
+          $('#waitMsg').show();
+        itC++;
+      }, 1000);
+      window.setInterval(function(){
+        self.postKeepAlive(host, port, controller.id);
+      }, 3000);
+      window.setInterval( function(){
+        $('#waitMsg').hide();
+        clearInterval(itPool);
+        getGraph(host, port, plotter.loop, controller.workers, 'cyclon');
+      }, 12000);
+      window.setInterval( function(){
+        plotter.loop++;
+        getGraph(host, port, plotter.loop, controller.workers, 'vicinity');
+      }, 27000);
+    }
+    
     function start(){
       var peerId = document.getElementById('user').value;
-      if(peerId && peerId != ''){
-        document.getElementById('start').disabled = true;
-        var profile = [];
-        for(var i = 1; i <=3 ; i++)
-          profile.push(document.getElementById("list" + i).value);
-        var controller = new Coordinator(configurationObj,{vicinity1: profile}, peerId);
-        controller.setApplicationLevelFunction(setObjsChatCo);
-        mainObjs['controller'] = controller;
-        controller.listen();
-        var plotter = new Plotter(peerId, {}, performConnectionsForChat);
-        controller.plotterObj = plotter;
-        var self = this;
-        window.setInterval( function(){
-          var host = configurationObj.peerJsOpts.host;
-          var port = configurationObj.peerJsOpts.port;
-          getGraph(host, port, plotter.loop, controller.workers, 'cyclon');
-        }, 12000);
-        window.setInterval( function(){
-          plotter.loop++;
-          var host = configurationObj.peerJsOpts.host;
-          var port = configurationObj.peerJsOpts.port;
-          getGraph(host, port, plotter.loop, controller.workers, 'vicinity');
-        }, 27000);
-      }else
+      var host = configurationObj.peerJsOpts.host;
+      var port = configurationObj.peerJsOpts.port;
+      if(peerId && peerId !== '')
+        isPeeridValid(host, port, peerId);
+      else
         alert("Your PeerID could not be empty");
     }
     
     document.addEventListener('DOMContentLoaded', function(event){
       console.log('Page was loaded');
       $('#user').focus();
+      $('#waitMsg').hide();
     });
     
   </script>
@@ -190,6 +250,7 @@
       <h2>Preferences</h2>
         Your PeerId: <input type="text" id="user" placeholder="Write your ID, here!">
         <button class="button" type="button" id="start" onclick="start()">START</button>
+        <h1 id="waitMsg"><strong>Application has initiated, performing connections with other peers!</strong></h1>
         <br><br>
         Your profile is:
         <select id="list1">
