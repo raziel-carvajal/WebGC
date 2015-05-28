@@ -17,7 +17,6 @@
 #       CREATED:  18/02/2015 16:35:49 CET
 #      REVISION:  ---
 #===============================================================================
-
 #===  FUNCTION  ================================================================
 #          NAME:  generateProfile
 #   DESCRIPTION:  
@@ -47,7 +46,6 @@ function generateProfile ()
   done
   doubleProf="{"$doubleProf"}"
 }    # ----------  end of function generateProfile  ----------
-
 #===  FUNCTION  ================================================================
 #          NAME:  
 #   DESCRIPTION:  
@@ -64,7 +62,6 @@ for (( COUNTER1=0; COUNTER1<n-1; COUNTER1++ )); do
 done
 data=$data$(($RANDOM%modNum))"]"
 }    # ----------  end of function getData  ----------
-
 #===  FUNCTION  ================================================================
 #          NAME:  isChromeInstalled
 #   DESCRIPTION:  Verifies if the Chrome browser is available
@@ -90,7 +87,6 @@ else
 fi
 chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --allow-file-access-from-files --user-data-dir="
 }    # ----------  end of function isChromeInstalled  ----------
-
 isChromeInstalled
 peers=$1
 exeTime=$2
@@ -103,13 +99,13 @@ rm -fr $testDir peer_*
 mkdir $testDir
 cd $serverDir
 cd src
-#echo "Launching LoggingServer..."
-#node LoggingServer.js 9991 >LoggingServer.log &
-#logServerPid=$!
-#cd ../examples/middleware2014
-#echo "Launching PeerServer..."
-#node server.js 9990 4 >PeerServer.log &
-#nodePid=$!
+echo "Launching LoggingServer..."
+node LoggingServer.js 9991 >LoggingServer.log &
+logServerPid=$!
+cd ../examples/middleware2014
+echo "Launching PeerServer..."
+node server.js 9990 4 >PeerServer.log &
+nodePid=$!
 echo "Launching instances of Chrome (one of them represents one peer)..."
 declare -a chromePids
 cd $origin
@@ -117,21 +113,8 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   peerDir="peer_$COUNTER"
   mkdir $testDir/$peerDir
   htmlFile=$peerDir".html"
-  
-  ##calling getData fills var "data"
-  ##getData $simLim $simLim
-  
-  ##random peerId (changes in the html file must be done)
-  ##cat "index.html" | sed "s/#userProfile/$data/;" >$htmlFile
-  
-  ##peerId predefined
-  ##cat "index.html" | sed "s/#userProfile/$data/;s/#userId/$peerDir/;" >$htmlFile
-  
-  #creation of two list of profiles for two instances of vicinity
-  #the call to this function sets the variable "doubleProf"
   generateProfile
   cat "index.html" | sed "s/#userProfile/$doubleProf/;s/#userId/$peerDir/;" >$htmlFile
-  
   "$chromeCommand" $chromeStr$testDir/$peerDir $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
   echo "Chrome PID: "${chromePids[$COUNTER]}
@@ -140,14 +123,14 @@ echo -e "\tDONE"
 echo "Waiting till the time of the experiment expires..."
 timeout=$(( $exeTime * 60 ))
 sleep $timeout
-#echo -e "\tKilling node instances..."
-#kill -9 $logServerPid $nodePid
-#echo -e "\tDONE"
+echo -e "\tKilling node instances..."
+kill -9 $logServerPid $nodePid
+echo -e "\tDONE"
 echo "killing chrome instances..."
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   kill -9 ${chromePids[$COUNTER]}
 done
 echo -e "\tDONE"
-#rm -fr $testDir peer_*
+rm -fr $testDir peer_*
 echo "END OF THE EXECUTION"
 echo "the file: src/log at $serverDir contains the log of each peer"
