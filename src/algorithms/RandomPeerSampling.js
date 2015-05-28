@@ -1,5 +1,6 @@
 /** 
- * @module lib/algorithms */
+*FIXME THIS ENTIRE CLESS ISN'T COEHERENT WITH THE NEW ARCHITECTURE !
+* @module lib/algorithms */
 (function(exports){
   /**
   * @class SamplingService

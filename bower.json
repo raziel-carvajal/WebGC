@@ -16,11 +16,12 @@
     "tests"
   ],
   "dependencies": {
-    "peerjs": "~0.3.14",
-    "cytoscape": "~2.2.9",
-    "log4javascript": "~1.4.9"
+    "peerjs": "0.3.14",
+    "cytoscape": "2.2.9",
+    "log4javascript": "1.4.9",
+    "jquery": "~2.1.4"
   },
   "devDependencies": {
-    "jsdoc3": "~3.2.2"
+    "jsdoc3": "3.2.2"
   }
 }

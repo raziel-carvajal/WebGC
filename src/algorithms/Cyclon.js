@@ -1,25 +1,30 @@
 /** 
-* @module lib/algorithms */
+* @module src/algorithms */
 (function(exports){
   /**
   * @class Cyclon
-  * @augments GossipProtocol
-  * @description This class implements the goosip-based algorithm Cyclon. The local view is an
-  * object where each property identifies a remote peer with ID "peerId"; properties point to 
-  * a vector with two entries, the first one contains the age (integer) of the vector and the 
-  * second one is the data owned by the peer "peerId".
-  * @param opts {Object} - properties to set by the object Cyclon
-  * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
+  * @augments [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
+  * @description Implementation of the gossip-based protocol 
+  * [Cyclon]{@link http://gossple2.irisa.fr/~akermarr/cyclon.jnsm.pdf}. The local view is an
+  * object where each of its keys identify a remote peer (peer ID); the value of each key points 
+  * to a vector with two entries, the first one is an integer (age of the vector) and the 
+  * second one is the data owned by the remote peer.
+  * @param algOpts Object with the settings of the protocol (fanout, view size, etc.)
+  * @param log [Logger]{@link module:src/utils#Logger} object register any error, warning or info
+  * message
+  * @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
+  * functions used by gossip protocols
+  * @author Raziel Carvajal [raziel.carvajal-gomez@inria.fr] */
   function Cyclon(algOpts, log, gossipUtil){
     GossipProtocol.call(this, algOpts, log, gossipUtil);
   }
   
+  //FIXME This function isn't available when web workers are used
   //GossipUtil.inherits(Cyclon, GossipProtocol);
   /**
-  * @description This object represents the configuration by default of this protocol. During the
-  * instantiation of this object (via the Factory object) if the options are not defined
-  * the default configuration will be taken into account. 
-  * @property {Object} defaultOpts - Default configuration of this gossip-based protocol.
+  * @const defaultOpts
+  * @description Default configuration of this protocol. During the instantiation of a Cyclon object
+  * (via the Factory object) if the user doesn't specify any option this object is taken into account.
   * @default */
   Cyclon.defaultOpts = {
     class: 'Cyclon',
@@ -29,16 +34,23 @@
     periodTimeOut: 10000,
     propagationPolicy: { push: true, pull: true }
   };
+  
   /** 
-  * @description This method selects the remote peer's identifier with the oldest age.See method 
-  * GossipProtocol.selectPeer() for more information.*/
+  * @method selectPeer
+  * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol} 
+  * for more details.*/
   Cyclon.prototype.selectPeer = function(){ return this.gossipUtil.getOldestKey(this.view); };
-  /***/
+  
+  /**
+  * @method setMediator
+  * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol} 
+  * for more details.*/
   Cyclon.prototype.setMediator = function(mediator){ this.gossipMediator = mediator; };
+  
   /** 
-  * @description This method initialize GossipProtocol.view with the peer identifiers n the array keys.
   * @method initialize
-  * @param keys:Array - Array of peer identifiers. */
+  * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol} 
+  * for more details.*/
   Cyclon.prototype.initialize = function(keys){
     if(keys.length > 0){
       var i = 0;
@@ -48,10 +60,11 @@
       }
     }
   };
+  
   /**
   * @method selectItemsToSend
-  * @description The selection of peers is performed in a randomly way.See method 
-  * GossipProtocol.selectItemsToSend() for more information.*/
+  * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol} 
+  * for more details.*/ 
   Cyclon.prototype.selectItemsToSend = function(thread){
     var dstPeer = this.selectPeer();
     var subDict = {}, clone = JSON.parse(JSON.stringify(this.view));
@@ -79,9 +92,11 @@
     this.gossipMediator.postInMainThread(msg);
     this.gossipMediator.sentActiveCycleStats();
   };
+  
   /**
   * @method selectItemsToKeep
-  * @description See method GossipProtocol.selectItemsToKeep() for more information.*/
+  * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}  
+  * for more details.*/                                                                               
   Cyclon.prototype.selectItemsToKeep = function(msg){
     var rcvKeys = Object.keys(msg.payload);
     if( rcvKeys.length === 0 ){ return; }
@@ -130,20 +145,15 @@
       }
     }
   };
+  
   /** 
   * @method increaseAge
-  * @description See method GossipProtocol.increaseAge() for more information.*/
+  * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}  
+  * for more details.*/                                                                               
   Cyclon.prototype.increaseAge = function(){
     var keys = Object.keys(this.view);
     for( var i = 0; i < keys.length; i++ ){ this.view[keys[i]].age++; }
   };
-  /** 
-  * @method setData 
-  * @description This method updates the value of of one item in GossipProtocol.view
-  * @param {String} key - ID of the item to update.
-  * @param {Object} data - New value for the data property*/
-  Cyclon.prototype.setData = function(key, data){ this.view[key].data = data; };
   
   exports.Cyclon = Cyclon;
-  
 })(this);
