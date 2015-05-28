@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC>
+<html lang="en">
+<head>
+  <style>
+    table {border:1;width:100%}
+  </style>
+  <script type="text/javascript" src="../../bower_components/peerjs/peer.js"></script>
+  <script type="text/javascript" src="../../src/utils/LoggerForWebWorker.js"></script>
+  <script type="text/javascript" src="../../src/utils/GossipUtil.js"></script>
+  <script type="text/javascript" src="../../src/services/LookupService.js"></script>
+  <script type="text/javascript" src="../../src/services/GossipFactory.js"></script>
+  <script type="text/javascript" src="../../src/superObjs/GossipProtocol.js"></script>
+  <script type="text/javascript" src="../../src/algorithms/Vicinity.js"></script>
+  <script type="text/javascript" src="../../src/algorithms/Cyclon.js"></script>
+  <script type="text/javascript" src="../../src/services/Bootstrap.js"></script>
+  <script type="text/javascript" src="../../src/controllers/Coordinator.js"></script>
+  <script type="text/javascript" src="twoSimFunc.js"></script>
+  <script>
+    
+    function addLogToTable(trace){
+      var keys = Object.keys(trace), field;
+      var row = document.createElement("tr");
+      for(var i = 0; i < keys.length; i++){
+        field = document.createElement("th");
+        field.appendChild(document.createTextNode(trace[ keys[i] ]));
+        row.appendChild(field);
+      }
+      document.getElementById(trace.algoId).appendChild(row);
+    }
+    
+    function addStatsToTable(trace){
+      var keys = Object.keys(trace), field;
+      var row = document.createElement("tr");
+      for(var i = 0; i < keys.length; i++){
+        field = document.createElement("th");
+        field.appendChild(document.createTextNode(trace[ keys[i] ]));
+        row.appendChild(field);
+      }
+      document.getElementById(trace.algoId + '-stats').appendChild(row);
+    }
+    
+    function appendLogSection(algoId){
+      var c1 = document.createElement('th');
+      c1.appendChild(document.createTextNode('Algo ID'));
+      var c2 = document.createElement('th');
+      c2.appendChild(document.createTextNode('Gossip Cycle'));
+      var c3 = document.createElement('th');
+      c3.appendChild(document.createTextNode("Active Cycle Offset (s)"));
+      
+      var trEl = document.createElement('tr');
+      trEl.appendChild(c1);
+      trEl.appendChild(c2);
+      trEl.appendChild(c3);
+      
+      var tableEl = document.createElement('table');
+      var idAtt = document.createAttribute('id');
+      idAtt.value = algoId;
+      tableEl.setAttributeNode(idAtt);
+      tableEl.appendChild(trEl);
+      
+      var divEl = document.createElement('div');
+      divEl.appendChild(tableEl);
+      document.getElementById('logSec').appendChild(document.createTextNode('Active Cycle Statistics'));
+      document.getElementById('logSec').appendChild(divEl);
+    }
+    
+    function appendStatsSection(algoId){
+      var c1 = document.createElement('th');
+      c1.appendChild(document.createTextNode('ProtocolId'));
+      var c2 = document.createElement('th');
+      c2.appendChild(document.createTextNode('Gossip Cycle'));
+      var c3 = document.createElement('th');
+      c3.appendChild(document.createTextNode('View'));
+      var c4 = document.createElement('th');
+      c4.appendChild(document.createTextNode("ViewUpd Offset (ms)"));
+      
+      var trEl = document.createElement('tr');
+      trEl.appendChild(c1);
+      trEl.appendChild(c2);
+      trEl.appendChild(c3);
+      trEl.appendChild(c4);
+      
+      var tableEl = document.createElement('table');
+      var idAtt = document.createAttribute('id');
+      idAtt.value = algoId + '-stats';
+      tableEl.setAttributeNode(idAtt);
+      tableEl.appendChild(trEl);
+      
+      var divEl = document.createElement('div');
+      divEl.appendChild(tableEl);
+      document.getElementById('logSec').appendChild(document.createTextNode('View Updates Statistics'));
+      document.getElementById('logSec').appendChild(divEl);
+    }
+    
+    document.addEventListener('DOMContentLoaded', function(event){
+      var peerId = '#userId';
+      var profile = #userProfile;
+      var hEl = document.createElement('h1');
+      hEl.appendChild(document.createTextNode('PeerID : ' + peerId));
+      hEl.appendChild(document.createElement('br'));
+      hEl.appendChild(document.createTextNode('Profile: ' + JSON.stringify(profile)));
+      hEl.appendChild(document.createElement('br'));
+      document.getElementById('peerInfo').appendChild(hEl);
+      var atts = Object.keys(configurationObj.gossipAlgos);
+      for(var i = 0; i < atts.length; i++){
+        appendLogSection(atts[i]);
+        appendStatsSection(atts[i]);
+      }
+      var controller = new Coordinator(configurationObj, profile, peerId);
+      //controller.setLogFunction(addLogToTable);
+      controller.listen();
+      if(!configurationObj.logOpts.activated){
+        window.setInterval(function(){
+          var histo = controller.getViewUpdHistory();
+          var keys = Object.keys(histo), traces, ks, i, j;
+          for(i = 0; i < keys.length; i++){
+            traces = histo[ keys[i] ];
+            ks = Object.keys(traces);
+            for(j = 0; j < ks.length; j++){ addStatsToTable(traces[ ks[j] ]); }
+          }
+          histo = controller.getActiCycHistory();
+          keys = Object.keys(histo);
+          for(i = 0; i < keys.length; i++){
+            traces = histo[ keys[i] ];
+            ks = Object.keys(traces);
+            for(j = 0; j < ks.length; j++){ addLogToTable(traces[ ks[j] ]); }
+          }
+          controller.emptyHistoryOfLogs();
+        }, configurationObj.logOpts.feedbackPeriod);
+      }
+    });
+    
+  </script>
+</head>
+<body>
+  <div id="peerInfo"></div>
+  <br><br><br>
+  <div id="logSec"></div>
+</body>
+</html>

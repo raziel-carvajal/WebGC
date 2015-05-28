@@ -154,7 +154,11 @@
       xhr.onreadystatechange = function(){
         if (xhr.readyState !== 4){ return; }
         if (xhr.status !== 200) { xhr.onerror(); return; }
-        console.info('Keep alive was posted');
+        var res = JSON.parse(xhr.responseText);
+        if(res.success)
+          console.info('Keep alive was posted');
+        else
+          console.error('Keep alive was not received by the server');
       };
       xhr.onerror = function(){
         console.error('While posting keep alive msg');

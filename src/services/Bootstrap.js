@@ -28,7 +28,11 @@
     xhr.onreadystatechange = function(){
       if (xhr.readyState !== 4){ return; }
       if (xhr.status !== 200) { xhr.onerror(); return; }
-      self.coordi.log.info('profile was posted properly');
+      var res = JSON.parse(xhr.responseText);
+      if(res.success)
+        self.coordi.log.info('profile was posted properly');
+      else
+        self.coordi.log.error('profile was not posted');
     };
     xhr.onerror = function(){
       self.coordi.log.error('while posting profile on server');
