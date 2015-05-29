@@ -1,8 +1,34 @@
 /**
-* @module lib/conf_objs
+* @module src/confObjs*/
+/**
 * @const configurationObj
-* @type {Object}
-* @description
+* @description This object serves as the input that any application with WebGC needs. Basically,
+* the settings for each gossip-based protocol are writen down here as well as other settings for 
+* general propose. The configuration object is formed with the next properties:
+* - peerJsOpts: PeerJS settings, click [here]{@link http://peerjs.com/} for more information
+* - gossipAlgos: the properties of this object are unique identifiers for each gossip protocol,
+*   every property points to another object which contains particular settings of each protocol
+*   like its class name (name of the class that implements the protocol), number of items in 
+*   its view, number of peers (fanout) to exchange messages with, seconds of each gossip
+*   cycle, etc
+* - logOpts: given that it is quite difficult to record logs of clients behind web browsers,
+*   this obect contains information about one server that records every log of WebGC. When
+*   the log server is de-activated every log appers in the console of the browser
+* - usingSs: WebGC is extended with a lookup service (see
+*   [LookupService]{@link module:src/services#LookupService} for more details) to take rid of
+*   the [brokering server]{@link https://github.com/peers/peerjs-server} in WebRTC, 
+*   this server allows to create connections among web browsers. 
+*   If this property is set to "true" a new connection among two peers, and considering that these
+*   peers contains at least one connection with others, will be performed using the already existing
+*   connections on the overlay; otherwise, every new connection among two peers will need a first
+*   communication with the brokering server (FYI the coordinates of this server are defined at the
+*   "peerJsOpts" property)
+* - lookupMulticast: when a lookup message M is received by one peer, M is retransmited to
+*   "lookupMulticast" peer's neighbours
+* - lookupMsgSTL: for avoiding infinite retransmitions of lookup messages, this property determines
+*   how many times lookup messages are retransmited; an optimal value of this parameter depends on
+*   the overlay diameter
+* - bootstrapTimeout: number of milli seconds to wait for each peer to bootstrap
 * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>*/
 var configurationObj = {
   peerJsOpts: {
@@ -58,41 +84,6 @@ var configurationObj = {
         { algoId: 'cyclon1', algoAttribute: 'view' }
       ]
     }
-    //vicinity2: { 
-    //  class: 'Vicinity',
-    //  viewSize: 4,
-    //  fanout: 4,
-    //  gossipPeriod: 5000,
-    //  propagationPolicy: { push: true, pull: true },
-    //  selectionPolicy: 'agr-biased', // random OR biased OR agr-biased
-    //  //implementation of the cosine similarity
-    //  //it is considered that len(a) = len(b)
-    //  similarityFunction: function(a, b, log){
-    //    var a1 = [], b1 = [], i, tmpA, tmpB, sumA = 0, sumB = 0;
-    //    for(i = 0; i < a.length; i++){
-    //      tmpA = a[i] !== 'undefined' ? 1 : 0;
-    //      tmpB = b[i] !== 'undefined' ? 1 : 0;
-    //      a1.push(tmpA);
-    //      b1.push(tmpB);
-    //      sumA += tmpA;
-    //      sumB += tmpB;
-    //    }
-    //    if(sumA === 0){ for(i = 0; i < a.length; i++){ a1[i] = 1; } }
-    //    if(sumB === 0){ for(i = 0; i < a.length; i++){ b1[i] = 1; } }
-    //    var prSum = 0, aSqrtSum = 0, bSqrtSum = 0;
-    //    for(i = 0; i < a1.length; i++){
-    //      prSum += a1[i] * b1[i];
-    //      aSqrtSum += a1[i] * a1[i];
-    //      bSqrtSum += b1[i] * b1[i];
-    //    }
-    //    var r = prSum / (Math.sqrt(aSqrtSum) * Math.sqrt(bSqrtSum));
-    //    log.info('CosineSim: ' + r + ', with vectors: ' + JSON.stringify({'a': a, 'b': b}));
-    //    return r;
-    //  },
-    //  dependencies:[
-    //    { algoId: 'cyclon1', algoAttribute: 'view' }
-    //  ]
-    //}
   },
   logOpts: {
     //host: '127.0.0.1',

@@ -1,16 +1,32 @@
 /**
-* @module lib/controllers*/
+* @module src/controllers*/
 (function(exports){
   /**
   * @class Coordinator
-  * @augments Peer
+  * @augments [Peer]{@link http://peerjs.com/docs/#api}
   * @description This class coordinates the execution of a set of gossip-based protocols. The
-  * protocols are described in a configuration object, this object is the only parameter in
-  * the constructor of the Coordinator object. Like every executor in the current module, 
-  * this executor is a sub-class of the Peer object (from PeerJS). When an object of this 
-  * class is created a unique ID will be requested to an instance of the PeerServer object 
-  * in order to bootstrap the exchange of messages with WebRTC. When the constructor of the
-  * Peer object is lunched a "get identifier" request is performed.
+  * protocols are described in a configuration object (see 
+  * [configurationObj]{@link module:src/confObjs#configurationObj}). In order to avoid 
+  * reinventing the wheel, Coordinator extends the [Peer]{@link http://peerjs.com/} class from PeerJS 
+  * (which provides a WebRTC wrapper with P2P communication functionalities like: send/receive
+  * functions, serialization of objects, management of media and data connections, etc)
+  * and manages every external connection with other peers. Moreover, this class acts as
+  * an intermediary between any web application and the 
+  * [GossipMediator]{@link module:src/controllers#GossipMediator} class to decide what to do with
+  * gossip messages; for instance, if one gossip algorithim needs to a send message M to peer
+  * P then the Coordinator is going to receive M (via the GossipMediator) to initiate what
+  * it is necesarly for the connection (looking for a method for reaching P; here there are two
+  * posibilities to reach P, either the Coordinator contacts the 
+  * [brokering server]{@link https://github.com/peers/peerjs-server} or the Coordinator uses the
+  * [LookupService]{@link module:src/services#LookupService}) and in that way sending M to P.
+  * @param opts Property "peerJsOpts" of the configuration object (see 
+  * [configurationObj]{@link module:src/confObjs#configurationObj} for more details)
+  * @param profile The content of a user's profile is application dependant, besides an especial
+  * format is required for this object. The properties of the object must coincide with the 
+  * algorithms identifiers in the property "gossipAlgos" in 
+  * [configurationObj]{@link module:src/confObjs#configurationObj}
+  * @param peerId Unique indentifier of the peer, if this parameter is not specified one
+  * random peerId will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
   * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
   function Coordinator(opts, profile, peerId){
     if(!(this instanceof Coordinator)){ return new Coordinator(opts, profile, peerId); }
@@ -49,6 +65,15 @@
   
   util.inherits(Coordinator, Peer);
   
+  /**
+  * @method listen
+  * @description Basically, this method instantiates: i) the [Peer]{@link http://peerjs.com/docs/#api} 
+  * object, ii) the LookupService (if it is
+  * specified in the configuration object) and iii) every implementation of the gossip algorithms. In point
+  * iii one [web worker]{@link http://www.w3schools.com/html/html5_webworkers.asp} environment is created
+  * per algorithm with an instance of a [GossipMediator]{@link module:src/controllers#GossipMediator} too.
+  * Additionally, events of [Peer]{@link http://peerjs.com/docs/#api} are set to receive messages of
+  * external peers.*/ 
   Coordinator.prototype.listen = function(){
     this.isIdRandom = false;
     if(typeof this.peerId !== 'undefined'){
@@ -69,8 +94,7 @@
     var self = this;
     /**
     * @event open
-    * @description When the peer is ready to communicate this event is fired. Events are
-    * possible because the Coordinator inherits from Peer.EventEmitter of PeerJS.*/
+    * @description When the peer is ready to communicate this event is fired.*/
     this.on('open', function(id){
       self.bootService = new Bootstrap(self);
       if(self.isIdRandom){
@@ -89,7 +113,10 @@
     * @description This event is fired when an external message is received.*/
     this.on('connection', function(c){ self.handleConnection(c); });
   };
-  
+  /**
+  * @method createAlgorithms
+  * @description Method in charge of the initialization of objects which implements every
+  * gossip protol specified in the [configuration file]{@link module:src/confObjs#configurationObj}.*/ 
   Coordinator.prototype.createAlgorithms = function(){
     var algosNames = Object.keys(this.gossipAlgos), algOpts, worker;
     for(var i = 0; i < algosNames.length; i++){
@@ -108,7 +135,13 @@
     }
     this.workers = this.factory.inventory;
   };
-  //
+  
+  /**
+  * @method checkConfFile
+  * @description The evaluation for knowing if the 
+  * [configuration file]{@link module:src/confObjs#configurationObj} is well structured is performed
+  * by this method
+  * @param confObj Configuration object*/
   Coordinator.prototype.checkConfFile = function(confObj){
     console.info('Cecking configuration file...');
     try{
@@ -127,7 +160,14 @@
     }
     return true;
   };
-  //
+  
+  /**
+  * @method setWorkerEvents
+  * @description This method sets the event "message" of a web worker for handling any message exchange
+  * in WebGC. These are the possible message exchanges: i) from the 
+  * Coordinator to an external peer, ii) from one worker to another one via the Coordinator and iii) from
+  * the Coordinator to a web application
+  * @param worker Reference to a [web worker]{@link http://www.w3schools.com/html/html5_webworkers.asp}*/
   Coordinator.prototype.setWorkerEvents = function(worker){
     var self = this;
     
@@ -188,9 +228,23 @@
     }, false);
   };
   
+  /**
+  * @method getViewUpdHistory
+  * @description Get statistics about to which extend the view of algorithms is updated
+  * @return Object Keys in this object correspond to the number of each gossip cycle*/
   Coordinator.prototype.getViewUpdHistory = function(){ return this.vieUpdHistory; };
+  
+  /**
+  * @method getActiCycHistory
+  * @description Get statatistics about to which extend the gossip cycle is updated on
+  * each algorithm
+  * @return Object Keys in this object correspond to the number each gossip cycle*/
   Coordinator.prototype.getActiCycHistory = function(){ return this.actCycHistory; };
   
+  /**
+  * @method emptyHistoryOfLogs
+  * @description Once this method is called every key of the objects "vieUpdHistory" and "actCycHistory"
+  * points to an empty object*/
   Coordinator.prototype.emptyHistoryOfLogs = function(){
     var keys = Object.keys(this.vieUpdHistory);
     for(var i = 0; i < keys.length; i++){
@@ -204,8 +258,14 @@
     }
   };
   
+  /**
+  * @method setLogFunction
+  * @description*/
   Coordinator.prototype.setLogFunction = function(func){ this.logFunc = func; };
   
+  /**
+  * @method sendViaSigServer
+  * @description*/
   Coordinator.prototype.sendViaSigServer = function(msg){
     var self = this;
     //Peer.connect
@@ -228,6 +288,9 @@
     return connection;
   };
   
+  /**
+  * @method sendViaLookupService
+  * @description*/
   Coordinator.prototype.sendViaLookupService = function(msg){
     //Peer.connections = this.connections
     this.log.info('Trying to send msg: ' + msg.service + ' to: ' + msg.receiver +
@@ -269,11 +332,12 @@
       this.lookupService.apply(msg);
     }
   };
+  
   /**
   * @method handleConnection
   * @description This method performs the passive thread of each gossip-based protocol in the object 
   * Coordinator.protocols
-  * @param {DataConnection} connection - This connection allows the exchange of meesages amog peers. */
+  * @param connection - This connection allows the exchange of meesages amog peers. */
   Coordinator.prototype.handleConnection = function(connection){
     var self = this;
     if(connection.label === 'chat' && this.appFn){
@@ -296,6 +360,9 @@
     }
   };
   
+  /**
+  * @method handleIncomingData
+  * @description*/
   Coordinator.prototype.handleIncomingData = function(data){
     this.log.info('External message received, msg: ' + JSON.stringify(data));
     switch(data.service){
@@ -321,6 +388,9 @@
     }
   };
   
+  /**
+  * @method setApplicationLevelFunction
+  * @description*/
   Coordinator.prototype.setApplicationLevelFunction = function(fn){ this.appFn = fn; };
   
   exports.Coordinator = Coordinator;
