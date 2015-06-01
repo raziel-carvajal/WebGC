@@ -1,4 +1,28 @@
+/**
+* @module src/controllers*/
 (function(exports){
+  /**
+  * @class GossipMediator
+  * @description This class acts as a mediator between the 
+  * [Coordinator]{@link module:src/controllers#Coordinator} (object in the main thread of the 
+  * Javascript engine) and one gossip protocol; both, the gossip protocol and the gossip mediator
+  * belongs to the context of one [Web Worker]{@link http://www.w3schools.com/html/html5_webworkers.asp}.
+  * The reason behind this separation is to avoid blocking the main thread when gossip computations
+  * take considerable time to be done. The creation of objects in the context of web workers is done 
+  * in a dinamyc fashion by the [GossipFactory]{@link module:src/services#GossipFactory}. Three types
+  * of retransmitions take place:
+  * i) Request to contact an external peer to perform a gossip exchange
+  * ii) Internal request, this happens when the current  gossip instance depends on the data shared by other
+  * gossip protocol (located in another web worker context)
+  * iii) Send data to the application
+  *
+  * Take into account that any WebRTC connection is performed by the main thread due to the restricted
+  * environment in web workers.
+  * @param algo Instance of one gossip protocol
+  * @param log Logger (see [LoggerForWebWorker]{@link module:src/utils#LoggerForWebWorker}) to 
+  * monitor the actions in the web worker
+  * @param worker Reference to the actual worker thread
+  * @author Raziel Carvajal-Gomez <raziel.carvajal-gomez@inria.fr> <raziel.carvajal@gmail.com> */
   function GossipMediator(algo, log, worker){
     this.algo = algo;
     this.log = log;
@@ -10,6 +34,13 @@
     }
   }
   
+  /**
+  * @method setDependencies
+  * @description Fill the "dependencies" object to distinguish between objects living in the web worker
+  * context (internal dependencie) and those who belong to the main thread context (external dependencie)
+  * @param algoDependencies Dependencies of the gossip algorithm (see 
+  * [configuration object]{@link module:src/confObjs#configurationObj}) instantiated in the web worker
+  * context*/
   GossipMediator.prototype.setDependencies = function(algoDependencies){
     var external, dep;
     for(var i = 0; i < algoDependencies.length; i++){

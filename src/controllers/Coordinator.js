@@ -259,13 +259,13 @@
   };
   
   /**
-  * @method setLogFunction
-  * @description*/
-  Coordinator.prototype.setLogFunction = function(func){ this.logFunc = func; };
-  
-  /**
   * @method sendViaSigServer
-  * @description*/
+  * @description Send a message to peer msg.receiver via one connection created with the help of the
+  * brokering server, i. e., the emitter of the message will exchange information with the receiver
+  * through the brokering server to perform a data connection between both peers; once the connection
+  * is open, the message msg will be sent to the receiver.
+  * @param msg Payload to send
+  * @return connection Reference to the connection stablished by two peers via the brokering server*/
   Coordinator.prototype.sendViaSigServer = function(msg){
     var self = this;
     //Peer.connect
@@ -290,9 +290,12 @@
   
   /**
   * @method sendViaLookupService
-  * @description*/
+  * @description Send a message to peer msg.receiver via one connection created by the 
+  * [LookupService]{@link module:src/services#LookupService}. Basically, msg.receiver will be found
+  * among the actual connections in the overlay with the forwarding of lookup messages. When the 
+  * connection is open, the message msg will be sent to the receiver.
+  * @param msg Payload to send*/
   Coordinator.prototype.sendViaLookupService = function(msg){
-    //Peer.connections = this.connections
     this.log.info('Trying to send msg: ' + msg.service + ' to: ' + msg.receiver +
       ' with existing connections');
     if(!this.isFirstConDone){
@@ -300,7 +303,6 @@
       this.sendViaSigServer(msg);
       return;
     }else{
-      //Peer.connections
       var connections = this.connections[msg.receiver], con;
       if(connections){
         this.log.info('Peer.connections is not empty, searching at least one connection open');
@@ -335,14 +337,18 @@
   
   /**
   * @method handleConnection
-  * @description This method performs the passive thread of each gossip-based protocol in the object 
-  * Coordinator.protocols
-  * @param connection - This connection allows the exchange of meesages amog peers. */
+  * @description Once one connection is stablished among two peers this method is called
+  * to set the events to trigger in case of error in the connection, data 
+  * reception and when the connection is ready to send messages. Aditionally, when the
+  * connection is open and if the function "appFn" was set then that function is
+  * called.
+  * @param connection Connection among two peers*/
   Coordinator.prototype.handleConnection = function(connection){
     var self = this;
     if(connection.label === 'chat' && this.appFn){
       connection.on('open', function(){
-        self.appFn(connection);
+        if(self.appFn !== null)
+          self.appFn(connection);
       });
     }else{
       if(!this.isFirstConDone)
@@ -362,7 +368,11 @@
   
   /**
   * @method handleIncomingData
-  * @description*/
+  * @description Every message received by peers contains one header to differentiate its payload,
+  * this method handles the reception of messages according to the next two headers: gossip and
+  * lookup. The latter serves to discover peers in the overlay and the former contains what it is
+  * exchanged by each gossip protocol (normally, the view of each peer).
+  * @param data Message exchange between two peers*/
   Coordinator.prototype.handleIncomingData = function(data){
     this.log.info('External message received, msg: ' + JSON.stringify(data));
     switch(data.service){
@@ -390,7 +400,9 @@
   
   /**
   * @method setApplicationLevelFunction
-  * @description*/
+  * @description This method sets one function external to WebGC that normally belogs to the
+  * application layer.
+  * @param fn Reference to an external function*/
   Coordinator.prototype.setApplicationLevelFunction = function(fn){ this.appFn = fn; };
   
   exports.Coordinator = Coordinator;
