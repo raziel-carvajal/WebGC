@@ -1,11 +1,30 @@
+/**
+* @module src/services*/
 (function(exports){
   
+  /**
+  * @class Bootstrap
+  * @description For being able to join an overlay peers must receive at least one reference of
+  * another peer (already in the overlay) to communicate with, most of the methods in this class 
+  * communicate with one server which will provide a list of peers to bootstrap the exchange of gossip
+  * messages. The bootstrap procedure works as follows: first of all, peers post its local profile
+  * that is the payload contained in every gossip message then, peers request the reference of
+  * another peer to perform a connection with it via the
+  * [brokering server]{@link https://github.com/peers/peerjs-server}, finally, peers request a list
+  * of peer references which will initialize every view of the gossip protocols (see attribute view
+  * of [GossipProtocol]{@link module:src/superObjs#GossipProtocol}).
+  * @param coordi Reference to the [Coordinator]{@link module:src/controllers#Coordinator}
+  * @author Raziel Carvajal-Gomez <raziel.carvajal-gomez@inria.fr> <raziel.carvajal@gmail.com>*/
   function Bootstrap(coordi){
     if(!(this instanceof Bootstrap)){ return new Bootstrap(coordi); }
     this.coordi = coordi;
     this.url = 'http://' + coordi.options.host + ':' + coordi.options.port + '/';
   }
   
+  /**
+  * @method bootstrap
+  * @description This method performs the hole bootstraping procedure (described on the
+  * top of this file).*/
   Bootstrap.prototype.bootstrap = function(){
     this.coordi.log.info('Posting profile');
     this.postProfile();
@@ -20,6 +39,10 @@
     }, this.coordi.bootstrapTimeout);
   };
   
+  /**
+  * @method postProfile
+  * @description Post in the [brokering server]{@link https://github.com/peers/peerjs-server} the
+  * peer's profile, which is the payload to exchange on each gossip message.*/
   Bootstrap.prototype.postProfile = function(){
     var xhr = new XMLHttpRequest();
     var self = this;
@@ -41,6 +64,10 @@
     xhr.send(JSON.stringify(msg));
   };
   
+  /**
+  * @method getFirstView
+  * @description Gets from the [brokering server]{@link https://github.com/peers/peerjs-server} the
+  * first list of peers to start exchanging messages.*/
   Bootstrap.prototype.getFirstView = function() {
     var http = new XMLHttpRequest();
     http.open('get', this.url + this.coordi.options.key +
@@ -72,6 +99,9 @@
     http.send(null);
   };
   
+  /**
+  * @method getNeighbour
+  * @description Gets one first peer reference to perform the first connection with it.*/
   Bootstrap.prototype.getNeighbour = function(){
     var http = new XMLHttpRequest();
     http.open('get', this.url + this.coordi.id + '/neighbour', true);
@@ -95,7 +125,7 @@
             receiver: data.neighbour
           };
           self.coordi.sendTo(msg);
-        }//Peer with "void" as neighbour will be contacted eventually
+        }//Peer with "void" as neighbour will be contacted eventually by another peer
       }else
         self.coordi.log.error('No peer for doing first connection');
     };

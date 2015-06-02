@@ -1,5 +1,26 @@
+/**
+* @module src/services*/
 (function(exports){
-  
+  /**
+  * @class LookupService
+  * @description This class replace some functionalities, aka  signaling, of the 
+  * [brokering server]{@link https://github.com/peers/peerjs-server} to perform connections 
+  * with other peers. Before talking about how the LookupService works, let's considered that the
+  * local peer has performed sucessfully one connection with another peer thanks to the bootstrap
+  * procedure (see [Bootstrap]{@link module:src/services#Bootstrap}) and now the local peers needs
+  * to create a new connection with another peer P, which belogs to the first view given by the
+  * Bootstrap service. The LookupService works as follows:
+  * i) To reach P one lookup message will be sent to at most "lookupMulticast" peers, 
+  *
+  * Note: this class keeps an strong dependency with some classes of [PeerJS]{@link http://peerjs.com/}.
+  * @param log
+  * @param peerCons
+  * @param handleConFn
+  * @param id
+  * @param peerJSopts
+  * @param multi
+  * @param stl
+  * @param inDataFunc*/
   function LookupService(log, peerCons, handleConFn, id, peerJSopts, multi, stl, inDataFunc){
     if(!(this instanceof LookupService))
       return new LookupService(log, peerCons, handleConFn, id, peerJSopts, multi, stl, inDataFunc);
@@ -23,6 +44,10 @@
     this.socket.send = function(msg){ self.send(msg); };
   }
   
+  /**
+  * @method apply
+  * @description
+  * @param msg*/
   LookupService.prototype.apply = function(msg){
     var target = msg.receiver;
     if(this.discoveredPaths[target]){
@@ -59,6 +84,14 @@
     }
   };
   
+  /**
+  * @method setPathAndIceCandidates
+  * @description
+  * @param target
+  * @param originator
+  * @param path
+  * @param steps
+  * @param sentFirstTime*/
   LookupService.prototype.setPathAndIceCandidates = function(target, originator, path,
     steps, sentFirstTime){
     this.discoveredPaths[target] = {
@@ -68,6 +101,10 @@
     };
   };
   
+  /**
+  * @method dispatch
+  * @description
+  * @param msg*/
   LookupService.prototype.dispatch = function(msg){
     this.log.info('Dispatching message: ' + msg.type + ', to reach peer: ' + msg.target);
     if(msg.steps < this.lookupMsgSTL){
@@ -132,6 +169,10 @@
     }else{ this.log.warn('The next message will be ignored: ' + JSON.stringify(msg)); }
   };
   
+  /**
+  * @method inOfferReception
+  * @description
+  * @param msg*/
   LookupService.prototype.inOfferReception = function(msg){
     this.log.info('REQ reception to reach: ' + msg.emitter);
     var self = this;
@@ -159,6 +200,15 @@
     this.handleConnection(dc);
   };
  
+  /**
+  * @method createLoUpMsg
+  * @description
+  * @param type
+  * @param path
+  * @param steps
+  * @param target
+  * @param payload
+  * @return Object*/
   LookupService.prototype.createLoUpMsg = function(type, path, steps, target, payload){
     return{
       service: 'LOOKUP', 'type': type, 'path': path,
@@ -167,6 +217,10 @@
     };
   };
   
+  /**
+  * @method send
+  * @description
+  * @param msg*/
   LookupService.prototype.send = function(msg){
     console.info('SEND');
     console.info(msg);
@@ -227,6 +281,11 @@
     }
   };
   
+  /**
+  * @method getConnection
+  * @description
+  * @param peerId
+  * @return Object*/
   LookupService.prototype.getConnection = function(peerId){
     if(this.peerCons[peerId] && this.peerCons[peerId][0])
       return this.peerCons[peerId][0];
@@ -237,6 +296,11 @@
     return;
   };
   
+  /**
+  * @method broadcast
+  * @description
+  * @param msg
+  * @param emitterToAvoid*/
   LookupService.prototype.broadcast = function(msg, emitterToAvoid){
     var keys = Object.keys(this.peerCons), i, sentMsgs = 0, con, self = this;
     if(keys.length === 0)

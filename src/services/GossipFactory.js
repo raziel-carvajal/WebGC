@@ -1,12 +1,18 @@
 /**
-* @module lib/patterns */
+* @module lib/services*/
 (function(exports){
   /**
   * @class GossipFactory
-  * @description This class implements a factory that creates instances of gossip-based protocols. The 
-  * creation of each protocol is performed via an object that contains the configuration of the protocol,
-  * this object is called configuration object.
-  * @author Raziel Carvajal Gomez <raziel.carvajal-gomez@inria.fr> */  
+  * @description Implementation of the 
+  * [factory pattern]{@link http://en.wikipedia.org/wiki/Factory_method_pattern} to create
+  * instances of gossip protocols, the settings of each protocol are defined in
+  * [the configuration object]{@link module:src/confObjs#configurationObj}. Given that
+  * the computation of gossip cycles could takes considerable time, each gossip protocol will be instantiated
+  * in the context of a [web worker]{@link http://www.w3schools.com/html/html5_webworkers.asp}; in that way
+  * it is expected to avoid freezing the main thread of JavaScript.
+  * @param opts Object with one [logger]{@link module:src/utils#LoggerForWebWorker} and with one reference
+  * to a [gossip util]{@link module:src/utils#GossipUtil} object.
+  * @author Raziel Carvajal-Gomez <raziel.carvajal-gomez@inria.fr> <raziel.carvajal@gmail.com>*/  
   function GossipFactory(opts){
     this.log = opts.log;
     this.gossipUtil = opts.gossipUtil;
@@ -14,9 +20,10 @@
   }
   /**
   * @method checkProperties
-  * @description This method verifies if the properties in a configuration object have a the right type and the
-  * valid value for each property.
-  * @param {Object} opts - Configuration object of a gossip protocol. */ 
+  * @description Verifies if the attributes in a 
+  * [configuration object]{@link module:src/confObjs#configurationObj} have the correct type as well as
+  * the minimal value.
+  * @param opts Object with the attributes of one gossip protocol*/ 
   GossipFactory.prototype.checkProperties = function(opts){
     if( typeof opts.data === 'undefined' )
       throw 'The local data could be defined';
@@ -33,10 +40,10 @@
   };
   /**
   * @method createProtocol
-  * @description This method creates an instance of a gossip protocol, this protocol is described by the
-  * parameter opts. The reference of every gossip protocol will be kept in the GossipFactory.inventory
-  * property of the factory.
-  * @param {Object} opts - Configuration object of a gossip protocol. */
+  * @description Creates an instance of one gossip protocol, the reference of the protocol will be kept
+  * in the local attribute "inventory" identified by a unique ID.
+  * @param algoId Unique identifier of one gossip protocol
+  * @param algOpts Object with the attributes of one gossip protocol*/
   GossipFactory.prototype.createProtocol = function(algoId, algOpts){
     try{
       if( typeof algOpts.class !== 'string' )
@@ -68,6 +75,13 @@
     }
   };
   
+  /**
+  * @method createWebWorker
+  * @description Creates one web worker with a group of objects required to perform the computation
+  * of one gossip protocol.
+  * @param algOpts Object with the attibutes of one gossip protocol
+  * @param logOpts Settings of a [logger]{@link module:src/utils#LoggerForWebWorker} object
+  * @return Worker New WebWorker*/
   GossipFactory.prototype.createWebWorker = function(algOpts, logOpts){
     var origin = window.location.href.split('peerjs-gossip')[0];
     origin += 'peerjs-gossip/';
@@ -110,7 +124,9 @@
     }
     return keysWithFunc;
   };
+  
   /**
+  * @deprecated
   * @method setDependencies
   * @description In some cases, there are gossip protocols that have dependencies amog them. This method
   * reads the property dependencies in the configuration object and establishes those dependencies. For

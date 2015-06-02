@@ -39,7 +39,7 @@
   * @description Fill the "dependencies" object to distinguish between objects living in the web worker
   * context (internal dependencie) and those who belong to the main thread context (external dependencie)
   * @param algoDependencies Dependencies of the gossip algorithm (see 
-  * [configuration object]{@link module:src/confObjs#configurationObj}) instantiated in the web worker
+  * [configuration object]{@link module:src/confObjs#configurationObj}) initialized in the web worker
   * context*/
   GossipMediator.prototype.setDependencies = function(algoDependencies){
     var external, dep;
@@ -50,6 +50,11 @@
     }
   };
   
+  /**
+  * @method sentActiveCycleStats
+  * @description In order to check if the use of web workers has an impact on the gossip protocol this
+  * method calculates how many seconds takes to perform a gossip cycle, the value of this offset is sent
+  * to the main thread.*/
   GossipMediator.prototype.sentActiveCycleStats = function(){
     this.activCycLogCounter++;
     var now = new Date();
@@ -64,6 +69,10 @@
     this.postInMainThread(msg);
   };
   
+  /**
+  * @method scheduleActiveThread
+  * @description The periodic execution of one gossip cycle is performed in this method, normally what 
+  * the protocol does is to chose items from its local view for being exchanged with other peer.*/
   GossipMediator.prototype.scheduleActiveThread = function(){
     this.lastActCycTime = new Date();
     var self = this;
@@ -86,6 +95,13 @@
     }, this.algo.gossipPeriod);
   };
   
+  /**
+  * @method applyDependency
+  * @description Dependencies between gossip protocols, see the 
+  * [configuration object]{@link module:src/confObjs#configurationObj} for more details, are linked
+  * by this method in two cases: local dependencies will refer to objects in the web worker context and
+  * external dependencies will refer to objects in the main thread.
+  * @param msg Object with attributes of the dependency, as: dependency ID, function to refer, etc.*/
   GossipMediator.prototype.applyDependency = function(msg){
     if(this.dependencies.hasOwnProperty(msg.depId)){
       var dep = this.dependencies[msg.depId];
@@ -105,6 +121,10 @@
     }
   };
   
+  /**
+  * @method listen
+  * @description Every message exchange between the main thread and the web worker is handled by
+  * this method.*/
   GossipMediator.prototype.listen = function(){
     var self = this;
     this.worker.addEventListener('message', function(e){
@@ -115,9 +135,6 @@
           self.scheduleActiveThread();
           break;
         case 'incomingMsg':
-          //self.log.info('Updating view...');
-          //self.log.info('Current view: ' + JSON.stringify(self.algo.view));
-          //self.log.info('Merge with  : ' + JSON.stringify(msg.payload));
           self.algo.selectItemsToKeep(msg);
           break;
         case 'getDep':
@@ -145,6 +162,12 @@
     }, false);
   };
   
+  /**
+  * @method postInMainThread
+  * @description Post messages to the [Coordinator]{@link module:src/controllers#Coordinator}
+  * @param msg Message to send, this object contains one header to identifies what will be done
+  * by the Coordinator*/
   GossipMediator.prototype.postInMainThread = function(msg){ this.worker.postMessage(msg); };
+  
   exports.GossipMediator = GossipMediator;
 })(this);

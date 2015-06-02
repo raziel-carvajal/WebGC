@@ -27,7 +27,7 @@
   * [configurationObj]{@link module:src/confObjs#configurationObj}
   * @param peerId Unique indentifier of the peer, if this parameter is not specified one
   * random peerId will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
-  * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> */
+  * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> <raziel.carvajal@gmail.com>*/
   function Coordinator(opts, profile, peerId){
     if(!(this instanceof Coordinator)){ return new Coordinator(opts, profile, peerId); }
     if(!this.checkConfFile(opts)){ return; }
