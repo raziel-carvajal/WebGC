@@ -7,20 +7,34 @@
   * [brokering server]{@link https://github.com/peers/peerjs-server} to perform connections 
   * with other peers. Before talking about how the LookupService works, let's considered that the
   * local peer has performed sucessfully one connection with another peer thanks to the bootstrap
-  * procedure (see [Bootstrap]{@link module:src/services#Bootstrap}) and now the local peers needs
+  * procedure (see [Bootstrap]{@link module:src/services#Bootstrap}) and now the local peer needs
   * to create a new connection with another peer P, which belogs to the first view given by the
   * Bootstrap service. The LookupService works as follows:
-  * i) To reach P one lookup message will be sent to at most "lookupMulticast" peers, 
+  * i) To reach P one lookup message L will be sent to at most "lookupMulticast" peers. L contains
+  * metadata (compose of one OFFER and one ICE candidate) to perform a WebRTC data connection between
+  * P and the local peer
+  * ii) When L reaches P, the path that L traveled (hops among peers) across the overlay is stored
+  * by P and a new lookup message L1 is created (the metadata on this message is composed of an
+  * ANSWER and one ICE candidate) to reply the WebRTC connection request
+  * iii) Finally, L1 will be sent to the local peer to complete the connection request
   *
-  * Note: this class keeps an strong dependency with some classes of [PeerJS]{@link http://peerjs.com/}.
-  * @param log
-  * @param peerCons
-  * @param handleConFn
-  * @param id
-  * @param peerJSopts
-  * @param multi
-  * @param stl
-  * @param inDataFunc*/
+  * For your information, this class keeps an strong dependency with some classes of 
+  * [PeerJS]{@link http://peerjs.com/} particularly the 
+  * [DataConnection]{@link http://peerjs.com/docs/#dataconnection} class. 
+  * @param log Logger (see [LoggerForWebWorker]{@link module:src/utils#LoggerForWebWorker}) to
+  * monitor the actions of the LookupService
+  * @param peerCons Object that contains any connection performed with the help of the brokering server
+  * @param handleConFn This function sets the events of one connection for knowing what to do
+  * when the connection is ready, when there is an error or when data is received
+  * @param id Local peer unique indentifier
+  * @param peerJSopts Object with the settings for PeerJS, which is cointained in the property
+  * "peerJsOpts" of the [configuration object]{@link module:src/confObjs#configurationObj}
+  * @param multi Maximum number of peers to send a lookup message
+  * @param stl Apart from the emitter of a lookup messages, peers in the overlay forward it to
+  * reach the receiver; for avoiding an infinite retransmition, this counter tells how many
+  * times lookup messages can be forwarded
+  * @param inDataFunc Function to handle any incoming data of one connection peformed by the 
+  * LookupService*/
   function LookupService(log, peerCons, handleConFn, id, peerJSopts, multi, stl, inDataFunc){
     if(!(this instanceof LookupService))
       return new LookupService(log, peerCons, handleConFn, id, peerJSopts, multi, stl, inDataFunc);
@@ -46,8 +60,11 @@
   
   /**
   * @method apply
-  * @description
-  * @param msg*/
+  * @description This method triggers the lookup service, when the constructor of the
+  * [DataConnection]{@link http://peerjs.com/docs/#dataconnection} is called 
+  * eventually the "send" method on this file is called twice, once to return the
+  * WebRTC offer and the second one to return ICE candidates.
+  * @param msg Payload to send as soon as a new connection with another peer is created*/
   LookupService.prototype.apply = function(msg){
     var target = msg.receiver;
     if(this.discoveredPaths[target]){
@@ -86,12 +103,14 @@
   
   /**
   * @method setPathAndIceCandidates
-  * @description
-  * @param target
-  * @param originator
-  * @param path
-  * @param steps
-  * @param sentFirstTime*/
+  * @description Stores one lookup message 
+  * @param target Identifier of the peer to reach
+  * @param originator Determines whether or no the peer who creates this lookup message is the originator
+  * of the connection request
+  * @param path Array of peer identifiers that represents one path in the overlay to reach two peers
+  * @param steps Number of current hops in the path
+  * @param sentFirstTime Determines whether or no one lookup message to reach the target was created
+  * for the first time*/
   LookupService.prototype.setPathAndIceCandidates = function(target, originator, path,
     steps, sentFirstTime){
     this.discoveredPaths[target] = {
@@ -103,8 +122,16 @@
   
   /**
   * @method dispatch
-  * @description
-  * @param msg*/
+  * @description Handles the reception of lookup messages, there are two types for these messages:
+  * answers and requests. While requests are created for the emitters of connections, answers are
+  * created by receivers as a response of one request. In one hand, when one request is received by a peer two
+  * actions can take place, if the peer is the target then one answer is forwarded to the penultimate 
+  * entry of the path (array in the request message), otherwise the peer includes its identifier the path
+  * and forwards the request to at most "lookupMulticast" peers. On the other hand, if one answer reaches
+  * its target then one WebRTC data connection will be performed, otherwise the answer is forwarded according
+  * to the order given by the path field of the answer.
+  * @param msg Lookup message, the content of this object could be reviewed in the "createLoUpMsg"
+  * method*/
   LookupService.prototype.dispatch = function(msg){
     this.log.info('Dispatching message: ' + msg.type + ', to reach peer: ' + msg.target);
     if(msg.steps < this.lookupMsgSTL){
@@ -150,7 +177,7 @@
               //here the request is igonered because the target was already removed from
               //LookupService.waitingPathFor. This is actually the end of the lookup.
               //TODO maintaining different paths for the same target could be better
-              //due to peers dinamicity; in the near future LookupService will could into
+              //due to peers dinamicity; in the near future LookupService will could turn into
               //a DHT or another P2P data structure
             }
           }else{
@@ -171,8 +198,11 @@
   
   /**
   * @method inOfferReception
-  * @description
-  * @param msg*/
+  * @description This method is called when an offer reaches its target peer, one 
+  * [DataConnection]{@link http://peerjs.com/docs/#dataconnection} is initialized and
+  * eventually the "send" method on this file is called twice, once to return the
+  * WebRTC answer and the second one to return ICE candidates.
+  * @param msg Lookup message made by the emitter of one connection request*/
   LookupService.prototype.inOfferReception = function(msg){
     this.log.info('REQ reception to reach: ' + msg.emitter);
     var self = this;
@@ -202,13 +232,13 @@
  
   /**
   * @method createLoUpMsg
-  * @description
-  * @param type
-  * @param path
-  * @param steps
-  * @param target
-  * @param payload
-  * @return Object*/
+  * @description Returns one object with the attributes of one lookup message
+  * @param type String with two posibble values: REQ or ANSW
+  * @param path Array of peer identifiers that represents one path in the overlay to reach two peers
+  * @param steps Number of current hops in the path
+  * @param target Peer to reach
+  * @param payload Metadata (offer, answer and/or ICE candidates) to set one WebRTC data connection
+  * @return Object Object with the attributes of one lookup message*/
   LookupService.prototype.createLoUpMsg = function(type, path, steps, target, payload){
     return{
       service: 'LOOKUP', 'type': type, 'path': path,
@@ -219,11 +249,12 @@
   
   /**
   * @method send
-  * @description
-  * @param msg*/
+  * @description This method is triggered by the internals of the 
+  * [DataConnection]{@link http://peerjs.com/docs/#dataconnection} class in two cases: when
+  * one WebRTC offer/answer is created or when ICE candidates are given to configure one
+  * connection with two peers.
+  * @param msg Object with metadata to perform a WebRTC connection between two peers*/
   LookupService.prototype.send = function(msg){
-    console.info('SEND');
-    console.info(msg);
     this.log.info('LookupService.send called with msg: ' + msg.type + ' to reach: ' + msg.dst);
     var lookupInfo = this.discoveredPaths[msg.dst], outMsg, path, steps, connection;
     switch(msg.type){
@@ -283,9 +314,11 @@
   
   /**
   * @method getConnection
-  * @description
-  * @param peerId
-  * @return Object*/
+  * @description Search for one connection in the internals of the
+  * [Peer]{@link http://peerjs.com/docs/#peer} class or in the connections peformed by the
+  * lookup service.
+  * @param peerId Peer identifier to perform a connection with
+  * @return Object [DataConnection]{@link http://peerjs.com/docs/#dataconnection}*/
   LookupService.prototype.getConnection = function(peerId){
     if(this.peerCons[peerId] && this.peerCons[peerId][0])
       return this.peerCons[peerId][0];
@@ -298,9 +331,11 @@
   
   /**
   * @method broadcast
-  * @description
-  * @param msg
-  * @param emitterToAvoid*/
+  * @description Forwards one lookup message to "lookupMulticast" peers if the number of times the message
+  * has been shared in the overlay does not reach "lookupMsgSTL" steps.
+  * @param msg Lookup message to forward
+  * @param emitterToAvoid Identifier of the lookup message emmiter when the message has not reached its 
+  * target and the message has been shared for at least one time*/
   LookupService.prototype.broadcast = function(msg, emitterToAvoid){
     var keys = Object.keys(this.peerCons), i, sentMsgs = 0, con, self = this;
     if(keys.length === 0)
