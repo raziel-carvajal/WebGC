@@ -1,20 +1,25 @@
 /**
 * @module src/confObjs*/
+
+/**
+* @alias module:src/confObjs.configurationObj*/
+
 /**
 * @const configurationObj
 * @description This object serves as the input that any application with WebGC needs. Basically,
-* the settings for each gossip-based protocol are writen down here as well as other settings for 
+* the settings for each gossip-based protocol are written down here as well as other settings for 
 * general propose. The configuration object is formed with the next properties:
-* - peerJsOpts: PeerJS settings, click [here]{@link http://peerjs.com/} for more information
-* - gossipAlgos: the properties of this object are unique identifiers for each gossip protocol,
+* 
+* i) peerJsOpts: PeerJS settings, click [here]{@link http://peerjs.com/} for more information
+* ii) gossipAlgos: the properties of this object are unique identifiers for each gossip protocol,
 *   every property points to another object which contains particular settings of each protocol
 *   like its class name (name of the class that implements the protocol), number of items in 
 *   its view, number of peers (fanout) to exchange messages with, seconds of each gossip
-*   cycle, etc
-* - logOpts: given that it is quite difficult to record logs of clients behind web browsers,
-*   this obect contains information about one server that records every log of WebGC. When
-*   the log server is de-activated every log appers in the console of the browser
-* - usingSs: WebGC is extended with a lookup service (see
+*   cycle, etc.
+* iii) logOpts: given that it is quite difficult to record logs of clients behind web browsers,
+*   this object contains information about one server that records every log of WebGC. When
+*   the log server is deactivated every log appears in the console of the browser
+* iv) usingSs: WebGC is extended with a lookup service (see
 *   [LookupService]{@link module:src/services#LookupService} for more details) to take rid of
 *   the [brokering server]{@link https://github.com/peers/peerjs-server} in WebRTC, 
 *   this server allows to create connections among web browsers. 
@@ -23,12 +28,13 @@
 *   connections on the overlay; otherwise, every new connection among two peers will need a first
 *   communication with the brokering server (FYI the coordinates of this server are defined at the
 *   "peerJsOpts" property)
-* - lookupMulticast: when a lookup message M is received by one peer, M is retransmited to
+* v) lookupMulticast: when a lookup message M is received by one peer, M is retransmitted to
 *   "lookupMulticast" peer's neighbours
-* - lookupMsgSTL: for avoiding infinite retransmitions of lookup messages, this property determines
-*   how many times lookup messages are retransmited; an optimal value of this parameter depends on
+* vi) lookupMsgSTL: for avoiding infinite forwards of lookup messages, this property determines
+*   how many times lookup messages are retransmitted; an optimal value of this parameter depends on
 *   the overlay diameter
-* - bootstrapTimeout: number of milli seconds to wait for each peer to bootstrap
+* vii) bootstrapTimeout: number of milliseconds to wait for each peer to bootstrap
+* 
 * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>*/
 var configurationObj = {
   peerJsOpts: {

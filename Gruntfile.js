@@ -3,6 +3,7 @@ module.exports = function(grunt) {
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    //Not updated with WebGC version 0.4.1
     uglify: {
       options: {
         banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
@@ -21,6 +22,7 @@ module.exports = function(grunt) {
         dest: 'dist/<%= pkg.name %>.min.js'
       }
     },
+    //Not updated with WebGC version 0.4.1
     linter: {
       options: {
         log: './logs/<%= pkg.name %>.log'
@@ -28,21 +30,19 @@ module.exports = function(grunt) {
       files: [ 'lib/**/*.js' ]
     },
     shell: {
-      vicinityLocalTest: {
-        options: { stdout: true, stderr: true },
+      cmdObjs: {
+        options: {stdout: true, stderr: true },
         command: [
-          'cd test/vicinity-local-test',
-          './vicinity-test.sh'
+          'rm -fr doc/*',
+          './bower_components/jsdoc3/jsdoc -r --verbose -d ./doc ./src'
         ].join('&&')
       }
     }
   });
-
   // Load the plugin that provides the "uglify" task.
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-linter');
   grunt.loadNpmTasks('grunt-shell');
-
   // Default task(s).
   grunt.registerTask('default', ['uglify', 'linter', 'shell']);
 };

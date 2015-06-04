@@ -3,8 +3,8 @@
 
 /**
 * @const configurationObj
-* @description This configuation object is the input that any application needs. Basically,
-* the settings for each gossip-based protocol are writen down here as well as other settings
+* @description This configuration object is the input that any application needs. Basically,
+* the settings for each gossip-based protocol are written down here as well as other settings
 * for general propose.
 * @deprecated
 * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>*/

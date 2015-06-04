@@ -9,8 +9,9 @@
   * belongs to the context of one [Web Worker]{@link http://www.w3schools.com/html/html5_webworkers.asp}.
   * The reason behind this separation is to avoid blocking the main thread when gossip computations
   * take considerable time to be done. The creation of objects in the context of web workers is done 
-  * in a dinamyc fashion by the [GossipFactory]{@link module:src/services#GossipFactory}. Three types
-  * of retransmitions take place:
+  * in a dynamic fashion by the [GossipFactory]{@link module:src/services#GossipFactory}. Three types
+  * of retransmissions take place:
+  * 
   * i) Request to contact an external peer to perform a gossip exchange
   * ii) Internal request, this happens when the current  gossip instance depends on the data shared by other
   * gossip protocol (located in another web worker context)
@@ -22,7 +23,7 @@
   * @param log Logger (see [LoggerForWebWorker]{@link module:src/utils#LoggerForWebWorker}) to 
   * monitor the actions in the web worker
   * @param worker Reference to the actual worker thread
-  * @author Raziel Carvajal-Gomez <raziel.carvajal-gomez@inria.fr> <raziel.carvajal@gmail.com> */
+  * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
   function GossipMediator(algo, log, worker){
     this.algo = algo;
     this.log = log;
@@ -35,9 +36,10 @@
   }
   
   /**
+  * @memberof GossipMediator
   * @method setDependencies
   * @description Fill the "dependencies" object to distinguish between objects living in the web worker
-  * context (internal dependencie) and those who belong to the main thread context (external dependencie)
+  * context (internal dependency) and those who belong to the main thread context (external dependency)
   * @param algoDependencies Dependencies of the gossip algorithm (see 
   * [configuration object]{@link module:src/confObjs#configurationObj}) initialized in the web worker
   * context*/
@@ -51,6 +53,7 @@
   };
   
   /**
+  * @memberof GossipMediator
   * @method sentActiveCycleStats
   * @description In order to check if the use of web workers has an impact on the gossip protocol this
   * method calculates how many seconds takes to perform a gossip cycle, the value of this offset is sent
@@ -70,6 +73,7 @@
   };
   
   /**
+  * @memberof GossipMediator
   * @method scheduleActiveThread
   * @description The periodic execution of one gossip cycle is performed in this method, normally what 
   * the protocol does is to chose items from its local view for being exchanged with other peer.*/
@@ -86,7 +90,7 @@
         header: 'logInConsole',
         log: JSON.stringify(log)
       });
-      //first try for mesuring stats (not a good idea)
+      //first try for measuring stats (not a good idea)
       //self.sentActiveCycleStats();
       //performing periodic gossip selection (no changes in view are done)
       self.algo.selectItemsToSend('active');
@@ -96,6 +100,7 @@
   };
   
   /**
+  * @memberof GossipMediator
   * @method applyDependency
   * @description Dependencies between gossip protocols, see the 
   * [configuration object]{@link module:src/confObjs#configurationObj} for more details, are linked
@@ -122,6 +127,7 @@
   };
   
   /**
+  * @memberof GossipMediator
   * @method listen
   * @description Every message exchange between the main thread and the web worker is handled by
   * this method.*/
@@ -163,6 +169,7 @@
   };
   
   /**
+  * @memberof GossipMediator
   * @method postInMainThread
   * @description Post messages to the [Coordinator]{@link module:src/controllers#Coordinator}
   * @param msg Message to send, this object contains one header to identifies what will be done

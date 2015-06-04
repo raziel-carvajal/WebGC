@@ -14,7 +14,7 @@
   * of peer references which will initialize every view of the gossip protocols (see attribute view
   * of [GossipProtocol]{@link module:src/superObjs#GossipProtocol}).
   * @param coordi Reference to the [Coordinator]{@link module:src/controllers#Coordinator}
-  * @author Raziel Carvajal-Gomez <raziel.carvajal-gomez@inria.fr> <raziel.carvajal@gmail.com>*/
+  * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
   function Bootstrap(coordi){
     if(!(this instanceof Bootstrap)){ return new Bootstrap(coordi); }
     this.coordi = coordi;
@@ -22,8 +22,9 @@
   }
   
   /**
+  * @memberof Bootstrap
   * @method bootstrap
-  * @description This method performs the hole bootstraping procedure (described on the
+  * @description This method performs the hole bootstrap procedure (described on the
   * top of this file).*/
   Bootstrap.prototype.bootstrap = function(){
     this.coordi.log.info('Posting profile');
@@ -40,6 +41,7 @@
   };
   
   /**
+  * @memberof Bootstrap
   * @method postProfile
   * @description Post in the [brokering server]{@link https://github.com/peers/peerjs-server} the
   * peer's profile, which is the payload to exchange on each gossip message.*/
@@ -65,6 +67,7 @@
   };
   
   /**
+  * @memberof Bootstrap
   * @method getFirstView
   * @description Gets from the [brokering server]{@link https://github.com/peers/peerjs-server} the
   * first list of peers to start exchanging messages.*/
@@ -100,6 +103,7 @@
   };
   
   /**
+  * @memberof Bootstrap
   * @method getNeighbour
   * @description Gets one first peer reference to perform the first connection with it.*/
   Bootstrap.prototype.getNeighbour = function(){

@@ -1,6 +1,6 @@
 /** 
-*FIXME THIS ENTIRE CLESS ISN'T COEHERENT WITH THE NEW ARCHITECTURE !
-* @module lib/algorithms */
+* @module src/algorithms*/
+//FIXME THIS ENTIRE CLESS ISN'T COEHERENT WITH THE NEW ARCHITECTURE !
 (function(exports){
   /**
   * @class SamplingService
@@ -11,7 +11,7 @@
   * {@link Item} that contains an age field (timestamp) and a data field 
   * (application dependent).
   * @param {Object} opts - Object with settings of the protocol.
-  * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>*/
+  * @author Raziel Carvajal <raziel.carvajal@gmail.com>*/
   function SamplingService(opts){
     this.log = new Logger(opts.loggingServer, opts.peerId, 'SamplingService');
     this.gossipUtil = new GossipUtil({
@@ -29,6 +29,7 @@
     this.inVandNonReturned = {};
   }
   /**
+  * @memberof SamplingService
   * @description This object represents the configuration by default of this protocol. During the
   * instantiation of this object (via the Factory object) if the options are not defined
   * the default configuration will be taken into account. 
@@ -47,6 +48,7 @@
   };
   util.inherits(SamplingService, GossipProtocol);
   /** 
+  * @memberof SamplingService
   * @description This method initialize GossipProtocol.view with the peer identifiers n the array keys.
   * @method initialize
   * @param keys:Array - Array of peer identifiers. */
@@ -61,6 +63,7 @@
     this.log.info('initialization of view: ' + JSON.stringify(this.view));
   };
   /**
+  * @memberof SamplingService
   * @method selectPeer
   * @description The selection of the peer identifier is performed in a randomly way or taking into account 
   * the oldest one. See method GossipProtocol.selectPeer() for more information.*/
@@ -87,6 +90,7 @@
     return peer;
   };
   /** 
+  * @memberof SamplingService
   * @method permuteView
   * @description This method changes, in a randomly way, the order of the view GossipProtocol.view */
   SamplingService.prototype.permuteView = function(){
@@ -109,6 +113,7 @@
     }
   };
   /**
+  * @memberof SamplingService
   * @method moveOldest
   * @description This method changes the order of the view GossipProtocol.view, moving the oldest 
   * SamplingService.H items (according to their timestamp) at the end of the view. */ 
@@ -126,6 +131,7 @@
     }
   };
   /**
+  * @memberof SamplingService
   * @method selectItemsToKeep
   * @description See method GossipProtocol.selectItemsToKeep() for more information. */
   SamplingService.prototype.selectItemsToKeep = function(thisId, rcvCache){
@@ -164,6 +170,7 @@
     }
   };
   /**
+  * @memberof SamplingService
   * @method selectItemsToSend
   * @description See method GossipProtocol.selectItemsToSend() for more information. */
   SamplingService.prototype.selectItemsToSend = function(thisId, dstPeer, thread){
@@ -179,6 +186,7 @@
     return buffer;
   };
   /** 
+  * @memberof SamplingService
   * @method increaseAge
   * @description See method GossipProtocol.increaseAge() for more information. */
   SamplingService.prototype.increaseAge = function(){
@@ -187,6 +195,7 @@
       this.view[ keys[i] ].age += 1;
   };
   /** 
+  * @memberof SamplingService
   * @method getLog
   * @description See method GossipProtocol.getLog() for more information. */
   SamplingService.prototype.getLog = function(){
@@ -203,6 +212,7 @@
     return trace;
   };
   /**
+  * @memberof SamplingService
   * @method getPlotInfo
   * @description See GossipProtocol.getPlotInfo for more information.*/
   SamplingService.prototype.getPlotInfo = function(peerId){

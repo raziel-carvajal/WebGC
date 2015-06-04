@@ -3,7 +3,7 @@
 (function(exports){
   /**
   * @class Vicinity
-  * @augments [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
+  * @extends GossipProtocol See [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
   * @description Implementation of the gossip-based protocol 
   * [Vicinity]{@link http://www.few.vu.nl/~spyros/papers/Thesis-Voulgaris.pdf}. The local view is an
   * object where each of its keys identify a remote peer (peer ID); the value of each key points
@@ -14,7 +14,7 @@
   * message
   * @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
   * functions used by gossip protocols
-  * @author Raziel Carvajal [raziel.carvajal-gomez@inria.fr] */
+  * @author Raziel Carvajal-Gomez raziel.carvajal@gmail.com */
   function Vicinity(algOpts, log, gossipUtil){
     gossipUtil.inherits(Vicinity, GossipProtocol);
     GossipProtocol.call(this, algOpts, log, gossipUtil);
@@ -27,6 +27,7 @@
   //GossipUtil.inherits(Vicinity, GossipProtocol);
   
   /**
+  * @memberof Vicinity
   * @const defaultOpts
   * @description Default configuration of this protocol. During the instantiation of a Cyclon object
   * (via the Factory object) if the user doesn't specify any option this object is taken into account.
@@ -42,12 +43,14 @@
   };
   
   /** 
+  * @memberof Vicinity
   * @method selectPeer
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol} 
   * for more details.*/
   Vicinity.prototype.selectPeer = function(){ return this.gossipUtil.getOldestKey(this.view); };
   
   /**                                                                                                 
+  * @memberof Vicinity
   * @method setMediator                                                                               
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}  
   * for more details.*/
@@ -57,6 +60,7 @@
   };
   
   /**                                                                                                 
+  * @memberof Vicinity
   * @method initialize                                                                                
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}  
   * for more details.*/                                                                               
@@ -72,6 +76,7 @@
   };
   
   /**
+  * @memberof Vicinity
   * @method selectItemsToSend
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol} 
   * for more details. Particularly, the selection of items is performed following one of the next 
@@ -132,6 +137,7 @@
   };
   
   /**
+  * @memberof Vicinity
   * @method doAgrBiasedSelection
   * @description When this selection is performed, items from the RPS layer are mixed with the
   * most similar ones (this items are obtained via the similarity function) in order to get
@@ -160,6 +166,7 @@
   };
   
   /**                                                                                                  
+  * @memberof Vicinity
   * @method selectItemsToKeep                                                                          
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}   
   * for more details.*/                                                                                
@@ -181,6 +188,7 @@
   };
   
   /**
+  * @memberof Vicinity
   * @method doItemsToKeepWithDep
   * @description When this selection is performed, items from the RPS layer are mixed with the
   * most similar ones (this items are obtained via the similarity function) in order to get
@@ -224,6 +232,7 @@
   };
   
   /** 
+  * @memberof Vicinity
   * @method increaseAge
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}  
   * for more details.*/                                                                               
@@ -233,12 +242,13 @@
   };
   
   /**
+  * @memberof Vicinity
   * @deprecated
   * @method getSimilarPeerIds
   * @description This method gives n peer identifiers from GossipProtocol.view
   * These peers have the higher degree of similarity with the local peer.
-  * @param {Integer} n - Number of the required peer IDs.
-  * @returns {Array} Array of n peer IDs. */ 
+  * @param n Number of the required peer IDs.
+  * @returns Array Array of n peer IDs. */ 
   Vicinity.prototype.getSimilarPeerIds = function(n){
     if( n <= 0){ return []; }
     var iDs = Object.keys(this.view);

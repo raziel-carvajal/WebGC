@@ -1,5 +1,5 @@
 /**
-* @module lib/services*/
+* @module src/services*/
 (function(exports){
   /**
   * @class GossipFactory
@@ -11,14 +11,15 @@
   * in the context of a [web worker]{@link http://www.w3schools.com/html/html5_webworkers.asp}; in that way
   * it is expected to avoid freezing the main thread of JavaScript.
   * @param opts Object with one [logger]{@link module:src/utils#LoggerForWebWorker} and with one reference
-  * to a [gossip util]{@link module:src/utils#GossipUtil} object.
-  * @author Raziel Carvajal-Gomez <raziel.carvajal-gomez@inria.fr> <raziel.carvajal@gmail.com>*/  
+  * to a [GossipUtil]{@link module:src/utils#GossipUtil} object.
+  * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/  
   function GossipFactory(opts){
     this.log = opts.log;
     this.gossipUtil = opts.gossipUtil;
     this.inventory = {};
   }
   /**
+  * @memberof GossipFactory
   * @method checkProperties
   * @description Verifies if the attributes in a 
   * [configuration object]{@link module:src/confObjs#configurationObj} have the correct type as well as
@@ -39,6 +40,7 @@
       throw 'Propagation policy (pull) is not boolean';
   };
   /**
+  * @memberof GossipFactory
   * @method createProtocol
   * @description Creates an instance of one gossip protocol, the reference of the protocol will be kept
   * in the local attribute "inventory" identified by a unique ID.
@@ -51,7 +53,7 @@
       var algoName = exports[algOpts.class];
       if(algoName === 'undefined')
         throw 'Algorithm: ' + algOpts.class + ' does not exist in WebGC' ;
-      //if users missed options in the configuration file, standards options are used insted
+      //if users missed options in the configuration file, standards options are used instead
       this.gossipUtil.extendProperties(algOpts, algoName.defaultOpts);
       //additional options are given for logging proposes
       this.gossipUtil.extendProperties(algOpts, {
@@ -76,10 +78,11 @@
   };
   
   /**
+  * @memberof GossipFactory
   * @method createWebWorker
   * @description Creates one web worker with a group of objects required to perform the computation
   * of one gossip protocol.
-  * @param algOpts Object with the attibutes of one gossip protocol
+  * @param algOpts Object with the attributes of one gossip protocol
   * @param logOpts Settings of a [logger]{@link module:src/utils#LoggerForWebWorker} object
   * @return Worker New WebWorker*/
   GossipFactory.prototype.createWebWorker = function(algOpts, logOpts){
@@ -106,7 +109,7 @@
       statements  += "algOpts[" + "'" + keysWithFunc[i] + "'" + "] = eval(" + algOpts[ keysWithFunc[i]] + ");\n";
     statements    += "var algo = new " + algOpts.class + "(algOpts, log, gossipUtil);\n";
     statements    += "importScripts('" + origin + "src/controllers/GossipMediator.js');\n";
-    //"this" referes the web-worker
+    //"this" refers the web-worker
     statements    += "var m = new GossipMediator(algo, log, this);\n";
     statements    += "algo.setMediator(m);\n";
     statements    += "m.listen();\n";
@@ -117,6 +120,12 @@
     return new Worker(blobUrl);
   };
   
+  /**
+  * @memberof GossipFactory
+  * @method searchFunctions
+  * @description Search the attributes of functions from one object
+  * @param obj Functions will be search in this object
+  * @return Array Keys of the object that points to functions*/
   GossipFactory.prototype.searchFunctions = function(obj){
     var keys = Object.keys(obj), keysWithFunc = [];
     for(var i = 0; i < keys.length; i++){
@@ -126,9 +135,10 @@
   };
   
   /**
-  * @deprecated
+  * @memberof GossipFactory
   * @method setDependencies
-  * @description In some cases, there are gossip protocols that have dependencies amog them. This method
+  * @deprecated Not useful since version 0.4.1
+  * @description In some cases, there are gossip protocols that have dependencies among them. This method
   * reads the property dependencies in the configuration object and establishes those dependencies. For
   * this method, a dependency is to share the property of one gossip protocol with another gossip protocol.*/
   //GossipFactory.prototype.setDependencies = function(gossipAlgos, simFunCatalogue){

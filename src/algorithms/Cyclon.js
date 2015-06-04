@@ -3,7 +3,7 @@
 (function(exports){
   /**
   * @class Cyclon
-  * @augments [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
+  * @extends GossipProtocol See [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
   * @description Implementation of the gossip-based protocol 
   * [Cyclon]{@link http://gossple2.irisa.fr/~akermarr/cyclon.jnsm.pdf}. The local view is an
   * object where each of its keys identify a remote peer (peer ID); the value of each key points 
@@ -22,6 +22,7 @@
   //FIXME This function isn't available when web workers are used
   //GossipUtil.inherits(Cyclon, GossipProtocol);
   /**
+  * @memberof Cyclon
   * @const defaultOpts
   * @description Default configuration of this protocol. During the instantiation of a Cyclon object
   * (via the Factory object) if the user doesn't specify any option this object is taken into account.
@@ -36,18 +37,21 @@
   };
   
   /** 
+  * @memberof Cyclon
   * @method selectPeer
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol} 
   * for more details.*/
   Cyclon.prototype.selectPeer = function(){ return this.gossipUtil.getOldestKey(this.view); };
   
   /**
+  * @memberof Cyclon
   * @method setMediator
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol} 
   * for more details.*/
   Cyclon.prototype.setMediator = function(mediator){ this.gossipMediator = mediator; };
   
   /** 
+  * @memberof Cyclon
   * @method initialize
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol} 
   * for more details.*/
@@ -62,6 +66,7 @@
   };
   
   /**
+  * @memberof Cyclon
   * @method selectItemsToSend
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol} 
   * for more details.*/ 
@@ -94,6 +99,7 @@
   };
   
   /**
+  * @memberof Cyclon
   * @method selectItemsToKeep
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}  
   * for more details.*/                                                                               
@@ -147,6 +153,7 @@
   };
   
   /** 
+  * @memberof Cyclon
   * @method increaseAge
   * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}  
   * for more details.*/                                                                               

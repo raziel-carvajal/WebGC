@@ -8,7 +8,7 @@
   * @param plotterId 
   * @param extraCons 
   * @param appDepFn 
-  * @author Raziel Carvajal-Gomez <raziel.carvajal-gomez@inria.fr> <raziel.carvajal@gmail.com>*/
+  * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
   function Plotter(plotterId, extraCons, appDepFn){
     this.loop = 0;
     this.logs = {};
@@ -19,6 +19,7 @@
   }
   
   /**
+  * @memberof Plotter
   * @method getShape
   * @description Returns the type of shape for one node.
   * @param i Positive integer not bigger than three
@@ -35,6 +36,7 @@
   };
  
   /**
+  * @memberof Plotter
   * @method getColor
   * @description Returns the HTML color for one node.
   * @param i Positive integer not bigger than three
@@ -51,6 +53,7 @@
   };
   
   /**
+  * @memberof Plotter
   * @method getGraphFormat
   * @description Returns one object with the Cytoscape.js format to draw the nodes and
   * the edges in a graph.
@@ -88,6 +91,7 @@
   };
   
   /**
+  * @memberof Plotter
   * @method buildGraph
   * @description Draws the graph of a gossip overlay, every peer that participates in the protocol is
   * included but just the edges between the local peer and the peers in its view are drawn
@@ -145,9 +149,10 @@
   };
   
   /**
+  * @memberof Plotter
   * @method resetGraph
   * @description Every graph is drawn when one gossip cycle has been completed, this
-  * method clean ups the graphs container (html tag) when a new graph is ready to
+  * method clean ups the graphs container (HTML tag) when a new graph is ready to
   * be included in the container.
   * @param algoId Identifier of the gossip algorithm*/
   Plotter.prototype.resetGraph = function(algoId){

@@ -3,20 +3,20 @@
 (function(exports){
   /**
   * @class Coordinator
-  * @augments [Peer]{@link http://peerjs.com/docs/#api}
+  * @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
   * @description This class coordinates the execution of a set of gossip-based protocols. The
   * protocols are described in a configuration object (see 
-  * [configurationObj]{@link module:src/confObjs#configurationObj}). In order to avoid 
+  * [configurationObj]{@link module:src/confObjs.configurationObj}). In order to avoid 
   * reinventing the wheel, Coordinator extends the [Peer]{@link http://peerjs.com/} class from PeerJS 
   * (which provides a WebRTC wrapper with P2P communication functionalities like: send/receive
   * functions, serialization of objects, management of media and data connections, etc)
   * and manages every external connection with other peers. Moreover, this class acts as
   * an intermediary between any web application and the 
-  * [GossipMediator]{@link module:src/controllers#GossipMediator} class to decide what to do with
-  * gossip messages; for instance, if one gossip algorithim needs to a send message M to peer
+  * [GossipMediator]{@link module:src/controllers.GossipMediator#setDependencies} class to decide what to do with
+  * gossip messages; for instance, if one gossip algorithm needs to a send message M to peer
   * P then the Coordinator is going to receive M (via the GossipMediator) to initiate what
-  * it is necesarly for the connection (looking for a method for reaching P; here there are two
-  * posibilities to reach P, either the Coordinator contacts the 
+  * it is necessarily for the connection (looking for a method for reaching P; here there are two
+  * possible cases to reach P, either the Coordinator contacts the 
   * [brokering server]{@link https://github.com/peers/peerjs-server} or the Coordinator uses the
   * [LookupService]{@link module:src/services#LookupService}) and in that way sending M to P.
   * @param opts Property "peerJsOpts" of the configuration object (see 
@@ -25,9 +25,9 @@
   * format is required for this object. The properties of the object must coincide with the 
   * algorithms identifiers in the property "gossipAlgos" in 
   * [configurationObj]{@link module:src/confObjs#configurationObj}
-  * @param peerId Unique indentifier of the peer, if this parameter is not specified one
+  * @param peerId Unique identifier of the peer, if this parameter is not specified one
   * random peerId will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
-  * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr> <raziel.carvajal@gmail.com>*/
+  * @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
   function Coordinator(opts, profile, peerId){
     if(!(this instanceof Coordinator)){ return new Coordinator(opts, profile, peerId); }
     if(!this.checkConfFile(opts)){ return; }
@@ -66,6 +66,7 @@
   util.inherits(Coordinator, Peer);
   
   /**
+  * @memberof Coordinator
   * @method listen
   * @description Basically, this method instantiates: i) the [Peer]{@link http://peerjs.com/docs/#api} 
   * object, ii) the LookupService (if it is
@@ -114,9 +115,10 @@
     this.on('connection', function(c){ self.handleConnection(c); });
   };
   /**
+  * @memberof Coordinator
   * @method createAlgorithms
   * @description Method in charge of the initialization of objects which implements every
-  * gossip protol specified in the [configuration file]{@link module:src/confObjs#configurationObj}.*/ 
+  * gossip protocol specified in the [configuration file]{@link module:src/confObjs#configurationObj}.*/ 
   Coordinator.prototype.createAlgorithms = function(){
     var algosNames = Object.keys(this.gossipAlgos), algOpts, worker;
     for(var i = 0; i < algosNames.length; i++){
@@ -137,6 +139,7 @@
   };
   
   /**
+  * @memberof Coordinator
   * @method checkConfFile
   * @description The evaluation for knowing if the 
   * [configuration file]{@link module:src/confObjs#configurationObj} is well structured is performed
@@ -162,6 +165,7 @@
   };
   
   /**
+  * @memberof Coordinator
   * @method setWorkerEvents
   * @description This method sets the event "message" of a web worker for handling any message exchange
   * in WebGC. These are the possible message exchanges: i) from the 
@@ -199,7 +203,7 @@
           else
             self.log.warn('graph obj is not defined, msg to graph was: ' + JSON.stringify(msg));
           break;
-        //Logging to which extend the view of each algo is updated and which
+        //Logging to which extend the view of each algorithm is updated and which
         //is the overload in gossip cycles with the use of web workers
         case 'actCycLog':
           if(self.actCycHistory){
@@ -229,19 +233,22 @@
   };
   
   /**
+  * @memberof Coordinator
   * @method getViewUpdHistory
   * @description Get statistics about to which extend the view of algorithms is updated
   * @return Object Keys in this object correspond to the number of each gossip cycle*/
   Coordinator.prototype.getViewUpdHistory = function(){ return this.vieUpdHistory; };
   
   /**
+  * @memberof Coordinator
   * @method getActiCycHistory
-  * @description Get statatistics about to which extend the gossip cycle is updated on
+  * @description Get statistics about to which extend the gossip cycle is updated on
   * each algorithm
   * @return Object Keys in this object correspond to the number each gossip cycle*/
   Coordinator.prototype.getActiCycHistory = function(){ return this.actCycHistory; };
   
   /**
+  * @memberof Coordinator
   * @method emptyHistoryOfLogs
   * @description Once this method is called every key of the objects "vieUpdHistory" and "actCycHistory"
   * points to an empty object*/
@@ -259,13 +266,14 @@
   };
   
   /**
+  * @memberof Coordinator
   * @method sendViaSigServer
   * @description Send a message to peer msg.receiver via one connection created with the help of the
   * brokering server, i. e., the emitter of the message will exchange information with the receiver
   * through the brokering server to perform a data connection between both peers; once the connection
   * is open, the message msg will be sent to the receiver.
   * @param msg Payload to send
-  * @return connection Reference to the connection stablished by two peers via the brokering server*/
+  * @return connection Reference to the connection established by two peers via the brokering server*/
   Coordinator.prototype.sendViaSigServer = function(msg){
     var self = this;
     //Peer.connect
@@ -289,6 +297,7 @@
   };
   
   /**
+  * @memberof Coordinator
   * @method sendViaLookupService
   * @description Send a message to peer msg.receiver via one connection created by the 
   * [LookupService]{@link module:src/services#LookupService}. Basically, msg.receiver will be found
@@ -336,10 +345,11 @@
   };
   
   /**
+  * @memberof Coordinator
   * @method handleConnection
-  * @description Once one connection is stablished among two peers this method is called
+  * @description Once one connection is established among two peers this method is called
   * to set the events to trigger in case of error in the connection, data 
-  * reception and when the connection is ready to send messages. Aditionally, when the
+  * reception and when the connection is ready to send messages. Additionally, when the
   * connection is open and if the function "appFn" was set then that function is
   * called.
   * @param connection Connection among two peers*/
@@ -367,6 +377,7 @@
   };
   
   /**
+  * @memberof Coordinator
   * @method handleIncomingData
   * @description Every message received by peers contains one header to differentiate its payload,
   * this method handles the reception of messages according to the next two headers: gossip and
@@ -399,8 +410,9 @@
   };
   
   /**
+  * @memberof Coordinator
   * @method setApplicationLevelFunction
-  * @description This method sets one function external to WebGC that normally belogs to the
+  * @description This method sets one function external to WebGC that normally belongs to the
   * application layer.
   * @param fn Reference to an external function*/
   Coordinator.prototype.setApplicationLevelFunction = function(fn){ this.appFn = fn; };

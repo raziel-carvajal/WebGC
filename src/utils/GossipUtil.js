@@ -1,38 +1,37 @@
 /**
-*@module lib/utils 
-*@const gossipUtil
-*@description This object contains a set of functions that are used by the different
-*implementations of the gossip protocols.
-*@author Raziel Carvajal Gomez <raziel.carvajal-gomez@inria.fr>*/
+*@module src/utils*/ 
 (function(exports){
   /**
-  *@class GossipUtil
-  *@description This class implements miscelaneous functions needed by a gossip-based
-  *algorithm
-  *@param {Object} opts - options of the logger */
+  * @class GossipUtil
+  * @description This class contains miscellaneous operations used by gossip protocols.
+  * @param log Logger (see [LoggerForWebWorker]{@link module:src/utils#LoggerForWebWorker}) to
+  * monitor the actions of GossipUtil objects
+  * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
   function GossipUtil(log){
     this.log = log;
     this.cacheSize = 2;
     this.alreadyChosen = {};
   }
+  
   /**
-  *@method newItem
-  *@description Returns an object its age (timestamp) and its data.
-  *@param {Integer} age - timestamp or age of the item
-  *@param {Object} data - data of the item
-  *@return {Object}*/
-  GossipUtil.prototype.newItem = function(age, data){
-    return { age: age, data: data };
-  };
+  * @memberof GossipUtil
+  * @method newItem
+  * @description Returns one object with two properties: its age (time stamp) and its data 
+  * (application dependant object).
+  * @param age Age of the item (integer)
+  * @param data Object to share by the gossip protocol (application dependant)
+  * @return Object Object with the properties age and data*/
+  GossipUtil.prototype.newItem = function(age, data){ return { age: age, data: data }; };
+  
   /**
-  *@method getRandomSubDict
-  *@description Get a random set of n items from one object
-  *@param {Integer} n - size of the new object
-  *@param {Object} src - original object
-  *@returns {Object}*/
+  * @memberof GossipUtil
+  * @method getRandomSubDict
+  * @description Get a random set of n items from one object
+  * @param n Size of the new object
+  * @param src Original object
+  * @returns Object Object with a subset of items from the source*/
   GossipUtil.prototype.getRandomSubDict = function(n, src){
-    if( n <= 0 || Object.keys(src).length === 0 )
-      return {};
+    if( n <= 0 || Object.keys(src).length === 0 ){ return {}; }
     if( n >= Object.keys(src).length )
       return src;
     else {
@@ -51,11 +50,13 @@
       return result;
     }
   };
+  
   /**
-  *@method getOldestKey
-  *@description Get the key of the element with the oldes age in dictio
-  *@param {Object} dictio - object
-  *@returns {String} key of the item with the oldest age in dictio*/
+  * @memberof GossipUtil
+  * @method getOldestKey
+  * @description Get the key of the element with the oldest age in the object
+  * @param dictio Source object
+  * @returns String Key of the item with the oldest age*/
   GossipUtil.prototype.getOldestKey = function(dictio){
     var keys = Object.keys(dictio);
     if( keys.length === 0 ){
@@ -75,11 +76,13 @@
       }
     }
   };
+  
   /**
-  *@method getRandomKey
-  *@description Get a random key of the object dict
-  *@param {Object} dict - source object
-  *@returns {String} key - random key of the obj */
+  * @memberof GossipUtil
+  * @method getRandomKey
+  * @description Get a random key from one object
+  * @param dict Source object
+  * @returns String Random key from the source*/
   GossipUtil.prototype.getRandomKey = function(dict){
     var keys = Object.keys(dict), key;
     if( keys.length === 0 ){
@@ -90,11 +93,13 @@
     }
     return key;
   };
+  
   /**
-  *@method removeRandomly
-  *@description Remov n elements of the object dic
-  *@param {Integer} n - elements to remove
-  *@param {Object} dic - source object  */
+  * @memberof GossipUtil
+  * @method removeRandomly
+  * @description Removes N elements from one object in a randomly way
+  * @param n Number of elements to remove
+  * @param dic Source object  */
   GossipUtil.prototype.removeRandomly = function(n, dic){
     if( n === 0 )
       return;
@@ -109,12 +114,14 @@
       }
     }
   };
+  
   /**
-  *@method mergeViews
-  *@description Merge two objects, the result object doesn't contain repetitions
-  *@param {Object} v1 - first object to merge
-  *@param {Object} v2 - second object to merge
-  *@returns {Object} the merge of v1 and v2*/
+  * @memberof GossipUtil
+  * @method mergeViews
+  * @description Merge two objects, the result does not contain repetitions
+  * @param v1 First object to merge
+  * @param v2 Second object to merge
+  * @returns Object The result of merging v1 and v2*/
   GossipUtil.prototype.mergeViews = function(v1, v2){
     var keysV1 = Object.keys(v1);
     var keysV2 = Object.keys(v2);
@@ -131,22 +138,25 @@
     }
     return result;
   };
+  
   /**
-  *@method setData
-  *@description If key exists in dic, the value of key is set to d
-  *@param {Object} dic - object
-  *@param {String} key - reference of the value to update
-  *@param {Object} d - new value of key*/
+  * @memberof GossipUtil
+  * @method setData
+  * @description Updates the value of the property "key" in one object
+  * @param dic Source object
+  * @param key Property to search in the source
+  * @param d Value to update*/
   GossipUtil.prototype.setData = function(dic, key, d){
     if( key in dic )
       dic[key].data = d;
   };
+  
   /**
-  *@method extendProperties
-  *@description Extends the elements in an object without repetitions. If an item in dst
-  *is in src too, the value of that item isn't updated
-  *@param {Object} dst - object to extend
-  *@param {Object} srs - elements to add in dst*/
+  * @memberof GossipUtil
+  * @method extendProperties
+  * @description Increases the number of properties/values from one object
+  * @param dst Object to extend
+  * @param src The properties/values of this object will be part of the destination object*/
   GossipUtil.prototype.extendProperties = function(dst, src){
     var keys = Object.keys(src);
     for( var i = 0; i < keys.length; i++ ){
@@ -155,6 +165,14 @@
     }
   };
   
+  /**
+  * @memberof GossipUtil
+  * @method inherits
+  * @deprecated Due to the lack of inheritance between the abstract class GossipProtocol and
+  * gossip implementations in web workers (version 0.4.1 of WebGC)
+  * @description Extends the "ctor" object with the attributes and methods of the "superCtor" object
+  * @param ctor Object to extend
+  * @param superCtor Object from which "ctor" inherits its methods and attributes*/
   GossipUtil.prototype.inherits = function(ctor, superCtor) {
     ctor.super_ = superCtor;
     ctor.prototype = Object.create(superCtor.prototype, {

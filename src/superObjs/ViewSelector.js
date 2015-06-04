@@ -9,7 +9,7 @@
   * @param log Logger (see [LoggerForWebWorker]{@link module:src/utils#LoggerForWebWorker}) to 
   * monitor the actions of the ViewSelector
   * @param simFunc Reference to the similarity function
-  * @author Raziel Carvajal-Gomez <raziel.carvajal-gomez@inria.fr> <raziel.carvajal@gmail.com> */ 
+  * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com> */ 
   function ViewSelector(profile, log, simFunc){
     this.profile = profile;
     this.log = log;
@@ -18,6 +18,7 @@
   }
   
   /**
+  * @memberof ViewSelector
   * @method checkBaseCase
   * @description The view selection takes the N most similar items from the local peer's view of
   * length V. To speed up the peer selection, this method returns the peer's view if N is negative
@@ -44,6 +45,7 @@
   };
   
   /**
+  * @memberof ViewSelector
   * @method getClosestNeighbours
   * @description This method gets the N most similar items in the local peer's view
   * @param n Number of the most similar items to the local peer
@@ -63,6 +65,7 @@
   };
   
   /**
+  * @memberof ViewSelector
   * @method getNsimilarPeers
   * @description This method gets the N most similar items in the local peer's view
   * @param n Number of the most similar items to the local peer                                      
