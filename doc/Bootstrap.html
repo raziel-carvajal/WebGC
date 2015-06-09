@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: Bootstrap</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Class: Bootstrap</h1>
+    
+    
+
+
+
+<section>
+    
+<header>
+    <h2>
+    Bootstrap
+    </h2>
+    
+</header>  
+
+<article>
+    <div class="container-overview">
+    
+    
+    
+        
+<dt>
+    <h4 class="name" id="Bootstrap"><span class="type-signature"></span>new Bootstrap<span class="signature">(coordi)</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        For being able to join an overlay peers must receive at least one reference of
+another peer (already in the overlay) to communicate with, most of the methods in this class 
+communicate with one server which will provide a list of peers to bootstrap the exchange of gossip
+messages. The bootstrap procedure works as follows: first of all, peers post its local profile
+that is the payload contained in every gossip message then, peers request the reference of
+another peer to perform a connection with it via the
+<a href="https://github.com/peers/peerjs-server">brokering server</a>, finally, peers request a list
+of peer references which will initialize every view of the gossip protocols (see attribute view
+of GossipProtocol).
+    </div>
+    
+
+    
+    
+    
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params">
+    <thead>
+	<tr>
+		
+		<th>Name</th>
+		
+		
+		<th>Type</th>
+		
+		
+		
+		
+		
+		<th class="last">Description</th>
+	</tr>
+	</thead>
+	
+	<tbody>
+	
+	
+        <tr>
+            
+                <td class="name"><code>coordi</code></td>
+            
+            
+            <td class="type">
+            
+            </td>
+            
+            
+            
+            
+            
+            <td class="description last">Reference to the Coordinator</td>
+        </tr>
+	
+	
+	</tbody>
+</table>
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <dt class="tag-author">Author:</dt>
+    <dd class="tag-author">
+        <ul>
+            <li><a href="mailto:raziel.carvajal@gmail.com">Raziel Carvajal-Gomez</a></li>
+        </ul>
+    </dd>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Bootstrap.js.html">services/Bootstrap.js</a>, <a href="Bootstrap.js.html#line5">line 5</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+    
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+        <h3 class="subsection-title">Methods</h3>
+        
+        <dl>
+            
+<dt>
+    <h4 class="name" id="bootstrap"><span class="type-signature">&lt;static> </span>bootstrap<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        This method performs the hole bootstrap procedure (described on the
+top of this file).
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Bootstrap.js.html">services/Bootstrap.js</a>, <a href="Bootstrap.js.html#line24">line 24</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="getFirstView"><span class="type-signature">&lt;static> </span>getFirstView<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Gets from the <a href="https://github.com/peers/peerjs-server">brokering server</a> the
+first list of peers to start exchanging messages.
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Bootstrap.js.html">services/Bootstrap.js</a>, <a href="Bootstrap.js.html#line69">line 69</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="getNeighbour"><span class="type-signature">&lt;static> </span>getNeighbour<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Gets one first peer reference to perform the first connection with it.
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Bootstrap.js.html">services/Bootstrap.js</a>, <a href="Bootstrap.js.html#line105">line 105</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="postProfile"><span class="type-signature">&lt;static> </span>postProfile<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        Post in the <a href="https://github.com/peers/peerjs-server">brokering server</a> the
+peer's profile, which is the payload to exchange on each gossip message.
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Bootstrap.js.html">services/Bootstrap.js</a>, <a href="Bootstrap.js.html#line43">line 43</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        </dl>
+    
+    
+    
+    
+    
+</article>
+
+</section>  
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="algorithms.html">src/algorithms</a></li><li><a href="confObjs.html">src/confObjs</a></li><li><a href="controllers.html">src/controllers</a></li><li><a href="services.html">src/services</a></li><li><a href="superObjs.html">src/superObjs</a></li><li><a href="utils.html">src/utils</a></li></ul><h3>Classes</h3><ul><li><a href="Bootstrap.html">Bootstrap</a></li><li><a href="Coordinator.html">Coordinator</a></li><li><a href="Cyclon.html">Cyclon</a></li><li><a href="GossipFactory.html">GossipFactory</a></li><li><a href="GossipMediator.html">GossipMediator</a></li><li><a href="GossipProtocol.html">GossipProtocol</a></li><li><a href="GossipUtil.html">GossipUtil</a></li><li><a href="Logger.html">Logger</a></li><li><a href="LookupService.html">LookupService</a></li><li><a href="Plotter.html">Plotter</a></li><li><a href="SamplingService.html">SamplingService</a></li><li><a href="Vicinity.html">Vicinity</a></li><li><a href="ViewSelector.html">ViewSelector</a></li></ul><h3>Events</h3><ul><li><a href="global.html#event:connection">connection</a></li><li><a href="global.html#event:open">open</a></li></ul><h3>Global</h3><ul><li><a href="global.html#configurationObj">configurationObj</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Tue Jun 09 2015 10:37:13 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

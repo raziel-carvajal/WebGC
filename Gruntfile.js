@@ -33,7 +33,8 @@ module.exports = function(grunt) {
       cmdObjs: {
         options: {stdout: true, stderr: true },
         command: [
-          'rm -fr doc/*',
+          'rm -fr doc',
+          'mkdir doc',
           './bower_components/jsdoc3/jsdoc -r --verbose -d ./doc ./src'
         ].join('&&')
       }

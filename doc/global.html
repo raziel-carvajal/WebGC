@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Global</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Global</h1>
+    
+    
+
+
+
+<section>
+    
+<header>
+    <h2>
+    
+    </h2>
+    
+</header>  
+
+<article>
+    <div class="container-overview">
+    
+    
+    
+        
+        
+        
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+        
+        
+    
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+        <h3 class="subsection-title">Members</h3>
+        
+        <dl>
+            
+<dt>
+    <h4 class="name" id="configurationObj"><span class="type-signature">&lt;constant> </span>configurationObj<span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        This object serves as the input that any application with WebGC needs. Basically,
+the settings for each gossip-based protocol are written down here as well as other settings for 
+general propose. The configuration object is formed with the next properties:
+
+i) peerJsOpts: PeerJS settings, click <a href="http://peerjs.com/">here</a> for more information
+ii) gossipAlgos: the properties of this object are unique identifiers for each gossip protocol,
+  every property points to another object which contains particular settings of each protocol
+  like its class name (name of the class that implements the protocol), number of items in 
+  its view, number of peers (fanout) to exchange messages with, seconds of each gossip
+  cycle, etc.
+iii) logOpts: given that it is quite difficult to record logs of clients behind web browsers,
+  this object contains information about one server that records every log of WebGC. When
+  the log server is deactivated every log appears in the console of the browser
+iv) usingSs: WebGC is extended with a lookup service (see
+  LookupService for more details) to take rid of
+  the <a href="https://github.com/peers/peerjs-server">brokering server</a> in WebRTC, 
+  this server allows to create connections among web browsers. 
+  If this property is set to "true" a new connection among two peers, and considering that these
+  peers contains at least one connection with others, will be performed using the already existing
+  connections on the overlay; otherwise, every new connection among two peers will need a first
+  communication with the brokering server (FYI the coordinates of this server are defined at the
+  "peerJsOpts" property)
+v) lookupMulticast: when a lookup message M is received by one peer, M is retransmitted to
+  "lookupMulticast" peer's neighbours
+vi) lookupMsgSTL: for avoiding infinite forwards of lookup messages, this property determines
+  how many times lookup messages are retransmitted; an optimal value of this parameter depends on
+  the overlay diameter
+vii) bootstrapTimeout: number of milliseconds to wait for each peer to bootstrap
+    </div>
+    
+    
+    
+
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    <dt class="tag-author">Author:</dt>
+    <dd class="tag-author">
+        <ul>
+            <li><a href="mailto:raziel.carvajal-gomez@inria.fr">Raziel Carvajal</a></li>
+        </ul>
+    </dd>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="twoSimFunc.js.html">confObjs/twoSimFunc.js</a>, <a href="twoSimFunc.js.html#line5">line 5</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="configurationObj"><span class="type-signature">&lt;constant> </span>configurationObj<span class="type-signature"></span></h4>
+    
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        This configuration object is the input that any application needs. Basically,
+the settings for each gossip-based protocol are written down here as well as other settings
+for general propose.
+    </div>
+    
+    
+    
+
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+        <dt class="important tag-deprecated">Deprecated:</dt><dd class="yes-def tag-deprecated"><ul class="dummy"><li>Yes</li></ul></dd>
+    
+    
+    
+    <dt class="tag-author">Author:</dt>
+    <dd class="tag-author">
+        <ul>
+            <li><a href="mailto:raziel.carvajal-gomez@inria.fr">Raziel Carvajal</a></li>
+        </ul>
+    </dd>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="confObjDumbFunc.js.html">confObjs/confObjDumbFunc.js</a>, <a href="confObjDumbFunc.js.html#line3">line 3</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+</dd>
+
+        </dl>
+    
+    
+    
+    
+    
+    
+    
+        <h3 class="subsection-title">Events</h3>
+        
+        <dl>
+            
+<dt>
+    <h4 class="name" id="event:connection">connection</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        This event is fired when an external message is received.
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Coordinator.js.html">controllers/Coordinator.js</a>, <a href="Coordinator.js.html#line112">line 112</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        
+            
+<dt>
+    <h4 class="name" id="event:open">open</h4>
+    
+    
+</dt>
+<dd>
+    
+    
+    <div class="description">
+        When the peer is ready to communicate this event is fired.
+    </div>
+    
+
+    
+    
+    
+    
+    
+    
+    
+<dl class="details">
+    
+        
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="Coordinator.js.html">controllers/Coordinator.js</a>, <a href="Coordinator.js.html#line96">line 96</a>
+    </li></ul></dd>
+    
+    
+    
+    
+    
+    
+    
+</dl>
+
+    
+    
+
+    
+
+    
+    
+    
+    
+    
+    
+    
+</dd>
+
+        </dl>
+    
+</article>
+
+</section>  
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="algorithms.html">src/algorithms</a></li><li><a href="confObjs.html">src/confObjs</a></li><li><a href="controllers.html">src/controllers</a></li><li><a href="services.html">src/services</a></li><li><a href="superObjs.html">src/superObjs</a></li><li><a href="utils.html">src/utils</a></li></ul><h3>Classes</h3><ul><li><a href="Bootstrap.html">Bootstrap</a></li><li><a href="Coordinator.html">Coordinator</a></li><li><a href="Cyclon.html">Cyclon</a></li><li><a href="GossipFactory.html">GossipFactory</a></li><li><a href="GossipMediator.html">GossipMediator</a></li><li><a href="GossipProtocol.html">GossipProtocol</a></li><li><a href="GossipUtil.html">GossipUtil</a></li><li><a href="Logger.html">Logger</a></li><li><a href="LookupService.html">LookupService</a></li><li><a href="Plotter.html">Plotter</a></li><li><a href="SamplingService.html">SamplingService</a></li><li><a href="Vicinity.html">Vicinity</a></li><li><a href="ViewSelector.html">ViewSelector</a></li></ul><h3>Events</h3><ul><li><a href="global.html#event:connection">connection</a></li><li><a href="global.html#event:open">open</a></li></ul><h3>Global</h3><ul><li><a href="global.html#configurationObj">configurationObj</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Tue Jun 09 2015 10:37:13 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
