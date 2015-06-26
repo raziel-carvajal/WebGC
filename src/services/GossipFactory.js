@@ -2,6 +2,7 @@
 * @module src/services*/
 module.exports = GossipFactory
 var Worker = require('webworker-threads').Worker
+var fs = require('fs') || require('browserify-fs')
 
 /**
 * @class GossipFactory
@@ -93,7 +94,7 @@ GossipFactory.prototype.createProtocol = function (algoId, algOpts) {
 * @param algOpts Object with the attributes of one gossip protocol
 * @param logOpts Settings of a [logger]{@link module:src/utils#LoggerForWebWorker} object
 * @return Worker New WebWorker*/
-GossipFactory.prototype.createWebWorker = function (algOpts, logOpts, ) {
+GossipFactory.prototype.createWebWorker = function (algOpts, logOpts) {
   var statements = "var Logger = require('LoggerForWebWorker')\n"
   statements += 'var logOpts = ' + JSON.stringify(logOpts) + '\n'
   statements += 'var log = new Logger(logOpts)\n'
@@ -118,19 +119,21 @@ GossipFactory.prototype.createWebWorker = function (algOpts, logOpts, ) {
   // "this" refers the web-worker
   statements += 'var m = new GossipMediator(algo, log, this)\n'
   statements += 'algo.setMediator(m)\n'
-  statements += 'm.listen()\n'
-  var blob
-  var blobUrl
+  statements += 'm.listen()'
+  // TODO find another way to cope with js files
+  // var buf = new Buffer(Buffer.byteLength(statements, 'ascii'))
+  // buf.write(statements, 0, 'ascii')
   if (typeof window === 'undefined') {// In node.js
-
-
-
-  } else {
+    fs.writeFile('worker.js', statements, function () {
+      return new Worker('worker.js')
+    })
+  } else { // TODO check compatibility with browsers (it works in Chrome)
     window.URL = window.URL || window.webkitURL
-    blob = new Blob([statements], {type: 'text/javascript'})
-    blobUrl = window.URL.createObjectURL(blob)
+    var Blob = exports.Blob
+    var blob = new Blob([statements], {type: 'text/javascript'})
+    var blobUrl = window.URL.createObjectURL(blob)
+    return new Worker(blobUrl)
   }
-  return new Worker(blobUrl)
 }
 
 /**
@@ -139,8 +142,9 @@ GossipFactory.prototype.createWebWorker = function (algOpts, logOpts, ) {
 * @description Search the attributes of functions from one object
 * @param obj Functions will be search in this object
 * @return Array Keys of the object that points to functions*/
-GossipFactory.prototype.searchFunctions = function(obj){
-  var keys = Object.keys(obj), keysWithFunc = []
+GossipFactory.prototype.searchFunctions = function (obj) {
+  var keys = Object.keys(obj)
+  var keysWithFunc = []
   for (var i = 0; i < keys.length; i++) {
     if (typeof obj[ keys[i] ] === 'function') { keysWithFunc.push(keys[i]) }
   }
@@ -154,54 +158,52 @@ GossipFactory.prototype.searchFunctions = function(obj){
 * @description In some cases, there are gossip protocols that have dependencies among them. This method
 * reads the property dependencies in the configuration object and establishes those dependencies. For
 * this method, a dependency is to share the property of one gossip protocol with another gossip protocol.*/
-//GossipFactory.prototype.setDependencies = function(gossipAlgos, simFunCatalogue){
-//  var keys = Object.keys(gossipAlgos)
-//  for( var i = 0 i < keys.length i++ ){
-//    if( gossipAlgos[ keys[i] ].hasOwnProperty('attributes') ){
-//      var atts = gossipAlgos[ keys[i] ].attributes
-//      var attsKeys = Object.keys(atts)
-//      for( var j = 0 j < attsKeys.length j++ ){
-//        var algoAttStr = atts[ attsKeys[j] ]
-//        var container = algoAttStr.split('.')
-//        if( container.length === 2 ){
-//          this.log.info('c0: ' + container[0] + ' c1: ' + container[1])
-//          var objExt = this.inventory[ container[0] ]
-//          if( objExt !== 'undefined' ){
-//            if( objExt[ container[1] ] !== 'undefined'){
-//              this.inventory[ keys[i] ][ attsKeys[j] ] = objExt[ container[1] ]
-//              this.log.info('Algorithm [' + keys[i] + '] was augmented with the property [' +
-//                attsKeys[j] + ']')
-//            }else{
-//              this.log.error('There is no property [' + container[1] + '] for the algorithm [' +
-//                container[0] + '], as a consecuence, the algorithm [' + keys[i]  + '] will ' +
-//                'have fatal errors during its execution')
-//            }
-//          }else{
-//            this.log.error('The protocol with id [' + payload + '] was not loaded by the Factory')
-//          }
-//        }else if(container.length === 1){
-//          this.log.info('c0: ' + container[0])
-//          var objSim = simFunCatalogue[ container[0] ]
-//          if(objSim !== 'undefined'){
-//            this.inventory[ keys[i] ][ attsKeys[j] ] = objSim
-//            this.log.info('Algorithm [' + keys[i] + '] was augmented with the simiilarity function ['+
-//              container[0] + ']')
-//          }else{
-//            this.log.error('There is not property [' + container[0] + '] at the catalogue of '+
-//              'similarity functions. The algorithm with ID [' + keys[i] + '] has not assigned '+
-//              'any similarity function')
-//          }
-//        }else{
-//          this.log.error('The value [' + algoAttStr + '] for the attribute [' + attsKeys[j] +
-//            '] has not the right format (separation by a period). As a consecuence, the algorithm ' +
-//            '[' + keys[i] + '] will have fatal errors during its execution.')
-//        }
-//      }
-//    }else{
-//      this.log.info('The algorithm [' + keys[i] + '] has not dependencies ' +
-//        'with others algorithms.')
-//    }
-//  }
-//}
-
-
+// GossipFactory.prototype.setDependencies = function(gossipAlgos, simFunCatalogue){
+//   var keys = Object.keys(gossipAlgos)
+//   for( var i = 0 i < keys.length i++ ){
+//     if( gossipAlgos[ keys[i] ].hasOwnProperty('attributes') ){
+//       var atts = gossipAlgos[ keys[i] ].attributes
+//       var attsKeys = Object.keys(atts)
+//       for( var j = 0 j < attsKeys.length j++ ){
+//         var algoAttStr = atts[ attsKeys[j] ]
+//         var container = algoAttStr.split('.')
+//         if( container.length === 2 ){
+//           this.log.info('c0: ' + container[0] + ' c1: ' + container[1])
+//           var objExt = this.inventory[ container[0] ]
+//           if( objExt !== 'undefined' ){
+//             if( objExt[ container[1] ] !== 'undefined'){
+//               this.inventory[ keys[i] ][ attsKeys[j] ] = objExt[ container[1] ]
+//               this.log.info('Algorithm [' + keys[i] + '] was augmented with the property [' +
+//                 attsKeys[j] + ']')
+//             }else{
+//               this.log.error('There is no property [' + container[1] + '] for the algorithm [' +
+//                 container[0] + '], as a consecuence, the algorithm [' + keys[i]  + '] will ' +
+//                 'have fatal errors during its execution')
+//             }
+//           }else{
+//             this.log.error('The protocol with id [' + payload + '] was not loaded by the Factory')
+//           }
+//         }else if(container.length === 1){
+//           this.log.info('c0: ' + container[0])
+//           var objSim = simFunCatalogue[ container[0] ]
+//           if(objSim !== 'undefined'){
+//             this.inventory[ keys[i] ][ attsKeys[j] ] = objSim
+//             this.log.info('Algorithm [' + keys[i] + '] was augmented with the simiilarity function ['+
+//               container[0] + ']')
+//           }else{
+//             this.log.error('There is not property [' + container[0] + '] at the catalogue of '+
+//               'similarity functions. The algorithm with ID [' + keys[i] + '] has not assigned '+
+//               'any similarity function')
+//           }
+//         }else{
+//           this.log.error('The value [' + algoAttStr + '] for the attribute [' + attsKeys[j] +
+//             '] has not the right format (separation by a period). As a consecuence, the algorithm ' +
+//             '[' + keys[i] + '] will have fatal errors during its execution.')
+//         }
+//       }
+//     }else{
+//       this.log.info('The algorithm [' + keys[i] + '] has not dependencies ' +
+//         'with others algorithms.')
+//     }
+//   }
+// }

@@ -1,8 +1,7 @@
 /**
 * @module src/services*/
 module.exports = Bootstrap
-var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest
-
+var XMLHttpRequest = exports.XMLHttpRequest || require('xhr2')
 /**
 * @class Bootstrap
 * @description For being able to join an overlay peers must receive at least one reference of
