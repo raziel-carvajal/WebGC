@@ -1,8 +1,10 @@
 /**
 * @module src/services*/
 module.exports = Bootstrap
-var XMLHttpRequest = exports.XMLHttpRequest || require('xhr2')
-// var Socket = typeof window === 'undefined' ? require('') : window.Socket
+var debug = require('debug')('bootstrap')
+var PeerJSProtocol = require('../utils/PeerjsProtocol')
+
+if (typeof window === 'undefined') var XMLHttpRequest = require('xhr2')
 /**
 * @class Bootstrap
 * @description For being able to join an overlay peers must receive at least one reference of
@@ -16,10 +18,15 @@ var XMLHttpRequest = exports.XMLHttpRequest || require('xhr2')
 * of [GossipProtocol]{@link module:src/superObjs#GossipProtocol}).
 * @param coordi Reference to the [Coordinator]{@link module:src/controllers#Coordinator}
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function Bootstrap (coordi) {
-  if (!(this instanceof Bootstrap)) { return new Bootstrap(coordi) }
-  this.coordi = coordi
-  this.url = 'http://' + coordi.options.host + ':' + coordi.options.port + '/'
+function Bootstrap (peerId, host, port, coordi) {
+  if (!(this instanceof Bootstrap)) return new Bootstrap(peerId, host, port, coordi)
+  this._coordi = coordi
+  this._url = 'http://' + host + ':' + port + '/'
+  this.signaling_service = new PeerJSProtocol(peerId, host, port)
+  var self = this
+  this.signaling_service.on('open', function () {
+    self._bootstrap()
+  })
 }
 
 /**
@@ -27,7 +34,7 @@ function Bootstrap (coordi) {
 * @method bootstrap
 * @description This method performs the hole bootstrap procedure (described on the
 * top of this file).*/
-Bootstrap.prototype.bootstrap = function () {
+Bootstrap.prototype._bootstrap = function () {
   this.coordi.log.info('Posting profile')
   this.postProfile()
   this.coordi.log.info('Wating: ' + this.coordi.bootstrapTimeout + ' ms for peers ' +
