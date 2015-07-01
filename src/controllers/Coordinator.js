@@ -43,7 +43,7 @@ function Coordinator (gossConfObj, profile, peerTag) {
   this.profile = profile
   this.peerTag = peerTag
   this.peerId = hat(160)
-  this.gossipUtil = new GossipUtil()
+  this.gossipUtil = new GossipUtil(debug)
   this.factory = new GossipFactory(this.gossipUtil)
   this.peerJsOpts = opts.peerJsOpts
   this.gossipAlgos = opts.gossipAlgos

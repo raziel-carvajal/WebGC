@@ -1,13 +1,14 @@
 /**
 *@module src/utils*/
 module.exports = GossipUtil
-var debug = require('debug')('gossip_util')
 
 /**
 * @class GossipUtil
 * @description This class contains miscellaneous operations used by gossip protocols.
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function GossipUtil () {
+function GossipUtil (debug) {
+  if (!(this instanceof GossipUtil)) return GossipUtil(debug)
+  this.debug = debug
   this.cacheSize = 2
   this.alreadyChosen = {}
 }
@@ -64,7 +65,7 @@ GossipUtil.prototype.getRandomSubDict = function (n, src) {
 GossipUtil.prototype.getOldestKey = function (dictio) {
   var keys = Object.keys(dictio)
   if (keys.length === 0) {
-    debug('Empty dictionary')
+    this.debug('Empty dictionary')
     return null
   }
   var i
@@ -94,7 +95,7 @@ GossipUtil.prototype.getRandomKey = function (dict) {
   var keys = Object.keys(dict)
   var key
   if (keys.length === 0) {
-    debug('No way to return a key from an empty dictionary')
+    this.debug('No way to return a key from an empty dictionary')
   } else {
     var rNum = keys.length === 1 ? 0 : Math.floor(Math.random() * keys.length)
     key = keys[rNum]

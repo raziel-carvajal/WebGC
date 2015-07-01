@@ -7,13 +7,13 @@ module.exports = ViewSelector
 * @description Ranks items in a gossip view according to a similarity function, this function
 * evaluates to which extend two peer profiles differs from each other.
 * @param profile Profile of the local peer
-* @param log Logger (see [LoggerForWebWorker]{@link module:src/utils#LoggerForWebWorker}) to
+* @param debug debug (see [LoggerForWebWorker]{@link module:src/utils#LoggerForWebWorker}) to
 * monitor the actions of the ViewSelector
 * @param simFunc Reference to the similarity function
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com> */
-function ViewSelector (profile, log, simFunc) {
+function ViewSelector (profile, debug, simFunc) {
   this.profile = profile
-  this.log = log
+  this.debug = debug
   this.simFunc = simFunc
   this.noImMsg = 'It is required to provide an implementation for this method'
 }
@@ -35,11 +35,11 @@ ViewSelector.prototype.checkBaseCase = function (n, view, newItem, keys) {
     view[newItem.k] = newItem.v
   }
   if (n <= 0 || keys.length === 0) {
-    this.log.info('Base case SimFun. View is empty')
+    debug('Base case SimFun. View is empty')
     return view
   }
   if (keys.length < n) {
-    this.log.info('Base case SimFun. view size: ' + keys.length + ', n: ' + n)
+    debug('Base case SimFun. view size: ' + keys.length + ', n: ' + n)
     return view
   }
   return null
@@ -80,7 +80,7 @@ ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
   for (i = 0; i < keys.length; i++) {
     values.push({
       k: keys[i],
-      v: this.simFunc(this.profile, view[ keys[i] ].data, this.log)
+      v: this.simFunc(this.profile, view[ keys[i] ].data)
     })
   }
   values.sort(function (a, b) { return a.v - b.v })

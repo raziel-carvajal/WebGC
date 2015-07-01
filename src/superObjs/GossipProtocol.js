@@ -16,7 +16,7 @@ module.exports = GossipProtocol
 * the actions of one gossip protocol
 * @param gossipUtil Object with [gossip utilities]{@link module:src/utils#GossipUtil}
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com> */
-function GossipProtocol (opts, log, gossipUtil) {
+function GossipProtocol (opts, debug, gossipUtil) {
   this.class = opts.class
   // attributes in common for each protocol
   this.view = {}
@@ -27,7 +27,7 @@ function GossipProtocol (opts, log, gossipUtil) {
   this.gossipPeriod = opts.gossipPeriod
   this.propagationPolicy = opts.propagationPolicy
   this.algoId = opts.algoId// unique ID for the algorithm
-  this.log = log
+  this.debug = debug
   this.gossipUtil = gossipUtil
   this.peerId = opts.peerId
   // error and warning messages

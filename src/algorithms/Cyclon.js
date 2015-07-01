@@ -20,8 +20,10 @@ inherits(Cyclon, GossipProtocol)
 * @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
 * functions used by gossip protocols
 * @author Raziel Carvajal [raziel.carvajal-gomez@inria.fr] */
-function Cyclon (algOpts, log, gossipUtil) {
-  GossipProtocol.call(this, algOpts, log, gossipUtil)
+function Cyclon (algOpts, debug, gossipUtil, isLogActivated) {
+  if (!(this instanceof Cyclon)) return Cyclon(algOpts, debug, gossipUtil)
+  this.isLogActivated = isLogActivated
+  GossipProtocol.call(this, algOpts, debug, gossipUtil)
 }
 
 /**
@@ -87,7 +89,7 @@ Cyclon.prototype.selectItemsToSend = function (thread) {
       subDict = this.gossipUtil.getRandomSubDict(this.fanout, this.clone)
       break
     default:
-      this.log.error('Unknown selection policy')
+      debug('Unknown selection policy')
       break
   }
   var msg = {
@@ -147,7 +149,7 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
         'viewUpdOffset': viewUpdOffset
       }
     }
-    if (!this.log.isActivated) {
+    if (!this.isLogActivated) {
       this.gossipMediator.viewUpdsLogCounter++
       msgToSend.header = 'viewUpdsLog'
       msgToSend.counter = this.gossipMediator.viewUpdsLogCounter

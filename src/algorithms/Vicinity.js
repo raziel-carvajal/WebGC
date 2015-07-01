@@ -21,10 +21,12 @@ inherits(Vicinity, GossipProtocol)
 * @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
 * functions used by gossip protocols
 * @author Raziel Carvajal-Gomez raziel.carvajal@gmail.com */
-function Vicinity (algOpts, log, gossipUtil) {
-  GossipProtocol.call(this, algOpts, log, gossipUtil)
+function Vicinity (algOpts, debug, gossipUtil, isLogActivated) {
+  if (!(this instanceof Vicinity)) return Vicinity(algOpts, debug, gossipUtil)
+  this.isLogActivated = isLogActivated
+  GossipProtocol.call(this, algOpts, debug, gossipUtil)
   this.selectionPolicy = algOpts.selectionPolicy
-  this.selector = new ViewSelector(this.data[this.algoId], log, algOpts.similarityFunction)
+  this.selector = new ViewSelector(this.data[this.algoId], debug, algOpts.similarityFunction)
   this.dependencies = algOpts.dependencies
 }
 
@@ -131,7 +133,7 @@ Vicinity.prototype.selectItemsToSend = function (thread) {
       }
       break
     default:
-      this.log.error('Unknown peer selection policy')
+      debug('Unknown peer selection policy')
       break
   }
 }
@@ -222,7 +224,7 @@ Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
       'viewUpdOffset': viewUpdOffset
     }
   }
-  if (!this.log.isActivated) {
+  if (!this.isLogActivated) {
     this.gossipMediator.viewUpdsLogCounter++
     msgToSend.header = 'viewUpdsLog'
     msgToSend.counter = this.gossipMediator.viewUpdsLogCounter

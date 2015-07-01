@@ -61,7 +61,7 @@ var configurationObj = {
       selectionPolicy: 'agr-biased', // random OR biased OR agr-biased
       // implementation of the cosine similarity
       // it is considered that: a.length = b.length
-      similarityFunction: function (a, b, log) {
+      similarityFunction: function (a, b) {
         var a1 = []
         var b1 = []
         var i

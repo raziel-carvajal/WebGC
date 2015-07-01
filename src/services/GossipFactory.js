@@ -74,7 +74,7 @@ GossipFactory.prototype.createProtocol = function (algoId, algOpts, logOpts) {
       feedbackPeriod: logOpts.feedbackPeriod,
       header: algOpts.class
     }
-    if (!this.inventory.hasOwnProperty(algoId)) {
+    if (!this.inventory[algoId]) {
       this.inventory[algoId] = this.createWebWorker(algOpts, opts, algoId)
     } else {
       throw new Error("The Object's identifier (" + algoId + ') already exists')
@@ -94,8 +94,9 @@ GossipFactory.prototype.createProtocol = function (algoId, algOpts, logOpts) {
 * @return Worker New WebWorker*/
 GossipFactory.prototype.createWebWorker = function (algOpts, logOpts, algoId) {
   var statements = "var debug = require('debug')('" + algoId + "')\n"
+  statements += 'var isLogActivated = ' + logOpts.activated
   statements += "var GossipUtil = require('GossipUtil')\n"
-  statements += 'var gossipUtil = new GossipUtil(log)\n'
+  statements += 'var gossipUtil = new GossipUtil(debug)\n'
   statements += "var GossipProtocol = require('GossipProtocol')\n"
   var keysWithFunc = this.searchFunctions(algOpts)
   var i
@@ -110,7 +111,7 @@ GossipFactory.prototype.createWebWorker = function (algOpts, logOpts, algoId) {
   for (i = 0; i < keysWithFunc.length; i++) {
     statements += "algOpts['" + keysWithFunc[i] + "'] = eval(" + algOpts[ keysWithFunc[i]] + ')\n'
   }
-  statements += 'var algo = new ' + algOpts.class + '(algOpts, log, gossipUtil)\n'
+  statements += 'var algo = new ' + algOpts.class + '(algOpts, debug, gossipUtil, isLogActivated)\n'
   statements += "var GossipMediator = require('GossipMediator')\n"
   // "this" refers the web-worker
   statements += 'var m = new GossipMediator(algo, this)\n'
