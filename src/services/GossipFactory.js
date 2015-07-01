@@ -1,6 +1,7 @@
 /**
 * @module src/services*/
 module.exports = GossipFactory
+var debug = require('debug')('gossip_factory')
 var Worker = require('webworker-threads').Worker
 var fs = require('fs') || require('browserify-fs')
 
@@ -16,9 +17,8 @@ var fs = require('fs') || require('browserify-fs')
 * @param opts Object with one [logger]{@link module:src/utils#LoggerForWebWorker} and with one reference
 * to a [GossipUtil]{@link module:src/utils#GossipUtil} object.
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function GossipFactory (opts) {
-  this.log = opts.log
-  this.gossipUtil = opts.gossipUtil
+function GossipFactory (gossipUtil) {
+  this.gossipUtil = gossipUtil
   this.inventory = {}
 }
 /**
@@ -55,7 +55,7 @@ GossipFactory.prototype.checkProperties = function (opts) {
 * in the local attribute "inventory" identified by a unique ID.
 * @param algoId Unique identifier of one gossip protocol
 * @param algOpts Object with the attributes of one gossip protocol*/
-GossipFactory.prototype.createProtocol = function (algoId, algOpts) {
+GossipFactory.prototype.createProtocol = function (algoId, algOpts, logOpts) {
   try {
     if (typeof algOpts.class !== 'string') {
       throw new Error('The class of the algorithm must be a string')
@@ -67,22 +67,20 @@ GossipFactory.prototype.createProtocol = function (algoId, algOpts) {
     // if users missed options in the configuration file, standards options are used instead
     this.gossipUtil.extendProperties(algOpts, algoName.defaultOpts)
     // additional options are given for logging proposes
-    this.gossipUtil.extendProperties(algOpts, { 'algoId': algoId, peerId: this.peerId })
+    this.gossipUtil.extendProperties(algOpts, {'algoId': algoId})
     this.checkProperties(algOpts)
-    var logOpts = {
-      host: this.log.host,
-      port: this.log.port,
-      activated: this.log.isActivated,
-      feedbackPeriod: this.log.feedbackPeriod,
-      header: algOpts.class + '_' + this.peerId
+    var opts = {
+      activated: logOpts.isActivated,
+      feedbackPeriod: logOpts.feedbackPeriod,
+      header: algOpts.class
     }
     if (!this.inventory.hasOwnProperty(algoId)) {
-      this.inventory[algoId] = this.createWebWorker(algOpts, logOpts)
+      this.inventory[algoId] = this.createWebWorker(algOpts, opts, algoId)
     } else {
       throw new Error("The Object's identifier (" + algoId + ') already exists')
     }
   } catch (e) {
-    this.log.error("Gossip-based protocol wasn't created. " + e)
+    debug("Gossip-based protocol wasn't created. " + e)
   }
 }
 
@@ -94,10 +92,8 @@ GossipFactory.prototype.createProtocol = function (algoId, algOpts) {
 * @param algOpts Object with the attributes of one gossip protocol
 * @param logOpts Settings of a [logger]{@link module:src/utils#LoggerForWebWorker} object
 * @return Worker New WebWorker*/
-GossipFactory.prototype.createWebWorker = function (algOpts, logOpts) {
-  var statements = "var Logger = require('LoggerForWebWorker')\n"
-  statements += 'var logOpts = ' + JSON.stringify(logOpts) + '\n'
-  statements += 'var log = new Logger(logOpts)\n'
+GossipFactory.prototype.createWebWorker = function (algOpts, logOpts, algoId) {
+  var statements = "var debug = require('debug')('" + algoId + "')\n"
   statements += "var GossipUtil = require('GossipUtil')\n"
   statements += 'var gossipUtil = new GossipUtil(log)\n'
   statements += "var GossipProtocol = require('GossipProtocol')\n"
@@ -117,7 +113,7 @@ GossipFactory.prototype.createWebWorker = function (algOpts, logOpts) {
   statements += 'var algo = new ' + algOpts.class + '(algOpts, log, gossipUtil)\n'
   statements += "var GossipMediator = require('GossipMediator')\n"
   // "this" refers the web-worker
-  statements += 'var m = new GossipMediator(algo, log, this)\n'
+  statements += 'var m = new GossipMediator(algo, this)\n'
   statements += 'algo.setMediator(m)\n'
   statements += 'm.listen()'
   // TODO find another way to cope with js files
@@ -168,41 +164,41 @@ GossipFactory.prototype.searchFunctions = function (obj) {
 //         var algoAttStr = atts[ attsKeys[j] ]
 //         var container = algoAttStr.split('.')
 //         if( container.length === 2 ){
-//           this.log.info('c0: ' + container[0] + ' c1: ' + container[1])
+//           debug('c0: ' + container[0] + ' c1: ' + container[1])
 //           var objExt = this.inventory[ container[0] ]
 //           if( objExt !== 'undefined' ){
 //             if( objExt[ container[1] ] !== 'undefined'){
 //               this.inventory[ keys[i] ][ attsKeys[j] ] = objExt[ container[1] ]
-//               this.log.info('Algorithm [' + keys[i] + '] was augmented with the property [' +
+//               debug('Algorithm [' + keys[i] + '] was augmented with the property [' +
 //                 attsKeys[j] + ']')
 //             }else{
-//               this.log.error('There is no property [' + container[1] + '] for the algorithm [' +
+//               debug('There is no property [' + container[1] + '] for the algorithm [' +
 //                 container[0] + '], as a consecuence, the algorithm [' + keys[i]  + '] will ' +
 //                 'have fatal errors during its execution')
 //             }
 //           }else{
-//             this.log.error('The protocol with id [' + payload + '] was not loaded by the Factory')
+//             debug('The protocol with id [' + payload + '] was not loaded by the Factory')
 //           }
 //         }else if(container.length === 1){
-//           this.log.info('c0: ' + container[0])
+//           debug('c0: ' + container[0])
 //           var objSim = simFunCatalogue[ container[0] ]
 //           if(objSim !== 'undefined'){
 //             this.inventory[ keys[i] ][ attsKeys[j] ] = objSim
-//             this.log.info('Algorithm [' + keys[i] + '] was augmented with the simiilarity function ['+
+//             debug('Algorithm [' + keys[i] + '] was augmented with the simiilarity function ['+
 //               container[0] + ']')
 //           }else{
-//             this.log.error('There is not property [' + container[0] + '] at the catalogue of '+
+//             debug('There is not property [' + container[0] + '] at the catalogue of '+
 //               'similarity functions. The algorithm with ID [' + keys[i] + '] has not assigned '+
 //               'any similarity function')
 //           }
 //         }else{
-//           this.log.error('The value [' + algoAttStr + '] for the attribute [' + attsKeys[j] +
+//           debug('The value [' + algoAttStr + '] for the attribute [' + attsKeys[j] +
 //             '] has not the right format (separation by a period). As a consecuence, the algorithm ' +
 //             '[' + keys[i] + '] will have fatal errors during its execution.')
 //         }
 //       }
 //     }else{
-//       this.log.info('The algorithm [' + keys[i] + '] has not dependencies ' +
+//       debug('The algorithm [' + keys[i] + '] has not dependencies ' +
 //         'with others algorithms.')
 //     }
 //   }

@@ -1,14 +1,14 @@
 /**
 * @module src/controllers*/
 module.exports = Coordinator
-var inherits = require('inherits')
+var debug = require('debug')('coordinator')
+var hat = require('hat')
 var GossipUtil = require('../utils/GossipUtil')
 var GossipFactory = require('../services/GossipFactory')
 var Logger = require('../utils/LoggerForWebWorker')
 var LookupService = require('../services/LookupService')
 var Bootstrap = require('../services/Bootstrap')
 var Peer = require('simple-peer')
-inherits(Coordinator, Peer)
 
 /**
 * @class Coordinator
@@ -37,18 +37,18 @@ inherits(Coordinator, Peer)
 * @param peerId Unique identifier of the peer, if this parameter is not specified one
 * random peerId will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
 * @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
-function Coordinator (opts, profile, peerId) {
-  if (!(this instanceof Coordinator)) { return new Coordinator(opts, profile, peerId) } 
-  if (!this.checkConfFile(opts)) { return }
+function Coordinator (gossConfObj, profile, peerTag) {
+  if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, profile, peerTag)
+  if (!this.checkConfFile(opts)) return
   this.profile = profile
-  this.peerId = peerId
-  this.log = new Logger(opts.logOpts)
-  this.log.setLocal(true)
-  this.gossipUtil = new GossipUtil(this.log)
-  this.factory = new GossipFactory({ 'log': this.log, 'gossipUtil': this.gossipUtil })
+  this.peerTag = peerTag
+  this.peerId = hat(160)
+  this.gossipUtil = new GossipUtil()
+  this.factory = new GossipFactory(this.gossipUtil)
   this.peerJsOpts = opts.peerJsOpts
   this.gossipAlgos = opts.gossipAlgos
-  if (!this.log.isActivated) {
+  this.logOpts = opts.logOpts
+  if (!this.logOpts.isActivated) {
     this.actCycHistory = {}
     this.vieUpdHistory = {}
   }
@@ -135,7 +135,7 @@ Coordinator.prototype.createAlgorithms = function () {
   for (var i = 0; i < algosNames.length; i++) {
     algOpts = this.gossipAlgos[ algosNames[i] ]
     algOpts.data = this.profile
-    this.factory.createProtocol(algosNames[i], algOpts)
+    this.factory.createProtocol(algosNames[i], algOpts, this.logOpts)
     worker = this.factory.inventory[ algosNames[i] ]
     if (worker !== 'undefined') {
       this.setWorkerEvents(worker)
@@ -158,7 +158,7 @@ Coordinator.prototype.createAlgorithms = function () {
 * by this method
 * @param confObj Configuration object*/
 Coordinator.prototype.checkConfFile = function (confObj) {
-  console.info('Cecking configuration file...')
+  debug('Cecking configuration file...')
   try {
     var opts = confObj.peerJsOpts
     if (!opts.hasOwnProperty('host') || !opts.hasOwnProperty('port')) {

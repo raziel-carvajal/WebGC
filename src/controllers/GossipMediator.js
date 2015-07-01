@@ -1,6 +1,7 @@
 /**
 * @module src/controllers*/
 module.exports = GossipMediator
+var debug = require('debug')('gossip_mediator')
 
 /**
 * @class GossipMediator
@@ -23,15 +24,12 @@ module.exports = GossipMediator
 * monitor the actions in the web worker
 * @param worker Reference to the actual worker thread
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function GossipMediator (algo, log, worker) {
+function GossipMediator (algo, worker) {
   this.algo = algo
-  this.log = log
   this.worker = worker
   this.dependencies = {}
-  if (!this.log.isActivated) {
-    this.viewUpdsLogCounter = 0
-    this.activCycLogCounter = 0
-  }
+  this.viewUpdsLogCounter = 0
+  this.activCycLogCounter = 0
 }
 
 /**
@@ -119,11 +117,11 @@ GossipMediator.prototype.applyDependency = function (msg) {
         msg.result = obj
         msg.callback(msg)
       } else {
-        this.log.error('dependency obj is not in worker scope')
+        debug('dependency obj is not in worker scope')
       }
     }
   } else {
-    this.log.error('dependency: ' + msg.depId + ' is not recognized')
+    debug('dependency: ' + msg.depId + ' is not recognized')
   }
 }
 
