@@ -25,6 +25,7 @@
     "webworker-threads": "~0.5.6",
     "webworkify": "~1.0.2",
     "browserify-fs": "~1.0.0",
-    "xhr2": "~0.1.2"
+    "xhr2": "~0.1.2",
+    "hat": "0.0.3"
   }
 }
