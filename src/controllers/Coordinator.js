@@ -9,7 +9,6 @@ var Logger = require('../utils/LoggerForWebWorker')
 var LookupService = require('../services/LookupService')
 var Bootstrap = require('../services/Bootstrap')
 var Peer = require('simple-peer')
-
 /**
 * @class Coordinator
 * @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
@@ -37,44 +36,26 @@ var Peer = require('simple-peer')
 * @param peerId Unique identifier of the peer, if this parameter is not specified one
 * random peerId will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
 * @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
-function Coordinator (gossConfObj, profile, peerTag) {
+function Coordinator (gossConfObj, profile, peerId) {
   if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, profile, peerTag)
   if (!this.checkConfFile(opts)) return
   this.profile = profile
-  this.peerTag = peerTag
-  this.peerId = hat(160)
-  this.gossipUtil = new GossipUtil(debug)
-  this.factory = new GossipFactory(this.gossipUtil)
-  this.peerJsOpts = opts.peerJsOpts
+  this.peerId = peerId || hat()
+  this._signalingService = opts.signalingService
   this.gossipAlgos = opts.gossipAlgos
-  this.logOpts = opts.logOpts
-  if (!this.logOpts.isActivated) {
+  this.statsOpts = opts.statsOpts
+  if (this.statsOpts.activated) {
     this.actCycHistory = {}
     this.vieUpdHistory = {}
   }
-  this.lookupMulticast = opts.lookupMulticast
-  this.lookupMsgSTL = opts.lookupMsgSTL
   this.usingSs = opts.usingSs
-  this.bootstrapTimeout = opts.bootstrapTimeout
-  var self = this
-  this.sendTo = function (msg) {
-    if (self.usingSs) {
-      self.sendViaSigServer(msg)
-    } else {
-      if (msg.service !== 'VOID') {
-        self.sendViaLookupService(msg)
-      } else {
-        self.sendViaSigServer(msg)
-      }
-    }
-  }
-  this.inDataFunc = function (msg) { self.handleIncomingData(msg) }
-  this.inHandleCon = function (c) { self.handleConnection(c) }
+  this.gossipUtil = new GossipUtil(debug)
+  this.factory = new GossipFactory(this.gossipUtil)
+  this.createAlgorithms() 
 }
-
 /**
 * @memberof Coordinator
-* @method listen
+* @method start
 * @description Basically, this method instantiates: i) the [Peer]{@link http://peerjs.com/docs/#api}
 * object, ii) the LookupService (if it is
 * specified in the configuration object) and iii) every implementation of the gossip algorithms. In point
@@ -82,47 +63,21 @@ function Coordinator (gossConfObj, profile, peerTag) {
 * per algorithm with an instance of a [GossipMediator]{@link module:src/controllers#GossipMediator} too.
 * Additionally, events of [Peer]{@link http://peerjs.com/docs/#api} are set to receive messages of
 * external peers.*/
-Coordinator.prototype.listen = function () {
-  this.isIdRandom = false
-  if (typeof this.peerId !== 'undefined') {
-    // TODO how to perform this call in simple-peer ?
-    // Peer.call(this, this.peerId, this.peerJsOpts)
-    this.log.header = 'Coordinator_' + this.peerId
-    this.factory.peerId = this.peerId
-  } else {
-    // TODO how to perform this call in simple-peer ?
-    // Peer.call(this, this.peerJsOpts)
-    this.isIdRandom = true
-  }
-  if (!this.usingSs) {
-    this.isFirstConDone = false
-    this.lookupService = new LookupService(this.log, this.connections,
-      this.inHandleCon, this.id, this.peerJsOpts, this.lookupMulticast,
-      this.lookupMsgSTL, this.inDataFunc)
-  }
-  var self = this
-  /**
-  * @event open
-  * @description When the peer is ready to communicate this event is fired.*/
-  this.on('open', function (id) {
-    self.bootService = new Bootstrap(self)
-    if (self.isIdRandom) {
-      self.peerId = id
-      self.log.header = 'Coordinator_' + id
-      self.factory.peerId = id
-    }
-    self.log.info('Peer is ready to listen external messages')
-    self.log.info('Algorithms initialization')
-    self.createAlgorithms()
-    self.log.info('Doing bootstrap')
-    self.bootService.bootstrap()
-  })
+Coordinator.prototype.bootstrap = function () {
+  this.bootService = new Bootstrap(this.peerId, this._signalingService.host, this._signalingService.port)
+  this.bootstrap.on('boot', function (bootstrapPeer) {})
+  this.bootstrap.on('abort', function () {})
+  // if (!this.usingSs) {
+  //   this.isFirstConDone = false
+  //   this.lookupService = new LookupService(this.log, this.connections,
+  //     this.inHandleCon, this.id, this.peerJsOpts, this.lookupMulticast,
+  //     this.lookupMsgSTL, this.inDataFunc)
+  // }
   /**
   * @event connection
   * @description This event is fired when an external message is received.*/
-  this.on('connection', function (c) { self.handleConnection(c) })
+  // this.on('connection', function (c) { self.handleConnection(c) })
 }
-
 /**
 * @memberof Coordinator
 * @method createAlgorithms
@@ -149,7 +104,6 @@ Coordinator.prototype.createAlgorithms = function () {
   }
   this.workers = this.factory.inventory
 }
-
 /**
 * @memberof Coordinator
 * @method checkConfFile
@@ -177,7 +131,6 @@ Coordinator.prototype.checkConfFile = function (confObj) {
   }
   return true
 }
-
 /**
 * @memberof Coordinator
 * @method setWorkerEvents
@@ -247,14 +200,12 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
     self.log.error('In Worker: ' + e.message + ', lineno: ' + e.lineno)
   }, false)
 }
-
 /**
 * @memberof Coordinator
 * @method getViewUpdHistory
 * @description Get statistics about to which extend the view of algorithms is updated
 * @return Object Keys in this object correspond to the number of each gossip cycle*/
 Coordinator.prototype.getViewUpdHistory = function () { return this.vieUpdHistory }
-
 /**
 * @memberof Coordinator
 * @method getActiCycHistory
@@ -262,7 +213,6 @@ Coordinator.prototype.getViewUpdHistory = function () { return this.vieUpdHistor
 * each algorithm
 * @return Object Keys in this object correspond to the number each gossip cycle*/
 Coordinator.prototype.getActiCycHistory = function () { return this.actCycHistory }
-
 /**
 * @memberof Coordinator
 * @method emptyHistoryOfLogs
@@ -280,7 +230,6 @@ Coordinator.prototype.emptyHistoryOfLogs = function () {
     this.actCycHistory[ keys[i] ] = {}
   }
 }
-
 /**
 * @memberof Coordinator
 * @method sendViaSigServer
@@ -308,7 +257,6 @@ Coordinator.prototype.sendViaSigServer = function (msg) {
   })
   return connection
 }
-
 /**
 * @memberof Coordinator
 * @method sendViaLookupService
@@ -360,7 +308,6 @@ Coordinator.prototype.sendViaLookupService = function (msg) {
     this.lookupService.apply(msg)
   }
 }
-
 /**
 * @memberof Coordinator
 * @method handleConnection
@@ -392,7 +339,6 @@ Coordinator.prototype.handleConnection = function (connection) {
     })
   }
 }
-
 /**
 * @memberof Coordinator
 * @method handleIncomingData
@@ -424,7 +370,6 @@ Coordinator.prototype.handleIncomingData = function (data) {
       break
   }
 }
-
 /**
 * @memberof Coordinator
 * @method setApplicationLevelFunction

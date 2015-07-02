@@ -2,8 +2,11 @@
 * @module src/services*/
 module.exports = GossipFactory
 var debug = require('debug')('gossip_factory')
+// XXX exports.Worker could be better ?
 var Worker = require('webworker-threads').Worker
-var fs = require('fs') || require('browserify-fs')
+// XXX probably browserify-fs isn't needed
+// var fs = require('fs') || require('browserify-fs')
+var fs = require('fs')
 
 /**
 * @class GossipFactory

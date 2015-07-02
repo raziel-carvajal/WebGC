@@ -1,6 +1,6 @@
 module.exports = PeerJSProtocol
 
-var debug = require('debug')
+var debug = require('debug')('peerjs-protocol')
 var inherits = require('inherits')
 var EventEmitter = require('events').EventEmitter
 
@@ -24,17 +24,30 @@ PeerJSProtocol.prototype._handleMessage = function (msg) {
   switch (type) {
     case 'OPEN':
       this._open = true
+      debug('Connection with signaling server is done')
       this.emit('open')
       break
     case 'ERROR':
+      debug('Error msg from server: ' + payload.msg)
       break
     case 'ID_TAKEN':
+      debug('Chosing another PeerID')
+      this.emit('idTaken')
       break
     case 'INVALID_KEY':
+      debug("Key for WebGC isn't valid, aborting")
+      this.emit('abort')
       break
     case 'LEAVE':
+      // TODO check if this message could be useful with the use of simple-peer.
+      // Normally, this LEAVE announcement must be performed in a DataChannel
+      // between two peers
+      debug('PeerJS.LEAVE msg is received, why?')
       break
     case 'EXPIRE':
+      // PeerJS: The offer sent to a peer has expired without response.
+      debug('Probably peer to bootstrap is down, getting another one')
+      this.emit('getFirstPeer')
       break
     case 'OFFER':
       break
@@ -47,3 +60,5 @@ PeerJSProtocol.prototype._handleMessage = function (msg) {
       break
   }
 }
+
+PeerJSProtocol.prototype.destroy = function () { this.socket.close() }

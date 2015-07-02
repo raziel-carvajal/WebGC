@@ -35,14 +35,9 @@
 module.exports = configurationObj
 
 var configurationObj = {
-  peerJsOpts: {
+  signalingService: {
     host: '131.254.213.43',
-    port: 9990,// port of the PeerServer
-    debug: 3,// Level of the local logging (logs that appears in the console part of each browser)
-    logFunction: function () {
-      var msg = Array.prototype.slice.call(arguments).join(' ')
-      console.log(msg)
-    }
+    port: 9990
   },
   gossipAlgos: {
     cyclon1: {
@@ -95,14 +90,9 @@ var configurationObj = {
       ]
     }
   },
-  logOpts: {
-    host: '131.254.213.43',
-    port: 9991,
+  statsOpts: {
     activated: false,
     feedbackPeriod: 20000
   },
-  usingSs: true,
-  lookupMulticast: 2,
-  lookupMsgSTL: 10,
-  bootstrapTimeout: 5000
+  usingSs: true
 }

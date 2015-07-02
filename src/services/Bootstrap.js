@@ -2,9 +2,13 @@
 * @module src/services*/
 module.exports = Bootstrap
 var debug = require('debug')('bootstrap')
+var inherits = require('inherits')
+var its = require('its')
+var EventEmitter = require('events').EventEmitter
 var PeerJSProtocol = require('../utils/PeerjsProtocol')
-
 if (typeof window === 'undefined') var XMLHttpRequest = require('xhr2')
+var TIMES_TO_RECONECT = 3
+inherits(Bootstrap, EventEmitter)
 /**
 * @class Bootstrap
 * @description For being able to join an overlay peers must receive at least one reference of
@@ -18,130 +22,73 @@ if (typeof window === 'undefined') var XMLHttpRequest = require('xhr2')
 * of [GossipProtocol]{@link module:src/superObjs#GossipProtocol}).
 * @param coordi Reference to the [Coordinator]{@link module:src/controllers#Coordinator}
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function Bootstrap (peerId, host, port, coordi) {
-  if (!(this instanceof Bootstrap)) return new Bootstrap(peerId, host, port, coordi)
-  this._coordi = coordi
+function Bootstrap (peerId, host, port) {
+  if (!(this instanceof Bootstrap)) return new Bootstrap(peerId, host, port)
+  EventEmitter.call(this)
+  this._serverOpts = {'host': host, 'port': port}
+  this._reconnectionTime = 3000
+  this._tries = 0
   this._url = 'http://' + host + ':' + port + '/'
-  this.signaling_service = new PeerJSProtocol(peerId, host, port)
+  this._signalingService = new PeerJSProtocol(peerId, host, port)
+  this._initEvents()
+}
+
+Bootstrap.prototype.resetSignalingService = function (peerId) {
+  this._signalingService.destroy()
+  this._signalingService = new PeerJSProtocol(peerId, this._serverOpts.host, this._serverOpts.port)
+  this._initEvents()
+}
+
+Bootstrap.prototype._initEvents = function () {
   var self = this
-  this.signaling_service.on('open', function () {
-    self._bootstrap()
+  this._signalingService.on('open', function () {
+    debug('Connection success with signaling server, getting first peer to bootstrap')
+    self._getPeerToBootstrap() 
+  })
+  this._signalingService.on('idTaken', function () {
+    // TODO Coordinator must implement this event if WebGC is open to the public where
+    // the peerID must be generated in a random way (via the 'hat' library for instance)
+    // aviding that two peers have the same identifier
+    // self.emit('resetPeerId')
+  })
+  this._signalingService.on('abort', function () { self.emit('abort') })
+  this._signalingService.on('getFirstPeer', function () {
+    // TODO Again these two method must be implemented if WebGC is open to the public
+    // self.emit('removeAllConnections')
+    // self._getPeerToBootstrap()
   })
 }
-
-/**
-* @memberof Bootstrap
-* @method bootstrap
-* @description This method performs the hole bootstrap procedure (described on the
-* top of this file).*/
-Bootstrap.prototype._bootstrap = function () {
-  this.coordi.log.info('Posting profile')
-  this.postProfile()
-  this.coordi.log.info('Wating: ' + this.coordi.bootstrapTimeout + ' ms for peers ' +
-    'being registered in the server')
-  var self = this
-  window.setTimeout(function () {
-    self.coordi.log.info('Getting first peer')
-    self.getNeighbour()
-    self.coordi.log.info('Getting first view now')
-    self.getFirstView()
-  }, this.coordi.bootstrapTimeout)
-}
-
 /**
 * @memberof Bootstrap
 * @method postProfile
 * @description Post in the [brokering server]{@link https://github.com/peers/peerjs-server} the
 * peer's profile, which is the payload to exchange on each gossip message.*/
-Bootstrap.prototype.postProfile = function () {
+Bootstrap.prototype._getPeerToBootstrap = function () {
   var xhr = new XMLHttpRequest()
   var self = this
-  xhr.open('POST', this.url + 'profile', true)
-  xhr.setRequestHeader('Content-type', 'text/plain')
+  xhr.open('GET', this.url + 'peerToBoot', true)
   xhr.onreadystatechange = function () {
-    if (xhr.readyState !== 4) { return }
+    if (xhr.readyState !== 4) return
     if (xhr.status !== 200) {
       xhr.onerror()
       return
     }
-    var res = JSON.parse(xhr.responseText)
-    if (res.success) {
-      self.coordi.log.info('profile was posted properly')
-    } else {
-      self.coordi.log.error('profile was not posted')
-    }
+    var peerToBootstrap = xhr.responseText
+    its.string(peerToBootstrap)
+    if( peerToBootstrap !== 'undefined') self.emit('boot', peerToBootstrap)
+    // when the peer to bootstrap isn't defined, it means that the local
+    // peer is the first peer to contact the server which means that eventually
+    // the local peer will be contacted by another peer
   }
   xhr.onerror = function () {
-    self.coordi.log.error('while posting profile on server')
-  }
-  var msg = {id: this.coordi.id, profile: this.coordi.profile}
-  xhr.send(JSON.stringify(msg))
-}
-
-/**
-* @memberof Bootstrap
-* @method getFirstView
-* @description Gets from the [brokering server]{@link https://github.com/peers/peerjs-server} the
-* first list of peers to start exchanging messages.*/
-Bootstrap.prototype.getFirstView = function () {
-  var http = new XMLHttpRequest()
-  http.open('get', this.url + this.coordi.options.key +
-    '/' + this.coordi.id + '/view', true)
-  var self = this
-  http.onerror = function (e) {
-    self.coordi.log.error('Error retrieving the view of IDs')
-    self.coordi._abort('server-error', 'Could not get the random view')
-  }
-  http.onreadystatechange = function () {
-    if (http.readyState !== 4) { return }
-    if (http.status !== 200) {
-      http.onerror()
-      return
-    }
-    // self.coordi.log.info('First view: ' + http.responseText)
-    var data = JSON.parse(http.responseText)
-    if (data.view.length !== 0) {
-      var algoIds = Object.keys(self.coordi.workers)
-      for (var i = 0; i < algoIds.length; i++) {
-        self.coordi.workers[ algoIds[i] ].postMessage({ header: 'firstView', view: data.view })
-      }
+    self._tries++
+    debug('Error while getting first peer to bootstrap, scheduling another request')
+    if (self._tries <= TIMES_TO_RECONECT) {
+      setTimeout(function () {self._getPeerToBootstrap}, 3000)
     } else {
-      self.coordi.log.error('First view is empty, scheduling req again')
-      window.setTimeout(function () { self.getFirstView() }, 5000)
+      debug('Too many erros during interaction with server, aborting')
+      self.emit('abort')
     }
   }
-  http.send(null)
-}
-
-/**
-* @memberof Bootstrap
-* @method getNeighbour
-* @description Gets one first peer reference to perform the first connection with it.*/
-Bootstrap.prototype.getNeighbour = function () {
-  var http = new XMLHttpRequest()
-  http.open('get', this.url + this.coordi.id + '/neighbour', true)
-  var self = this
-  http.onerror = function (e) {
-    self.coordi.log.error('Error while retrieving first neighbour')
-    self.coordi._abort('server-error', 'No peer for doing first connection')
-  }
-  http.onreadystatechange = function () {
-    if (http.readyState !== 4) { return }
-    if (http.status !== 200) {
-      http.onerror()
-      return
-    }
-    self.coordi.log.info('First peer: ' + http.responseText)
-    var data = JSON.parse(http.responseText)
-    if (data) {
-      self.coordi.log.info('Doing first connection with: ' + data.neighbour)
-      if (data.neighbour !== 'void') {
-        var msg = { service: 'VOID', emitter: self.coordi.id, receiver: data.neighbour }
-        self.coordi.sendTo(msg)
-      }// Peer with "void" as neighbour will be contacted eventually by another peer
-    } else {
-      self.coordi.log.error('No peer for doing first connection')
-    }
-  }
-  http.send(null)
+  xhr.send(null)
 }
