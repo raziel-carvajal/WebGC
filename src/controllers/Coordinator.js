@@ -5,9 +5,8 @@ var debug = require('debug')('coordinator')
 var hat = require('hat')
 var GossipUtil = require('../utils/GossipUtil')
 var GossipFactory = require('../services/GossipFactory')
-var Logger = require('../utils/LoggerForWebWorker')
-var LookupService = require('../services/LookupService')
 var Bootstrap = require('../services/Bootstrap')
+var GossipConnectionManager = require('../controllers/GossipConnectionManager')
 var Peer = require('simple-peer')
 /**
 * @class Coordinator
@@ -51,7 +50,10 @@ function Coordinator (gossConfObj, profile, peerId) {
   this.usingSs = opts.usingSs
   this.gossipUtil = new GossipUtil(debug)
   this.factory = new GossipFactory(this.gossipUtil)
-  this.createAlgorithms() 
+  this.createAlgorithms()
+  this._connectionManager = new GossipConnectionManager(Object.keys(this.gossipAlgos))
+  this._connectionManager.on('connect', function (peerId, viewToUpd) {})
+  this._connectionManager.on('destroy', function (peerToDel, peerIdToDel, viewToUpd) {})
 }
 /**
 * @memberof Coordinator
@@ -135,9 +137,8 @@ Coordinator.prototype.checkConfFile = function (confObj) {
 * @memberof Coordinator
 * @method setWorkerEvents
 * @description This method sets the event "message" of a web worker for handling any message exchange
-* in WebGC. These are the possible message exchanges: i) from the
-* Coordinator to an external peer, ii) from one worker to another one via the Coordinator and iii) from
-* the Coordinator to a web application
+* in WebGC. These are the possible message exchanges: i) from the Coordinator to an external peer, ii)
+* from one worker to another one via the Coordinator and iii) from the Coordinator to a web application
 * @param worker Reference to a [web worker]{@link http://www.w3schools.com/html/html5_webworkers.asp}*/
 Coordinator.prototype.setWorkerEvents = function (worker) {
   var self = this

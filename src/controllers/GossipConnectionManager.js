@@ -1,19 +1,16 @@
 module.exports = GossipConnectionManager
 var debug = require('debug')('gossipCoManager')
 var EventEmitter = require('events').EventEmitter
-
 function GossipConnectionManager (gossipAlgos) {
   if (!(this typeof GossipConnectionManager)) return new GossipConnectionManager(gossipAlgos)
   EventEmitter.call(this)
   this._cons = {}
   for (var i = 0; i < gossipAlgos.length; i++)) this._initView(gossipAlgos[i])
 }
-
 GossipConnectionManager.prototype._initView = function (algoId) {
   if (this._cons[algoId]) return
   this._cons[algoId] = {}
 }
-
 GossipConnectionManager.prototype.updView = function (algoId, newView) {
   if (!this._cons[algoId]) {
     debug("view couldn't be updated because " + algoId + " isn't initialized")
@@ -35,4 +32,12 @@ GossipConnectionManager.prototype.updView = function (algoId, newView) {
     }
   }
   for (i = 0; i < newView.length; i++) this.emit('connect', newView[i], oldView)
+}
+GossipConnectionManager.prototype.addConnection = function (peer, peerId, algoId) {
+  if (!this._cons[algoId][peerId]) {
+    this._cons[algoId][peerId] = peer
+    debug('Peer: ' + peerId + ' was added in connections list of: ' algoId)
+    return
+  }
+  debug('Peer: ' + peerId + ' already has one connection')
 }
