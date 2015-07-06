@@ -43,7 +43,7 @@ Bootstrap.prototype._initEvents = function () {
   var self = this
   this._signalingService.on('open', function () {
     debug('Connection success with signaling server, getting first peer to bootstrap')
-    self._getPeerToBootstrap() 
+    self._getPeerToBootstrap()
   })
   this._signalingService.on('idTaken', function () {
     // TODO Coordinator must implement this event if WebGC is open to the public where
@@ -75,10 +75,10 @@ Bootstrap.prototype._getPeerToBootstrap = function () {
     }
     var peerToBootstrap = xhr.responseText
     its.string(peerToBootstrap)
-    if( peerToBootstrap !== 'undefined') self.emit('boot', peerToBootstrap)
     // when the peer to bootstrap isn't defined, it means that the local
     // peer is the first peer to contact the server which means that eventually
     // the local peer will be contacted by another peer
+    if (peerToBootstrap !== 'undefined') self.emit('boot', peerToBootstrap)
   }
   xhr.onerror = function () {
     self._tries++

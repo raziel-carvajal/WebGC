@@ -32,8 +32,6 @@
 *   the overlay diameter
 * vii) bootstrapTimeout: number of milliseconds to wait for each peer to bootstrap
 * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>*/
-module.exports = configurationObj
-
 var configurationObj = {
   signalingService: {
     host: '131.254.213.43',
@@ -94,5 +92,8 @@ var configurationObj = {
     activated: false,
     feedbackPeriod: 20000
   },
-  usingSs: true
+  usingSs: true,
+  workerPath: '/home/raziel/Documents/repositories/brow2brow/peerjs-gossip'
 }
+
+module.exports = configurationObj

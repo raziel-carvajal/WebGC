@@ -1,13 +1,12 @@
 /**
 * @module src/services*/
-module.exports = GossipFactory
 var debug = require('debug')('gossip_factory')
+var its = require('its')
 // XXX exports.Worker could be better ?
 var Worker = require('webworker-threads').Worker
 // XXX probably browserify-fs isn't needed
 // var fs = require('fs') || require('browserify-fs')
 var fs = require('fs')
-
 /**
 * @class GossipFactory
 * @description Implementation of the
@@ -20,7 +19,7 @@ var fs = require('fs')
 * @param opts Object with one [logger]{@link module:src/utils#LoggerForWebWorker} and with one reference
 * to a [GossipUtil]{@link module:src/utils#GossipUtil} object.
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function GossipFactory (gossipUtil) {
+function GossipFactory (gossipUtil, ) {
   this.gossipUtil = gossipUtil
   this.inventory = {}
 }
@@ -32,24 +31,15 @@ function GossipFactory (gossipUtil) {
 * the minimal value.
 * @param opts Object with the attributes of one gossip protocol*/
 GossipFactory.prototype.checkProperties = function (opts) {
-  if (typeof opts.data === 'undefined') {
-    throw new Error('The local data could be defined')
-  }
-  if (typeof opts.viewSize !== 'number' || opts.viewSize < 1) {
-    throw new Error("Protocol's size view is not valid")
-  }
-  if (typeof opts.fanout !== 'number' || opts.fanout < 1) {
-    throw new Error("Protocol's message size is not valid")
-  }
-  if (typeof opts.periodTimeOut !== 'number' || opts.periodTimeOut < 2000) {
-    throw new Error("Protocol's periodicity is not valid")
-  }
-  if (typeof opts.propagationPolicy.push !== 'boolean') {
-    throw new Error('Propagation policy (push) is not boolean')
-  }
-  if (typeof opts.propagationPolicy.pull !== 'boolean') {
-    throw new Error('Propagation policy (pull) is not boolean')
-  }
+  its.defined(opts.data)
+  its.number(opts.viewSize)
+  its.range(opts.viewSize > 1)
+  its.number(opts.fanout)
+  its.range(opts.fanout > 1)
+  its.number(opts.periodTimeOut)
+  its.range(opts.periodTimeOut >= 2000)
+  its.boolean(opts.propagationPolicy.push)
+  its.boolean(opts.propagationPolicy.pull)
 }
 /**
 * @memberof GossipFactory
@@ -58,23 +48,18 @@ GossipFactory.prototype.checkProperties = function (opts) {
 * in the local attribute "inventory" identified by a unique ID.
 * @param algoId Unique identifier of one gossip protocol
 * @param algOpts Object with the attributes of one gossip protocol*/
-GossipFactory.prototype.createProtocol = function (algoId, algOpts, logOpts) {
+GossipFactory.prototype.createProtocol = function (algoId, algOpts, statsOpts) {
+  debug('Checking if gossip algorithms are available')
   try {
-    if (typeof algOpts.class !== 'string') {
-      throw new Error('The class of the algorithm must be a string')
-    }
-    var algoName = exports[algOpts.class]
-    if (algoName === 'undefined') {
-      throw new Error('Algorithm: ' + algOpts.class + ' does not exist in WebGC')
-    }
-    // if users missed options in the configuration file, standards options are used instead
-    this.gossipUtil.extendProperties(algOpts, algoName.defaultOpts)
+    its.string(algOpts.class)
+    var cls = require('../algorithms/' + algOpts.class)
+    this.gossipUtil.extendProperties(algOpts, cls.defaultOpts)
     // additional options are given for logging proposes
     this.gossipUtil.extendProperties(algOpts, {'algoId': algoId})
     this.checkProperties(algOpts)
     var opts = {
-      activated: logOpts.isActivated,
-      feedbackPeriod: logOpts.feedbackPeriod,
+      activated: statsOpts.activated,
+      feedbackPeriod: statsOpts.feedbackPeriod,
       header: algOpts.class
     }
     if (!this.inventory[algoId]) {
@@ -83,39 +68,38 @@ GossipFactory.prototype.createProtocol = function (algoId, algOpts, logOpts) {
       throw new Error("The Object's identifier (" + algoId + ') already exists')
     }
   } catch (e) {
-    debug("Gossip-based protocol wasn't created. " + e)
+    debug(e)
   }
 }
-
 /**
 * @memberof GossipFactory
 * @method createWebWorker
 * @description Creates one web worker with a group of objects required to perform the computation
 * of one gossip protocol.
 * @param algOpts Object with the attributes of one gossip protocol
-* @param logOpts Settings of a [logger]{@link module:src/utils#LoggerForWebWorker} object
+* @param statsOpts Settings of a [logger]{@link module:src/utils#LoggerForWebWorker} object
 * @return Worker New WebWorker*/
-GossipFactory.prototype.createWebWorker = function (algOpts, logOpts, algoId) {
+GossipFactory.prototype.createWebWorker = function (algOpts, statsOpts, algoId) {
   var statements = "var debug = require('debug')('" + algoId + "')\n"
-  statements += 'var isLogActivated = ' + logOpts.activated
-  statements += "var GossipUtil = require('GossipUtil')\n"
+  statements += 'var isLogActivated = ' + statsOpts.activated + "\n"
+  statements += "var GossipUtil = require('../utils/GossipUtil')\n"
   statements += 'var gossipUtil = new GossipUtil(debug)\n'
-  statements += "var GossipProtocol = require('GossipProtocol')\n"
+  statements += "var GossipProtocol = require('../superObjs/GossipProtocol')\n"
   var keysWithFunc = this.searchFunctions(algOpts)
   var i
   if (keysWithFunc.length > 0) {
-    statements += "var ViewSelector = require('ViewSelector')\n"
+    statements += "var ViewSelector = require('../controllers/ViewSelector')\n"
     for (i = 0; i < keysWithFunc.length; i++) {
       algOpts[ keysWithFunc[i] ] = String(algOpts[ keysWithFunc[i] ])
     }
   }
-  statements += 'var ' + algOpts.class + " = require('" + algOpts.class + "')\n"
+  statements += 'var ' + algOpts.class + " = require('../algorithms/" + algOpts.class + "')\n"
   statements += 'var algOpts = ' + JSON.stringify(algOpts) + '\n'
   for (i = 0; i < keysWithFunc.length; i++) {
     statements += "algOpts['" + keysWithFunc[i] + "'] = eval(" + algOpts[ keysWithFunc[i]] + ')\n'
   }
   statements += 'var algo = new ' + algOpts.class + '(algOpts, debug, gossipUtil, isLogActivated)\n'
-  statements += "var GossipMediator = require('GossipMediator')\n"
+  statements += "var GossipMediator = require('../controllers/GossipMediator')\n"
   // "this" refers the web-worker
   statements += 'var m = new GossipMediator(algo, this)\n'
   statements += 'algo.setMediator(m)\n'
@@ -125,6 +109,7 @@ GossipFactory.prototype.createWebWorker = function (algOpts, logOpts, algoId) {
   // buf.write(statements, 0, 'ascii')
   if (typeof window === 'undefined') {// In node.js
     fs.writeFile('worker.js', statements, function () {
+      debug(Worker)
       return new Worker('worker.js')
     })
   } else { // TODO check compatibility with browsers (it works in Chrome)
@@ -135,7 +120,6 @@ GossipFactory.prototype.createWebWorker = function (algOpts, logOpts, algoId) {
     return new Worker(blobUrl)
   }
 }
-
 /**
 * @memberof GossipFactory
 * @method searchFunctions
@@ -150,7 +134,6 @@ GossipFactory.prototype.searchFunctions = function (obj) {
   }
   return keysWithFunc
 }
-
 /**
 * @memberof GossipFactory
 * @method setDependencies
@@ -207,3 +190,4 @@ GossipFactory.prototype.searchFunctions = function (obj) {
 //     }
 //   }
 // }
+module.exports = GossipFactory

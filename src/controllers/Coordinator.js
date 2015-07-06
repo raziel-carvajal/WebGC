@@ -1,13 +1,12 @@
 /**
 * @module src/controllers*/
-module.exports = Coordinator
 var debug = require('debug')('coordinator')
+var its = require('its')
 var hat = require('hat')
 var GossipUtil = require('../utils/GossipUtil')
 var GossipFactory = require('../services/GossipFactory')
 var Bootstrap = require('../services/Bootstrap')
 var GossipConnectionManager = require('../controllers/GossipConnectionManager')
-var Peer = require('simple-peer')
 /**
 * @class Coordinator
 * @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
@@ -36,25 +35,34 @@ var Peer = require('simple-peer')
 * random peerId will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
 * @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
 function Coordinator (gossConfObj, profile, peerId) {
-  if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, profile, peerTag)
-  if (!this.checkConfFile(opts)) return
+  if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, profile, peerId)
+  if (!this.checkConfFile(gossConfObj)) return
+  its.defined(profile)
+  its.defined(gossConfObj.signalingService)
+  its.defined(gossConfObj.gossipAlgos)
+  its.defined(gossConfObj.statsOpts)
   this.profile = profile
   this.peerId = peerId || hat()
-  this._signalingService = opts.signalingService
-  this.gossipAlgos = opts.gossipAlgos
-  this.statsOpts = opts.statsOpts
+  this._signalingService = gossConfObj.signalingService
+  this.gossipAlgos = gossConfObj.gossipAlgos
+  this.statsOpts = gossConfObj.statsOpts
   if (this.statsOpts.activated) {
     this.actCycHistory = {}
     this.vieUpdHistory = {}
   }
-  this.usingSs = opts.usingSs
-  this.gossipUtil = new GossipUtil(debug)
-  this.factory = new GossipFactory(this.gossipUtil)
-  this.createAlgorithms()
-  this._connectionManager = new GossipConnectionManager(Object.keys(this.gossipAlgos))
-  this._connectionManager.on('connect', function (peerId, viewToUpd) {})
-  this._connectionManager.on('destroy', function (peerToDel, peerIdToDel, viewToUpd) {})
+  try {
+    this.usingSs = gossConfObj.usingSs
+    this.gossipUtil = new GossipUtil(debug)
+    this.factory = new GossipFactory(this.gossipUtil)
+    this.createAlgorithms()
+    this._connectionManager = new GossipConnectionManager(Object.keys(this.gossipAlgos))
+    this._connectionManager.on('connect', function (peerId, viewToUpd) {})
+    this._connectionManager.on('destroy', function (peerToDel, peerIdToDel, viewToUpd) {})
+  } catch (e) {
+    debug('During the instantiaton of gossip objects. ' + e)
+  }
 }
+
 /**
 * @memberof Coordinator
 * @method start
@@ -92,12 +100,13 @@ Coordinator.prototype.createAlgorithms = function () {
   for (var i = 0; i < algosNames.length; i++) {
     algOpts = this.gossipAlgos[ algosNames[i] ]
     algOpts.data = this.profile
-    this.factory.createProtocol(algosNames[i], algOpts, this.logOpts)
+    this.factory.createProtocol(algosNames[i], algOpts, this.statsOpts)
     worker = this.factory.inventory[ algosNames[i] ]
+    debug(worker)
     if (worker !== 'undefined') {
       this.setWorkerEvents(worker)
     } else {
-      this.log.error('worker: ' + algosNames[i] + ' is not defined')
+      debug('worker: ' + algosNames[i] + ' is not defined')
     }
     if (!this.log.isActivated) {
       this.actCycHistory[ algosNames[i] ] = {}
@@ -114,9 +123,9 @@ Coordinator.prototype.createAlgorithms = function () {
 * by this method
 * @param confObj Configuration object*/
 Coordinator.prototype.checkConfFile = function (confObj) {
-  debug('Cecking configuration file...')
+  debug('Cecking configuration file')
   try {
-    var opts = confObj.peerJsOpts
+    var opts = confObj.signalingService
     if (!opts.hasOwnProperty('host') || !opts.hasOwnProperty('port')) {
       throw new Error('Host and/or port of signaling server is absent')
     }
@@ -126,9 +135,9 @@ Coordinator.prototype.checkConfFile = function (confObj) {
         throw new Error('Class name of the protocol is absent')
       }
     }
-    console.info('configuration file is well formed')
+    debug('configuration file is well formed')
   } catch (e) {
-    console.error('Configuration file is malformed. ' + e.message)
+    debug('Configuration file is malformed. ' + e.message)
     return
   }
   return true
@@ -147,7 +156,7 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
     var worker
     switch (msg.header) {
       case 'outgoingMsg':
-        self.log.info('OutgoingMsg to reach: ' + msg.receiver + ' with algoId: ' + msg.algoId)
+        debug('OutgoingMsg to reach: ' + msg.receiver + ' with algoId: ' + msg.algoId)
         self.sendTo(msg)
         break
       case 'getDep':
@@ -155,7 +164,7 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
         if (worker !== 'undefined') {
           worker.postMessage(msg)
         } else {
-          self.log.error('there is not a worker for algorithm: ' + msg.depId)
+          debug('there is not a worker for algorithm: ' + msg.depId)
         }
         break
       case 'setDep':
@@ -164,14 +173,14 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
           msg.header = 'applyDep'
           worker.postMessage(msg)
         } else {
-          self.log.error('there is not a worker for algorithm: ' + msg.emitter)
+          debug('there is not a worker for algorithm: ' + msg.emitter)
         }
         break
       case 'drawGraph':
         if (typeof self.plotterObj !== 'undefined') {
           self.plotterObj.buildGraph(msg.algoId, msg.graph, msg.view)
         } else {
-          self.log.warn('graph obj is not defined, msg to graph was: ' + JSON.stringify(msg))
+          debug(msg)
         }
         break
       // Logging to which extend the view of each algorithm is updated and which
@@ -189,16 +198,16 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
         self.vieUpdHistory[msg.trace.algoId][msg.counter] = msg.trace
         break
       case 'logInConsole':
-        console.log('WebGClog &&' + msg.log + '&&')
+        debug('WebGClog &&' + msg.log + '&&')
         break
       default:
-        console.error('message: ' + msg.header + ' is not recoginized')
-        self.log.warn('message: ' + msg.header + ' is not recoginized')
+        debug('message: ' + msg.header + ' is not recoginized')
+        debug('message: ' + msg.header + ' is not recoginized')
         break
     }
   }, false)
   worker.addEventListener('error', function (e) {
-    self.log.error('In Worker: ' + e.message + ', lineno: ' + e.lineno)
+    debug('In Worker: ' + e.message + ', lineno: ' + e.lineno)
   }, false)
 }
 /**
@@ -245,7 +254,7 @@ Coordinator.prototype.sendViaSigServer = function (msg) {
   // Peer.connect
   var connection = this.connect(msg.receiver, {serialization: 'json'})
   connection.on('open', function () {
-    self.log.info('Connection open, sending msg: ' + msg.service +
+    debug('Connection open, sending msg: ' + msg.service +
       ' to: ' + msg.receiver)
     if (!self.usingSs) {
       self.isFirstConDone = true
@@ -254,7 +263,7 @@ Coordinator.prototype.sendViaSigServer = function (msg) {
     connection.on('data', function (data) { self.handleIncomingData(data) })
   })
   connection.on('error', function (e) {
-    self.log.error('Trying to connect with: ' + msg.receiver + ' ' + e)
+    debug('Trying to connect with: ' + msg.receiver + ' ' + e)
   })
   return connection
 }
@@ -267,44 +276,44 @@ Coordinator.prototype.sendViaSigServer = function (msg) {
 * connection is open, the message msg will be sent to the receiver.
 * @param msg Payload to send*/
 Coordinator.prototype.sendViaLookupService = function (msg) {
-  this.log.info('Trying to send msg: ' + msg.service + ' to: ' + msg.receiver +
+  debug('Trying to send msg: ' + msg.service + ' to: ' + msg.receiver +
     ' with existing connections')
   if (!this.isFirstConDone) {
-    this.log.info('Doing first connection via the signaling server')
+    debug('Doing first connection via the signaling server')
     this.sendViaSigServer(msg)
     return
   } else {
     var connections = this.connections[msg.receiver]
     var con
     if (connections) {
-      this.log.info('Peer.connections is not empty, searching at least one connection open')
+      debug('Peer.connections is not empty, searching at least one connection open')
       for (var i = 0; i < connections.length; i++) {
         con = connections[i]
         if (con) {
-          this.log.info('Connection with: ' + msg.receiver + ' at Peer was found')
+          debug('Connection with: ' + msg.receiver + ' at Peer was found')
           if (con.open) {
-            this.log.info('Sending message')
+            debug('Sending message')
             con.send(msg)
             return
           } else {
-            this.log.info('Connection in Peer is still not ready')
+            debug('Connection in Peer is still not ready')
           }
         }
       }
     }
-    this.log.info('Any connection available at Peer, checking LookupService')
+    debug('Any connection available at Peer, checking LookupService')
     con = this.lookupService.connections[msg.receiver]
     if (con) {
-      this.log.info('Connection with: ' + msg.receiver + ' at LookupService was found')
+      debug('Connection with: ' + msg.receiver + ' at LookupService was found')
       if (con.open) {
-        this.log.info('Sending message')
+        debug('Sending message')
         con.send(msg)
         return
       } else {
-        this.log.info('Connection in LookupService is still not ready')
+        debug('Connection in LookupService is still not ready')
       }
     } else {
-      this.log.info('Any connection available at Lookup, doing lookup service')
+      debug('Any connection available at Lookup, doing lookup service')
     }
     this.lookupService.apply(msg)
   }
@@ -331,11 +340,11 @@ Coordinator.prototype.handleConnection = function (connection) {
       this.isFirstConDone = true
     }
     connection.on('open', function () {
-      self.log.info('Bi-directional communication with: ' + connection.peer + ' is ready')
+      debug('Bi-directional communication with: ' + connection.peer + ' is ready')
       connection.on('data', function (data) { self.handleIncomingData(data) })
     })
     connection.on('error', function (err) {
-      self.log.error('In communication with: ' + connection.peer +
+      debug('In communication with: ' + connection.peer +
         ' (call handleConnection) ' + err)
     })
   }
@@ -349,7 +358,7 @@ Coordinator.prototype.handleConnection = function (connection) {
 * exchanged by each gossip protocol (normally, the view of each peer).
 * @param data Message exchange between two peers*/
 Coordinator.prototype.handleIncomingData = function (data) {
-  this.log.info('External message received, msg: ' + JSON.stringify(data))
+  debug(data)
   switch (data.service) {
     case 'LOOKUP':
       this.lookupService.dispatch(data)
@@ -364,10 +373,10 @@ Coordinator.prototype.handleIncomingData = function (data) {
       worker.postMessage(msg)
       break
     case 'VOID':
-      this.log.info('VOID was received from: ' + data.emitter)
+      debug('VOID was received from: ' + data.emitter)
       break
     default:
-      this.log.error('Msg: ' + JSON.stringify(data) + ' is not recognized')
+      debug(data + ' is not recognized')
       break
   }
 }
@@ -378,3 +387,5 @@ Coordinator.prototype.handleIncomingData = function (data) {
 * application layer.
 * @param fn Reference to an external function*/
 Coordinator.prototype.setApplicationLevelFunction = function (fn) { this.appFn = fn }
+
+module.exports = Coordinator
