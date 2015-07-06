@@ -93,7 +93,7 @@ var configurationObj = {
     feedbackPeriod: 20000
   },
   usingSs: true,
-  workerPath: '/home/raziel/Documents/repositories/brow2brow/peerjs-gossip'
+  workersPath: '/home/raziel/tmp/peerjs-gossip/examples/withNodejs/'
 }
 
 module.exports = configurationObj

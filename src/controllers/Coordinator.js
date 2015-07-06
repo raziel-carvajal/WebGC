@@ -98,21 +98,22 @@ Coordinator.prototype.createAlgorithms = function () {
   var algOpts
   var worker
   for (var i = 0; i < algosNames.length; i++) {
+    debug('Trying to initialize algo with ID: ' + algosNames[i])
     algOpts = this.gossipAlgos[ algosNames[i] ]
     algOpts.data = this.profile
     this.factory.createProtocol(algosNames[i], algOpts, this.statsOpts)
-    worker = this.factory.inventory[ algosNames[i] ]
-    debug(worker)
+    worker = this.factory.inventory[algosNames[i]]
     if (worker !== 'undefined') {
       this.setWorkerEvents(worker)
     } else {
       debug('worker: ' + algosNames[i] + ' is not defined')
     }
-    if (!this.log.isActivated) {
+    if (this.statsOpts.activated) {
       this.actCycHistory[ algosNames[i] ] = {}
       this.vieUpdHistory[ algosNames[i] ] = {}
     }
   }
+  debug('Initialization DONE')
   this.workers = this.factory.inventory
 }
 /**

@@ -19,7 +19,7 @@ var fs = require('fs')
 * @param opts Object with one [logger]{@link module:src/utils#LoggerForWebWorker} and with one reference
 * to a [GossipUtil]{@link module:src/utils#GossipUtil} object.
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function GossipFactory (gossipUtil, ) {
+function GossipFactory (gossipUtil) {
   this.gossipUtil = gossipUtil
   this.inventory = {}
 }
@@ -81,7 +81,7 @@ GossipFactory.prototype.createProtocol = function (algoId, algOpts, statsOpts) {
 * @return Worker New WebWorker*/
 GossipFactory.prototype.createWebWorker = function (algOpts, statsOpts, algoId) {
   var statements = "var debug = require('debug')('" + algoId + "')\n"
-  statements += 'var isLogActivated = ' + statsOpts.activated + "\n"
+  statements += 'var isLogActivated = ' + statsOpts.activated + '\n'
   statements += "var GossipUtil = require('../utils/GossipUtil')\n"
   statements += 'var gossipUtil = new GossipUtil(debug)\n'
   statements += "var GossipProtocol = require('../superObjs/GossipProtocol')\n"
@@ -108,10 +108,10 @@ GossipFactory.prototype.createWebWorker = function (algOpts, statsOpts, algoId) 
   // var buf = new Buffer(Buffer.byteLength(statements, 'ascii'))
   // buf.write(statements, 0, 'ascii')
   if (typeof window === 'undefined') {// In node.js
-    fs.writeFile('worker.js', statements, function () {
-      debug(Worker)
-      return new Worker('worker.js')
-    })
+    fs.writeFileSync(algoId + '.js', statements)
+    if (!fs.existsSync(algoId + '.js')) throw Error('While creating worker file')
+    debug('Worker ' + algoId + '.js' + ' was created')
+    return new Worker(algoId + '.js')
   } else { // TODO check compatibility with browsers (it works in Chrome)
     window.URL = window.URL || window.webkitURL
     var Blob = exports.Blob
