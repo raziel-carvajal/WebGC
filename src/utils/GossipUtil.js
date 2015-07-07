@@ -1,5 +1,10 @@
 /**
 *@module src/utils*/
+// TODO Find a way to export (NodeJS fashion) in a Web Worker scope, because "require" could be
+// used with "workerify" but not in "webworker-threads" for NodeJS. Now the solution is to
+// remove every require (which isn't elegant) and replace it whith the anonymous function to
+// export. Other solution could be to edit the sources on the fly adding the right headers
+// 
 module.exports = GossipUtil
 
 /**
@@ -11,6 +16,7 @@ function GossipUtil (debug) {
   this.debug = debug
   this.cacheSize = 2
   this.alreadyChosen = {}
+  this.debug('GossipUtil init() DONE')
 }
 
 /**

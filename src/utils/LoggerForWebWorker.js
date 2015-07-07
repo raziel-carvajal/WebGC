@@ -1,7 +1,7 @@
 /**
 *@module src/utils*/
 module.exports = Logger
-var XMLHttpRequest = exports.XMLHttpRequest || require('xhr2')
+//var XMLHttpRequest = exports.XMLHttpRequest || require('xhr2')
 
 /**
 * @class Logger

@@ -1,9 +1,14 @@
 /**
 * @module src/algorithms*/
+// TODO Find a way to export (NodeJS fashion) in a Web Worker scope, because "require" could be
+// used with "workerify" but not in "webworker-threads" for NodeJS. Now the solution is to
+// remove every require (which isn't elegant) and replace it whith the anonymous function to
+// export. Other solution could be to edit the sources on the fly adding the right headers
 module.exports = Cyclon
 
 var inherits = require('inherits')
 var GossipProtocol = require('../superObjs/GossipProtocol')
+
 inherits(Cyclon, GossipProtocol)
 
 /**
@@ -21,8 +26,9 @@ inherits(Cyclon, GossipProtocol)
 * functions used by gossip protocols
 * @author Raziel Carvajal [raziel.carvajal-gomez@inria.fr] */
 function Cyclon (algOpts, debug, gossipUtil, isLogActivated) {
-  if (!(this instanceof Cyclon)) return Cyclon(algOpts, debug, gossipUtil)
+  if (!(this instanceof Cyclon)) return Cyclon(algOpts, debug, gossipUtil, isLogActivated)
   this.isLogActivated = isLogActivated
+  debug('Cyclon Init')
   GossipProtocol.call(this, algOpts, debug, gossipUtil)
 }
 
@@ -89,7 +95,7 @@ Cyclon.prototype.selectItemsToSend = function (thread) {
       subDict = this.gossipUtil.getRandomSubDict(this.fanout, this.clone)
       break
     default:
-      debug('Unknown selection policy')
+      this.debug('Unknown selection policy')
       break
   }
   var msg = {

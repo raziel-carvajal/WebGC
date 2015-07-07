@@ -52,7 +52,9 @@ function Coordinator (gossConfObj, profile, peerId) {
   }
   try {
     this.usingSs = gossConfObj.usingSs
+    debug('pass')
     this.gossipUtil = new GossipUtil(debug)
+    debug('no')
     this.factory = new GossipFactory(this.gossipUtil)
     this.createAlgorithms()
     this._connectionManager = new GossipConnectionManager(Object.keys(this.gossipAlgos))

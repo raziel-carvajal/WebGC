@@ -1,7 +1,12 @@
 /**
 * @module src/superObjs*/
+// TODO Find a way to export (NodeJS fashion) in a Web Worker scope, because "require" could be
+// used with "workerify" but not in "webworker-threads" for NodeJS. Now the solution is to
+// remove every require (which isn't elegant) and replace it whith the anonymous function to
+// export. Other solution could be to edit the sources on the fly adding the right headers
 module.exports = GossipProtocol
 
+// (function (exports) {
 /**
 * @class GossipProtocol
 * @description Representation of one generic gossip protocol, every implementation must inherits
@@ -39,13 +44,13 @@ function GossipProtocol (opts, debug, gossipUtil) {
 * @method increaseAge
 * @description Increments by one the age field of each item in the view GossipProtocol.view.
 * @deprecated For version 0.4.1, see the NOTE at the top of this file*/
-GossipProtocol.prototype.increaseAge = function () { throw this.nonImpMsg }
+GossipProtocol.prototype.increaseAge = function () { throw new Error(this.nonImpMsg) }
 
 /**
 * @description This method selects one remote peer identifier in GossipProtocol.view
 * @memberof GossipProtocol@method selectPeer
 * @returns String - ID of the remote peer.*/
-GossipProtocol.prototype.selectPeer = function () { throw this.nonImpMsg }
+GossipProtocol.prototype.selectPeer = function () { throw new Error(this.nonImpMsg) }
 
 /**
 * @memberof GossipProtocol
@@ -56,7 +61,7 @@ GossipProtocol.prototype.selectPeer = function () { throw this.nonImpMsg }
 * @param thread:String - Whether the selection is performed in the passive thread or in the active thread.
 * @returns Object - Subset of the local view.
 * @deprecated For version 0.4.1, see the NOTE at the top of this file*/
-GossipProtocol.prototype.selectItemsToSend = function (thread) { throw this.nonImpMsg }
+GossipProtocol.prototype.selectItemsToSend = function (thread) { throw new Error(this.nonImpMsg) }
 
 /**
 * @memberof GossipProtocol
@@ -66,7 +71,7 @@ GossipProtocol.prototype.selectItemsToSend = function (thread) { throw this.nonI
 * @param thisId:String - The ID of the local peer.
 * @param rcvCache:String - The set of items to merge.
 * @deprecated For version 0.4.1, see the NOTE at the top of this file*/
-GossipProtocol.prototype.selectItemsToKeep = function (thisId, rcvCache) { throw this.nonImpMsg }
+GossipProtocol.prototype.selectItemsToKeep = function (thisId, rcvCache) { throw new Error(this.nonImpMsg) }
 
 /**
 * @memberof GossipProtocol
@@ -75,4 +80,7 @@ GossipProtocol.prototype.selectItemsToKeep = function (thisId, rcvCache) { throw
 * for getting data about the neighbours of each peer and to send them to a PeerJS plotter
 * @param peerId:String - Identifier of the local peer
 * @deprecated For version 0.4.1, see the NOTE at the top of this file*/
-GossipProtocol.prototype.getPlotInfo = function (peerId) { throw this.nonImpMsg }
+GossipProtocol.prototype.getPlotInfo = function (peerId) { throw new Error(this.nonImpMsg) }
+
+//exports.GossipProtocol = GossipProtocol
+//}) (this)

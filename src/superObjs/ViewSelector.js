@@ -35,11 +35,11 @@ ViewSelector.prototype.checkBaseCase = function (n, view, newItem, keys) {
     view[newItem.k] = newItem.v
   }
   if (n <= 0 || keys.length === 0) {
-    debug('Base case SimFun. View is empty')
+    this.debug('Base case SimFun. View is empty')
     return view
   }
   if (keys.length < n) {
-    debug('Base case SimFun. view size: ' + keys.length + ', n: ' + n)
+    this.debug('Base case SimFun. view size: ' + keys.length + ', n: ' + n)
     return view
   }
   return null

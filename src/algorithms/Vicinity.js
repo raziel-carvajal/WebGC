@@ -1,11 +1,13 @@
 /**
 * @module src/algorithms */
+// TODO Find a way to export (NodeJS fashion) in a Web Worker scope, because "require" could be
+// used with "workerify" but not in "webworker-threads" for NodeJS. Now the solution is to
+// remove every require (which isn't elegant) and replace it whith the anonymous function to
+// export. Other solution could be to edit the sources on the fly adding the right headers
 module.exports = Vicinity
-
 var inherits = require('inherits')
 var GossipProtocol = require('../superObjs/GossipProtocol')
 var ViewSelector = require('../superObjs/ViewSelector')
-inherits(Vicinity, GossipProtocol)
 
 /**
 * @class Vicinity
@@ -22,7 +24,7 @@ inherits(Vicinity, GossipProtocol)
 * functions used by gossip protocols
 * @author Raziel Carvajal-Gomez raziel.carvajal@gmail.com */
 function Vicinity (algOpts, debug, gossipUtil, isLogActivated) {
-  if (!(this instanceof Vicinity)) return Vicinity(algOpts, debug, gossipUtil)
+  if (!(this instanceof Vicinity)) return Vicinity(algOpts, debug, gossipUtil, isLogActivated)
   this.isLogActivated = isLogActivated
   GossipProtocol.call(this, algOpts, debug, gossipUtil)
   this.selectionPolicy = algOpts.selectionPolicy
@@ -133,7 +135,7 @@ Vicinity.prototype.selectItemsToSend = function (thread) {
       }
       break
     default:
-      debug('Unknown peer selection policy')
+      this.debug('Unknown peer selection policy')
       break
   }
 }

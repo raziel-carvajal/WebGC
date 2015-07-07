@@ -4,6 +4,7 @@ var debug = require('debug')('gossip_factory')
 var its = require('its')
 // XXX exports.Worker could be better ?
 var Worker = require('webworker-threads').Worker
+//var Worker = require('webworkify')
 // XXX probably browserify-fs isn't needed
 // var fs = require('fs') || require('browserify-fs')
 var fs = require('fs')
@@ -80,44 +81,54 @@ GossipFactory.prototype.createProtocol = function (algoId, algOpts, statsOpts) {
 * @param statsOpts Settings of a [logger]{@link module:src/utils#LoggerForWebWorker} object
 * @return Worker New WebWorker*/
 GossipFactory.prototype.createWebWorker = function (algOpts, statsOpts, algoId) {
-  var statements = "var debug = require('debug')('" + algoId + "')\n"
-  statements += 'var isLogActivated = ' + statsOpts.activated + '\n'
-  statements += "var GossipUtil = require('../utils/GossipUtil')\n"
-  statements += 'var gossipUtil = new GossipUtil(debug)\n'
-  statements += "var GossipProtocol = require('../superObjs/GossipProtocol')\n"
+  var statements = 'var debug\n'
+  statements += "console.log('WORKER')\n"
+  statements += "console.log(this.require)\n"
+  statements += "if (typeof console.log !== 'undefined') {\n"
+  statements += '  debug = console.log\n'
+  statements += "  this.importScripts('../utils/GossipUtil.js')\n"
+  statements += "  this.importScripts('../superObjs/GossipProtocol.js')\n"
+  statements += "  this.importScripts('../superObjs/ViewSelector.js')\n"
+  statements += "  this.importScripts('../algorithms/" + algOpts.class + ".js')\n"
+  statements += "  this.importScripts('../controllers/GossipMediator.js')\n"
+  statements += '} else {\n'
+  statements += "  debug = require('debug')('" + algoId + "')\n"
+  statements += "  var GossipUtil = require('../utils/GossipUtil')\n"
+  statements += "  var GossipProtocol = require('../superObjs/GossipProtocol')\n"
+  statements += "  var ViewSelector = require('../superObjs/ViewSelector')\n"
+  statements += '  var ' + algOpts.class + " = require('../algorithms/" + algOpts.class + "')\n"
+  statements += "  var GossipMediator = require('../controllers/GossipMediator')\n"
+  statements += '}\n'
+  statements += 'var isLogActivated = ' + statsOpts.activated + ';\n'
   var keysWithFunc = this.searchFunctions(algOpts)
   var i
   if (keysWithFunc.length > 0) {
-    statements += "var ViewSelector = require('../controllers/ViewSelector')\n"
     for (i = 0; i < keysWithFunc.length; i++) {
       algOpts[ keysWithFunc[i] ] = String(algOpts[ keysWithFunc[i] ])
     }
   }
-  statements += 'var ' + algOpts.class + " = require('../algorithms/" + algOpts.class + "')\n"
   statements += 'var algOpts = ' + JSON.stringify(algOpts) + '\n'
   for (i = 0; i < keysWithFunc.length; i++) {
     statements += "algOpts['" + keysWithFunc[i] + "'] = eval(" + algOpts[ keysWithFunc[i]] + ')\n'
   }
+  statements += "debug('Worker initialization BEGINS');\n"
+  statements += 'var gossipUtil = new GossipUtil(debug)\n'
   statements += 'var algo = new ' + algOpts.class + '(algOpts, debug, gossipUtil, isLogActivated)\n'
-  statements += "var GossipMediator = require('../controllers/GossipMediator')\n"
-  // "this" refers the web-worker
-  statements += 'var m = new GossipMediator(algo, this)\n'
-  statements += 'algo.setMediator(m)\n'
-  statements += 'm.listen()'
-  // TODO find another way to cope with js files
-  // var buf = new Buffer(Buffer.byteLength(statements, 'ascii'))
-  // buf.write(statements, 0, 'ascii')
+  statements += 'var mediator = new GossipMediator(algo, this, debug)\n'
+  statements += 'algo.setMediator(mediator)\n'
+  statements += 'mediator.listen()\n'
+  statements += "debug('Worker initialization DONE')"
   if (typeof window === 'undefined') {// In node.js
-    fs.writeFileSync(algoId + '.js', statements)
-    if (!fs.existsSync(algoId + '.js')) throw Error('While creating worker file')
-    debug('Worker ' + algoId + '.js' + ' was created')
-    return new Worker(algoId + '.js')
-  } else { // TODO check compatibility with browsers (it works in Chrome)
-    window.URL = window.URL || window.webkitURL
-    var Blob = exports.Blob
-    var blob = new Blob([statements], {type: 'text/javascript'})
-    var blobUrl = window.URL.createObjectURL(blob)
-    return new Worker(blobUrl)
+    var fP = __filename.split('services/GossipFactory.js')[0] + 'workers/' + algoId + '.js'
+    fs.writeFileSync(fP, statements)
+    if (!fs.existsSync(fP)) throw Error('While creating worker file')
+    return new Worker(fP)
+  } else { // TODO doing else with workerify
+    // window.URL = window.URL || window.webkitURL
+    // var Blob = exports.Blob
+    // var blob = new Blob([statements], {type: 'text/javascript'})
+    // var blobUrl = window.URL.createObjectURL(blob)
+    // return new Worker(blobUrl)
   }
 }
 /**
