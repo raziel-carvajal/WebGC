@@ -8,7 +8,7 @@ if (typeof window === 'undefined') var WebSocket = require('websocket').w3cwebso
 var OPTS = {
   urlPrefix: 'wss://',
   randomToken: function () { return Math.random().toString(36).substr(2) },
-  key: 'webgc'
+  key: 'peerjs'
 }
 
 inherits(Socket, EventEmitter)
@@ -18,7 +18,7 @@ function Socket (peerId, host, port) {
   EventEmitter.call(this)
   this.disconnected = false
   this._url = OPTS.urlPrefix + host + ':' + port + '/peerjs?key=' + OPTS.key +
-    '&id=' + peerId + '&=token' + OPTS.randomToken()
+    '&id=' + peerId + '&token=' + OPTS.randomToken()
   this._socket = new WebSocket(this._url)
   var self = this
   this._socket.onmessage = function (evnt) {
@@ -38,13 +38,14 @@ function Socket (peerId, host, port) {
     debug('Socket is open')
   }
   this._socket.onerror = function (e) {
-    debug('Error in socket connection: ' + e)
+    debug('Error in socket connection: ')
+    debug(e)
   }
 }
 
 Socket.prototype.send = function (msg) {
   if (this.disconnected) return
-  if (!msg){
+  if (!msg) {
     debug('Empty message to send')
     return
   }

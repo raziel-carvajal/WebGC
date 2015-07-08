@@ -75,8 +75,8 @@ function Coordinator (gossConfObj, profile, peerId) {
 * external peers.*/
 Coordinator.prototype.bootstrap = function () {
   this.bootService = new Bootstrap(this.peerId, this._signalingService.host, this._signalingService.port)
-  this.bootstrap.on('boot', function (bootstrapPeer) {})
-  this.bootstrap.on('abort', function () {})
+  this.bootService.on('boot', function (bootstrapPeer) {})
+  this.bootService.on('abort', function () {})
   // if (!this.usingSs) {
   //   this.isFirstConDone = false
   //   this.lookupService = new LookupService(this.log, this.connections,

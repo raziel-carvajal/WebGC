@@ -1,13 +1,16 @@
 /**
 * @module src/services*/
 module.exports = Bootstrap
+
 var debug = require('debug')('bootstrap')
 var inherits = require('inherits')
 var its = require('its')
 var EventEmitter = require('events').EventEmitter
 var PeerJSProtocol = require('../utils/PeerjsProtocol')
+
 if (typeof window === 'undefined') var XMLHttpRequest = require('xhr2')
 var TIMES_TO_RECONECT = 3
+
 inherits(Bootstrap, EventEmitter)
 /**
 * @class Bootstrap

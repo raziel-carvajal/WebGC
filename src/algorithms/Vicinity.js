@@ -32,6 +32,7 @@ function Vicinity (algOpts, debug, gossipUtil, isLogActivated) {
   this.selectionPolicy = algOpts.selectionPolicy
   this.selector = new ViewSelector(this.data[this.algoId], debug, algOpts.similarityFunction)
   this.dependencies = algOpts.dependencies
+  debug('Vicinity.init')
 }
 
 /**
