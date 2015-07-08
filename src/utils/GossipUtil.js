@@ -16,7 +16,7 @@ function GossipUtil (debug) {
   this.debug = debug
   this.cacheSize = 2
   this.alreadyChosen = {}
-  this.debug('GossipUtil init() DONE')
+  debug('GossipUtil.init')
 }
 
 /**

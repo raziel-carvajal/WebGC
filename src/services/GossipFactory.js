@@ -1,13 +1,16 @@
 /**
 * @module src/services*/
+module.exports = GossipFactory
+
 var debug = require('debug')('gossip_factory')
 var its = require('its')
 // XXX exports.Worker could be better ?
 var Worker = require('webworker-threads').Worker
-//var Worker = require('webworkify')
+// var Worker = require('webworkify')
 // XXX probably browserify-fs isn't needed
 // var fs = require('fs') || require('browserify-fs')
 var fs = require('fs')
+
 /**
 * @class GossipFactory
 * @description Implementation of the
@@ -23,6 +26,26 @@ var fs = require('fs')
 function GossipFactory (gossipUtil) {
   this.gossipUtil = gossipUtil
   this.inventory = {}
+  if (typeof window === 'undefined') {
+    this.modifInfo = {
+      files: {
+        'utils/GossipUtil.js': true,
+        'superObjs/GossipProtocol.js': true,
+        'superObjs/ViewSelector.js': true,
+        'algorithms/Cyclon.js': false,
+        'algorithms/Vicinity.js': false,
+        'controllers/GossipMediator.js': true
+      },
+      commonHeaders: ['module.exports'],
+      nonCommonHeaders: [
+        'module.exports',
+        'var inherits',
+        'var GossipProtocol',
+        'var ViewSelector',
+        'inherits('
+      ]
+    }
+  }
 }
 /**
 * @memberof GossipFactory
@@ -81,25 +104,7 @@ GossipFactory.prototype.createProtocol = function (algoId, algOpts, statsOpts) {
 * @param statsOpts Settings of a [logger]{@link module:src/utils#LoggerForWebWorker} object
 * @return Worker New WebWorker*/
 GossipFactory.prototype.createWebWorker = function (algOpts, statsOpts, algoId) {
-  var statements = 'var debug\n'
-  statements += "console.log('WORKER')\n"
-  statements += "console.log(this.require)\n"
-  statements += "if (typeof console.log !== 'undefined') {\n"
-  statements += '  debug = console.log\n'
-  statements += "  this.importScripts('../utils/GossipUtil.js')\n"
-  statements += "  this.importScripts('../superObjs/GossipProtocol.js')\n"
-  statements += "  this.importScripts('../superObjs/ViewSelector.js')\n"
-  statements += "  this.importScripts('../algorithms/" + algOpts.class + ".js')\n"
-  statements += "  this.importScripts('../controllers/GossipMediator.js')\n"
-  statements += '} else {\n'
-  statements += "  debug = require('debug')('" + algoId + "')\n"
-  statements += "  var GossipUtil = require('../utils/GossipUtil')\n"
-  statements += "  var GossipProtocol = require('../superObjs/GossipProtocol')\n"
-  statements += "  var ViewSelector = require('../superObjs/ViewSelector')\n"
-  statements += '  var ' + algOpts.class + " = require('../algorithms/" + algOpts.class + "')\n"
-  statements += "  var GossipMediator = require('../controllers/GossipMediator')\n"
-  statements += '}\n'
-  statements += 'var isLogActivated = ' + statsOpts.activated + ';\n'
+  var code = this._buildWorkerHeader(algoId, algOpts.class, statsOpts.activated)
   var keysWithFunc = this.searchFunctions(algOpts)
   var i
   if (keysWithFunc.length > 0) {
@@ -107,29 +112,65 @@ GossipFactory.prototype.createWebWorker = function (algOpts, statsOpts, algoId) 
       algOpts[ keysWithFunc[i] ] = String(algOpts[ keysWithFunc[i] ])
     }
   }
-  statements += 'var algOpts = ' + JSON.stringify(algOpts) + '\n'
+  code += 'var algOpts = ' + JSON.stringify(algOpts) + '\n'
   for (i = 0; i < keysWithFunc.length; i++) {
-    statements += "algOpts['" + keysWithFunc[i] + "'] = eval(" + algOpts[ keysWithFunc[i]] + ')\n'
+    code += "algOpts['" + keysWithFunc[i] + "'] = eval(" + algOpts[ keysWithFunc[i]] + ')\n'
   }
-  statements += "debug('Worker initialization BEGINS');\n"
-  statements += 'var gossipUtil = new GossipUtil(debug)\n'
-  statements += 'var algo = new ' + algOpts.class + '(algOpts, debug, gossipUtil, isLogActivated)\n'
-  statements += 'var mediator = new GossipMediator(algo, this, debug)\n'
-  statements += 'algo.setMediator(mediator)\n'
-  statements += 'mediator.listen()\n'
-  statements += "debug('Worker initialization DONE')"
+  code += "debug('Worker initialization BEGINS')\n"
+  code += 'var gossipUtil = new GossipUtil(debug)\n'
+  code += 'var algo = new ' + algOpts.class + '(algOpts, debug, gossipUtil, isLogActivated)\n'
+  code += 'var mediator = new GossipMediator(algo, this, debug)\n'
+  code += 'algo.setMediator(mediator)\n'
+  code += 'mediator.listen()\n'
+  code += "debug('Worker initialization DONE')"
   if (typeof window === 'undefined') {// In node.js
     var fP = __filename.split('services/GossipFactory.js')[0] + 'workers/' + algoId + '.js'
-    fs.writeFileSync(fP, statements)
+    fs.writeFileSync(fP, code)
     if (!fs.existsSync(fP)) throw Error('While creating worker file')
     return new Worker(fP)
   } else { // TODO doing else with workerify
     // window.URL = window.URL || window.webkitURL
     // var Blob = exports.Blob
-    // var blob = new Blob([statements], {type: 'text/javascript'})
+    // var blob = new Blob([code], {type: 'text/javascript'})
     // var blobUrl = window.URL.createObjectURL(blob)
     // return new Worker(blobUrl)
   }
+}
+
+GossipFactory.prototype._buildWorkerHeader = function (algoId, algoClass, statsActiv) {
+  var code = ''
+  var inNodejs = typeof window === 'undefined'
+  var classToExport
+  if (inNodejs) {
+    var isCommon, content, headers, j, workerPath
+    code += 'var debug = console.log\n'
+  } else {
+    code += "var debug = require('debug')('" + algoId + "')\n"
+  }
+  code += "debug('Initialization of worker')\n"
+  var fP = __filename.split('services/GossipFactory.js')[0]
+  var filesToModif = Object.keys(this.modifInfo.files)
+  for (var i = 0; i < filesToModif.length; i++) {
+    classToExport = filesToModif[i].split('/')[1].split('.')[0]
+    if (inNodejs) {
+      isCommon = this.modifInfo.files[filesToModif[i]]
+      content = fs.readFileSync(fP + filesToModif[i], {encoding: 'utf8'})
+      if (isCommon) headers = this.modifInfo.commonHeaders
+      else headers = this.modifInfo.nonCommonHeaders
+      for (j = 0; j < headers.length; j++) content = content.replace(headers[j], '//')
+      content = '(function (exports) {\n' + content
+      content += 'exports.' + classToExport + ' = ' + classToExport + '\n'
+      content += '}) (this)'
+      workerPath = fP + 'workers/' + filesToModif[i].split('/')[1]
+      fs.writeFileSync(workerPath, content)
+      if (!fs.existsSync(workerPath)) throw Error('While building worker')
+      code += "this.importScripts('" + workerPath + "')\n"
+    } else {
+      code += 'var ' + classToExport + " = require('../" + filesToModif[i] + "')\n"
+    }
+  }
+  code += 'var isLogActivated = ' + statsActiv + '\n'
+  return code
 }
 /**
 * @memberof GossipFactory
@@ -145,60 +186,3 @@ GossipFactory.prototype.searchFunctions = function (obj) {
   }
   return keysWithFunc
 }
-/**
-* @memberof GossipFactory
-* @method setDependencies
-* @deprecated Not useful since version 0.4.1
-* @description In some cases, there are gossip protocols that have dependencies among them. This method
-* reads the property dependencies in the configuration object and establishes those dependencies. For
-* this method, a dependency is to share the property of one gossip protocol with another gossip protocol.*/
-// GossipFactory.prototype.setDependencies = function(gossipAlgos, simFunCatalogue){
-//   var keys = Object.keys(gossipAlgos)
-//   for( var i = 0 i < keys.length i++ ){
-//     if( gossipAlgos[ keys[i] ].hasOwnProperty('attributes') ){
-//       var atts = gossipAlgos[ keys[i] ].attributes
-//       var attsKeys = Object.keys(atts)
-//       for( var j = 0 j < attsKeys.length j++ ){
-//         var algoAttStr = atts[ attsKeys[j] ]
-//         var container = algoAttStr.split('.')
-//         if( container.length === 2 ){
-//           debug('c0: ' + container[0] + ' c1: ' + container[1])
-//           var objExt = this.inventory[ container[0] ]
-//           if( objExt !== 'undefined' ){
-//             if( objExt[ container[1] ] !== 'undefined'){
-//               this.inventory[ keys[i] ][ attsKeys[j] ] = objExt[ container[1] ]
-//               debug('Algorithm [' + keys[i] + '] was augmented with the property [' +
-//                 attsKeys[j] + ']')
-//             }else{
-//               debug('There is no property [' + container[1] + '] for the algorithm [' +
-//                 container[0] + '], as a consecuence, the algorithm [' + keys[i]  + '] will ' +
-//                 'have fatal errors during its execution')
-//             }
-//           }else{
-//             debug('The protocol with id [' + payload + '] was not loaded by the Factory')
-//           }
-//         }else if(container.length === 1){
-//           debug('c0: ' + container[0])
-//           var objSim = simFunCatalogue[ container[0] ]
-//           if(objSim !== 'undefined'){
-//             this.inventory[ keys[i] ][ attsKeys[j] ] = objSim
-//             debug('Algorithm [' + keys[i] + '] was augmented with the simiilarity function ['+
-//               container[0] + ']')
-//           }else{
-//             debug('There is not property [' + container[0] + '] at the catalogue of '+
-//               'similarity functions. The algorithm with ID [' + keys[i] + '] has not assigned '+
-//               'any similarity function')
-//           }
-//         }else{
-//           debug('The value [' + algoAttStr + '] for the attribute [' + attsKeys[j] +
-//             '] has not the right format (separation by a period). As a consecuence, the algorithm ' +
-//             '[' + keys[i] + '] will have fatal errors during its execution.')
-//         }
-//       }
-//     }else{
-//       debug('The algorithm [' + keys[i] + '] has not dependencies ' +
-//         'with others algorithms.')
-//     }
-//   }
-// }
-module.exports = GossipFactory

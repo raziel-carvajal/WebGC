@@ -37,6 +37,8 @@ function GossipProtocol (opts, debug, gossipUtil) {
   this.peerId = opts.peerId
   // error and warning messages
   this.nonImpMsg = 'An implementation for this method is required'
+  this.debug = debug
+  this.debug('GossipProtocol.init')
 }
 
 /**

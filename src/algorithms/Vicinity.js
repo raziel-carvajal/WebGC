@@ -5,9 +5,11 @@
 // remove every require (which isn't elegant) and replace it whith the anonymous function to
 // export. Other solution could be to edit the sources on the fly adding the right headers
 module.exports = Vicinity
+
 var inherits = require('inherits')
 var GossipProtocol = require('../superObjs/GossipProtocol')
 var ViewSelector = require('../superObjs/ViewSelector')
+inherits(Vicinity, GossipProtocol)
 
 /**
 * @class Vicinity

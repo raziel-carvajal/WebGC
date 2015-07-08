@@ -30,6 +30,7 @@ function GossipMediator (algo, worker, debug) {
   this.dependencies = {}
   this.viewUpdsLogCounter = 0
   this.activCycLogCounter = 0
+  this.debug('GossipMediator.init')
 }
 
 /**

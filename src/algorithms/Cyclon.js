@@ -8,6 +8,7 @@ module.exports = Cyclon
 
 var inherits = require('inherits')
 var GossipProtocol = require('../superObjs/GossipProtocol')
+var ViewSelector = require('../superObjs/ViewSelector')
 
 inherits(Cyclon, GossipProtocol)
 
@@ -28,8 +29,8 @@ inherits(Cyclon, GossipProtocol)
 function Cyclon (algOpts, debug, gossipUtil, isLogActivated) {
   if (!(this instanceof Cyclon)) return Cyclon(algOpts, debug, gossipUtil, isLogActivated)
   this.isLogActivated = isLogActivated
-  debug('Cyclon Init')
   GossipProtocol.call(this, algOpts, debug, gossipUtil)
+  this.debug('Cyclon.init')
 }
 
 /**
