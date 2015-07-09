@@ -73,8 +73,9 @@ Bootstrap.prototype._initEvents = function () {
 * peer's profile, which is the payload to exchange on each gossip message.*/
 Bootstrap.prototype._getPeerToBootstrap = function () {
   var xhr = new XMLHttpRequest()
-  var url = this._url + '/peerToBoot?id=' + this._id + '&profile=UNO'
-  xhr.open('GET', this._url + '/id', true)
+  var url = this._url + '/' + this._id + '/profi' + '/peerToBoot'
+  debug('URL: ' + url)
+  xhr.open('GET', url, true)
   var self = this
   xhr.onreadystatechange = function () {
     if (xhr.readyState !== 4) return
