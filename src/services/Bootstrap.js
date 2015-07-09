@@ -25,13 +25,18 @@ inherits(Bootstrap, EventEmitter)
 * of [GossipProtocol]{@link module:src/superObjs#GossipProtocol}).
 * @param coordi Reference to the [Coordinator]{@link module:src/controllers#Coordinator}
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function Bootstrap (peerId, host, port) {
-  if (!(this instanceof Bootstrap)) return new Bootstrap(peerId, host, port)
+function Bootstrap (peerId, host, port, profile) {
+  if (!(this instanceof Bootstrap)) return new Bootstrap(peerId, host, port, profile)
+  its.string(peerId)
+  its.string(host)
+  its.number(port)
   EventEmitter.call(this)
+  this._id = peerId
   this._serverOpts = {'host': host, 'port': port}
+  this._profile = profile
   this._reconnectionTime = 3000
   this._tries = 0
-  this._url = 'http://' + host + ':' + port + '/'
+  this._url = 'http://' + host + ':' + port + '/peerjs'
   this._signalingService = new PeerJSProtocol(peerId, host, port)
   this._initEvents()
 }
@@ -68,14 +73,16 @@ Bootstrap.prototype._initEvents = function () {
 * peer's profile, which is the payload to exchange on each gossip message.*/
 Bootstrap.prototype._getPeerToBootstrap = function () {
   var xhr = new XMLHttpRequest()
+  var url = this._url + '/peerToBoot?id=' + this._id + '&profile=UNO'
+  xhr.open('GET', this._url + '/id', true)
   var self = this
-  xhr.open('GET', this.url + 'peerToBoot', true)
   xhr.onreadystatechange = function () {
     if (xhr.readyState !== 4) return
     if (xhr.status !== 200) {
       xhr.onerror()
       return
     }
+    debug('ANSWER: ' + xhr.responseText)
     var peerToBootstrap = xhr.responseText
     its.string(peerToBootstrap)
     // when the peer to bootstrap isn't defined, it means that the local

@@ -6,7 +6,7 @@ var EventEmitter = require('events').EventEmitter
 if (typeof window === 'undefined') var WebSocket = require('websocket').w3cwebsocket
 
 var OPTS = {
-  urlPrefix: 'wss://',
+  urlPrefix: 'ws://',
   randomToken: function () { return Math.random().toString(36).substr(2) },
   key: 'peerjs'
 }

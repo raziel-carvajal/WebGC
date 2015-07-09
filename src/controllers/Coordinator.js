@@ -74,7 +74,8 @@ function Coordinator (gossConfObj, profile, peerId) {
 * Additionally, events of [Peer]{@link http://peerjs.com/docs/#api} are set to receive messages of
 * external peers.*/
 Coordinator.prototype.bootstrap = function () {
-  this.bootService = new Bootstrap(this.peerId, this._signalingService.host, this._signalingService.port)
+  this.bootService = new Bootstrap(this.peerId, this._signalingService.host,
+    this._signalingService.port, this.profile)
   this.bootService.on('boot', function (bootstrapPeer) {})
   this.bootService.on('abort', function () {})
   // if (!this.usingSs) {

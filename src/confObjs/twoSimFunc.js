@@ -34,7 +34,7 @@
 * @author Raziel Carvajal <raziel.carvajal-gomez@inria.fr>*/
 var configurationObj = {
   signalingService: {
-    host: '192.168.0.12',
+    host: 'localhost',
     port: 9990
   },
   gossipAlgos: {
