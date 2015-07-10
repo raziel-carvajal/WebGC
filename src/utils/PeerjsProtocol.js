@@ -10,6 +10,7 @@ inherits(PeerJSProtocol, EventEmitter)
 function PeerJSProtocol (peerId, host, port) {
   if (!(this instanceof PeerJSProtocol)) return new PeerJSProtocol(peerId, host, port)
   EventEmitter.call(this)
+  this._id = peerId
   this._open = false
   this.socket = new Socket(peerId, host, port)
   var self = this
@@ -19,16 +20,14 @@ function PeerJSProtocol (peerId, host, port) {
 
 PeerJSProtocol.prototype._handleMessage = function (msg) {
   var type = msg.type
-  var payload = msg.payload
-  // var peer = msg.src
-  switch (type) {
+  switch (msg.type) {
     case 'OPEN':
       this._open = true
       debug('Connection with signaling server is done')
       this.emit('open')
       break
     case 'ERROR':
-      debug('Error msg from server: ' + payload.msg)
+      debug('Error msg from server: ?')
       break
     case 'ID_TAKEN':
       debug('Chosing another PeerID')
@@ -50,10 +49,13 @@ PeerJSProtocol.prototype._handleMessage = function (msg) {
       this.emit('getFirstPeer')
       break
     case 'OFFER':
+      this.emit('offer', msg.src, msg.payload)
       break
     case 'ANSWER':
+      this.emit('answer', msg.src, msg.payload)
       break
     case 'CANDIDATE':
+      this.emit('candidate', msg.src, msg.payload)
       break
     default:
       debug("Message isn't in the PeerJS protocol")
@@ -62,3 +64,9 @@ PeerJSProtocol.prototype._handleMessage = function (msg) {
 }
 
 PeerJSProtocol.prototype.destroy = function () { this.socket.close() }
+
+PeerJSProtocol.prototype.sendSDP = function (sdp, receiver) {
+  var type = typeof sdp.type !== 'undefined' ? sdp.type.toUpperCase() : 'CANDIDATE'
+  if (this._open) this.socket.send({'type': type, dst: receiver, payload: sdp})
+  else debug('Socket is closed. SDP: ' + type + 'will not be transmitted to: ' + receiver)
+}

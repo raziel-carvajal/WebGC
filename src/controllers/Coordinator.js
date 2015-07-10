@@ -6,7 +6,7 @@ var hat = require('hat')
 var GossipUtil = require('../utils/GossipUtil')
 var GossipFactory = require('../services/GossipFactory')
 var Bootstrap = require('../services/Bootstrap')
-var GossipConnectionManager = require('../controllers/GossipConnectionManager')
+var ConnectionManager = require('../controllers/ConnectionManager')
 /**
 * @class Coordinator
 * @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
@@ -31,18 +31,18 @@ var GossipConnectionManager = require('../controllers/GossipConnectionManager')
 * format is required for this object. The properties of the object must coincide with the
 * algorithms identifiers in the property "gossipAlgos" in
 * [configurationObj]{@link module:src/confObjs#configurationObj}
-* @param peerId Unique identifier of the peer, if this parameter is not specified one
-* random peerId will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
+* @param id Unique identifier of the peer, if this parameter is not specified one
+* random id will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
 * @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
-function Coordinator (gossConfObj, profile, peerId) {
-  if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, profile, peerId)
+function Coordinator (gossConfObj, profile, id) {
+  if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, profile, id)
   if (!this.checkConfFile(gossConfObj)) return
   its.defined(profile)
   its.defined(gossConfObj.signalingService)
   its.defined(gossConfObj.gossipAlgos)
   its.defined(gossConfObj.statsOpts)
   this.profile = profile
-  this.peerId = peerId || hat()
+  this.id = id || hat()
   this._signalingService = gossConfObj.signalingService
   this.gossipAlgos = gossConfObj.gossipAlgos
   this.statsOpts = gossConfObj.statsOpts
@@ -51,13 +51,10 @@ function Coordinator (gossConfObj, profile, peerId) {
     this.vieUpdHistory = {}
   }
   try {
-    this.usingSs = gossConfObj.usingSs
+    this._usingSs = gossConfObj.usingSs
     this.gossipUtil = new GossipUtil(debug)
     this.factory = new GossipFactory(this.gossipUtil)
     this.createAlgorithms()
-    this._connectionManager = new GossipConnectionManager(Object.keys(this.gossipAlgos))
-    this._connectionManager.on('connect', function (peerId, viewToUpd) {})
-    this._connectionManager.on('destroy', function (peerToDel, peerIdToDel, viewToUpd) {})
   } catch (e) {
     debug('During the instantiaton of gossip objects. ' + e)
   }
@@ -74,20 +71,40 @@ function Coordinator (gossConfObj, profile, peerId) {
 * Additionally, events of [Peer]{@link http://peerjs.com/docs/#api} are set to receive messages of
 * external peers.*/
 Coordinator.prototype.bootstrap = function () {
-  this.bootService = new Bootstrap(this.peerId, this._signalingService.host,
-    this._signalingService.port, this.profile)
-  this.bootService.on('boot', function (bootstrapPeer) {})
-  this.bootService.on('abort', function () {})
-  // if (!this.usingSs) {
-  //   this.isFirstConDone = false
-  //   this.lookupService = new LookupService(this.log, this.connections,
-  //     this.inHandleCon, this.id, this.peerJsOpts, this.lookupMulticast,
-  //     this.lookupMsgSTL, this.inDataFunc)
-  // }
-  /**
-  * @event connection
-  * @description This event is fired when an external message is received.*/
-  // this.on('connection', function (c) { self.handleConnection(c) })
+  var c
+  var self = this
+  this._connectionManager = new ConnectionManager(Object.keys(this.gossipAlgos))
+  this._connectionManager.on('destroy', function (peerToDel, idToDel, viewToUpd) { })
+  var ss = this._signalingService
+  this._bootService = new Bootstrap(this.id, ss.host, ss.port, this.profile)
+  this._bootService.on('boot', function (bootstrapPeer) {
+    c = self._connectionManager.newConnection(bootstrapPeer, true, self._usingSs)
+    self._initConnectionEvents(c)
+    self._connectionManager.setToAll(c)
+  })
+  this._bootService.on('offer', function (src, payload) {
+    c = self._connectionManager.newConnection(src, false, self._usingSs)
+    self._initConnectionEvents(c)
+    self._connectionManager.setToAll(c)
+    c._peer.emit('signal', payload)
+  })
+  this._bootService.on('answer', function (src, payload) {})
+  this._bootService.on('candidate', function (src, payload) {})
+  this._bootService.on('abort', function () { debug('Abort was called') })
+}
+
+Coordinator.prototype._initConnectionEvents = function(c) {
+  if (!c) return
+  var self = this
+  c.on('open', function () {})
+  c.on('sdp', function (sdp) {
+    if (c._usingSigSer) {
+      debug('Sending SDP through the server')
+      self._bootService._signalingService.sendSDP(sdp, c._receiver)
+    } else {
+      // TODO
+    }
+  })
 }
 /**
 * @memberof Coordinator
@@ -258,7 +275,7 @@ Coordinator.prototype.sendViaSigServer = function (msg) {
   connection.on('open', function () {
     debug('Connection open, sending msg: ' + msg.service +
       ' to: ' + msg.receiver)
-    if (!self.usingSs) {
+    if (!self._usingSs) {
       self.isFirstConDone = true
     }
     connection.send(msg)

@@ -49,11 +49,9 @@ Bootstrap.prototype.resetSignalingService = function (peerId) {
 
 Bootstrap.prototype._initEvents = function () {
   var self = this
-  this._signalingService.on('open', function () {
-    debug('Connection success with signaling server, getting first peer to bootstrap')
-    self._getPeerToBootstrap()
-  })
+  this._signalingService.on('open', function () { self._getPeerToBootstrap() })
   this._signalingService.on('idTaken', function () {
+    debug('idTaken')
     // TODO Coordinator must implement this event if WebGC is open to the public where
     // the peerID must be generated in a random way (via the 'hat' library for instance)
     // aviding that two peers have the same identifier
@@ -61,6 +59,7 @@ Bootstrap.prototype._initEvents = function () {
   })
   this._signalingService.on('abort', function () { self.emit('abort') })
   this._signalingService.on('getFirstPeer', function () {
+    debug('getFitstPeer')
     // TODO Again these two method must be implemented if WebGC is open to the public
     // self.emit('removeAllConnections')
     // self._getPeerToBootstrap()
@@ -72,9 +71,9 @@ Bootstrap.prototype._initEvents = function () {
 * @description Post in the [brokering server]{@link https://github.com/peers/peerjs-server} the
 * peer's profile, which is the payload to exchange on each gossip message.*/
 Bootstrap.prototype._getPeerToBootstrap = function () {
+  debug('Connection success with signaling server, getting first peer to bootstrap')
   var xhr = new XMLHttpRequest()
   var url = this._url + '/' + this._id + '/profi' + '/peerToBoot'
-  debug('URL: ' + url)
   xhr.open('GET', url, true)
   var self = this
   xhr.onreadystatechange = function () {
@@ -83,19 +82,23 @@ Bootstrap.prototype._getPeerToBootstrap = function () {
       xhr.onerror()
       return
     }
-    debug('ANSWER: ' + xhr.responseText)
+    debug('Peer to boot is: ' + xhr.responseText)
     var peerToBootstrap = xhr.responseText
     its.string(peerToBootstrap)
     // when the peer to bootstrap isn't defined, it means that the local
     // peer is the first peer to contact the server which means that eventually
     // the local peer will be contacted by another peer
-    if (peerToBootstrap !== 'undefined') self.emit('boot', peerToBootstrap)
+    if (peerToBootstrap !== 'undefined') {
+      self.emit('boot', peerToBootstrap)
+    } else {
+      debug('I am the first peer in the overlay, eventually other peer will contact me')
+    }
   }
   xhr.onerror = function () {
     self._tries++
     debug('Error while getting first peer to bootstrap, scheduling another request')
     if (self._tries <= TIMES_TO_RECONECT) {
-      setTimeout(function () {self._getPeerToBootstrap}, 3000)
+      setTimeout(self._getPeerToBootstrap, 3000)
     } else {
       debug('Too many erros during interaction with server, aborting')
       self.emit('abort')
