@@ -47,7 +47,14 @@ ConnectionManager.prototype.newConnection = function (receiver, initiator, viaSi
   return new Connection(receiver, initiator, viaSigSer)
 }
 
+ConnectionManager.prototype.get = function (id) {
+  var keys = Object.keys(this._cons)
+  for (var i = 0; i < keys.length; i++) {
+    if (this._cons[keys[i]][id] !== 'undefined') return this._cons[keys[i]][id]
+  }
+}
+
 ConnectionManager.prototype.setToAll = function (c) {
   var keys = Object.keys(this._cons)
-  for (var i = 0; i < keys.length; i++) { if (!this._cons[keys[i]]) this._cons[keys[i]] = c }
+  for (var i = 0; i < keys.length; i++) { if (!this._cons[keys[i]][c._receiver]) this._cons[keys[i]][c._receiver] = c }
 }

@@ -19,7 +19,6 @@ function PeerJSProtocol (peerId, host, port) {
 }
 
 PeerJSProtocol.prototype._handleMessage = function (msg) {
-  var type = msg.type
   switch (msg.type) {
     case 'OPEN':
       this._open = true
@@ -49,12 +48,15 @@ PeerJSProtocol.prototype._handleMessage = function (msg) {
       this.emit('getFirstPeer')
       break
     case 'OFFER':
+      debug('Offer received from: ' + msg.src)
       this.emit('offer', msg.src, msg.payload)
       break
     case 'ANSWER':
+      debug('Answer received from: ' + msg.src)
       this.emit('answer', msg.src, msg.payload)
       break
     case 'CANDIDATE':
+      debug('Candidate received from: ' + msg.src)
       this.emit('candidate', msg.src, msg.payload)
       break
     default:

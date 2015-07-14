@@ -18,6 +18,7 @@ function Connection (receiver, initiator, usingSigSer) {
   this._msgsQueue = []
   this._peer = new Peer({
     'initiator': initiator,
+    'trickle': false,
     'wrtc': typeof window === 'undefined' ? wrtc : false
   })
   var self = this
@@ -32,7 +33,7 @@ function Connection (receiver, initiator, usingSigSer) {
     debug('SDP: [' + Object.keys(data) + '] to exchange with: ' + self._receiver)
     self.emit('sdp', data)
   })
-  this._peer.on('data', function (data) {self.emit('msgReception', data, self._receiver)})
+  this._peer.on('data', function (data) { self.emit('msgReception', data, self._receiver) })
   this._peer.on('error', function (err) {debug('Connection error with: ' + self._receiver + '. ' + err)})
 }
 

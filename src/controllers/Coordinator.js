@@ -7,6 +7,7 @@ var GossipUtil = require('../utils/GossipUtil')
 var GossipFactory = require('../services/GossipFactory')
 var Bootstrap = require('../services/Bootstrap')
 var ConnectionManager = require('../controllers/ConnectionManager')
+var PeerJSProtocol = require('../utils/PeerjsProtocol')
 /**
 * @class Coordinator
 * @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
@@ -42,22 +43,24 @@ function Coordinator (gossConfObj, profile, id) {
   its.defined(gossConfObj.gossipAlgos)
   its.defined(gossConfObj.statsOpts)
   this.profile = profile
-  this.id = id || hat()
-  this._signalingService = gossConfObj.signalingService
+  this._id = id || hat()
+  this._sigSerOpts = gossConfObj.signalingService
   this.gossipAlgos = gossConfObj.gossipAlgos
   this.statsOpts = gossConfObj.statsOpts
+  this._usingSs = gossConfObj.usingSs
   if (this.statsOpts.activated) {
     this.actCycHistory = {}
     this.vieUpdHistory = {}
   }
   try {
-    this._usingSs = gossConfObj.usingSs
     this.gossipUtil = new GossipUtil(debug)
     this.factory = new GossipFactory(this.gossipUtil)
     this.createAlgorithms()
   } catch (e) {
     debug('During the instantiaton of gossip objects. ' + e)
   }
+  this._connectionManager = new ConnectionManager(Object.keys(this.gossipAlgos))
+  this._connectionManager.on('destroy', function (peerToDel, idToDel, viewToUpd) { })
 }
 
 /**
@@ -71,41 +74,63 @@ function Coordinator (gossConfObj, profile, id) {
 * Additionally, events of [Peer]{@link http://peerjs.com/docs/#api} are set to receive messages of
 * external peers.*/
 Coordinator.prototype.bootstrap = function () {
-  var c
+  this._sigSer = new PeerJSProtocol(this._id, this._sigSerOpts.host, this._sigSerOpts.port)
   var self = this
-  this._connectionManager = new ConnectionManager(Object.keys(this.gossipAlgos))
-  this._connectionManager.on('destroy', function (peerToDel, idToDel, viewToUpd) { })
-  var ss = this._signalingService
-  this._bootService = new Bootstrap(this.id, ss.host, ss.port, this.profile)
-  this._bootService.on('boot', function (bootstrapPeer) {
-    c = self._connectionManager.newConnection(bootstrapPeer, true, self._usingSs)
-    self._initConnectionEvents(c)
-    self._connectionManager.setToAll(c)
+  this._sigSer.on('open', function () {
+    var ss = self._sigSerOpts
+    self._bootSer = new Bootstrap(self._id, ss.host, ss.port, self.profile)
+    self._bootSer.on('boot', function (peerToBoot) {
+      var c = self._connectionManager.newConnection(peerToBoot, true, true)
+      self._initConnectionEvents(c)
+      self._connectionManager.setToAll(c)
+    })
+    self._bootSer.getPeerToBootstrap()
   })
-  this._bootService.on('offer', function (src, payload) {
-    c = self._connectionManager.newConnection(src, false, self._usingSs)
-    self._initConnectionEvents(c)
-    self._connectionManager.setToAll(c)
-    c._peer.emit('signal', payload)
+  this._sigSer.on('idTaken', function () {
+    // TODO Coordinator must implement this event if WebGC is open to the public where
+    // the peerID must be generated in a random way (via the 'hat' library for instance)
+    // aviding that two peers have the same identifier. Call: self.emit('resetPeerId')
   })
-  this._bootService.on('answer', function (src, payload) {})
-  this._bootService.on('candidate', function (src, payload) {})
-  this._bootService.on('abort', function () { debug('Abort was called') })
+  this._sigSer.on('abort', function () { /* TODO handle as exception */ })
+  this._sigSer.on('getFirstPeer', function () {
+    // TODO Again these two method must be implemented if WebGC is open to the public
+    // self.emit('removeAllConnections') && self._getPeerToBootstrap()
+  })
+  this._sigSer.on('offer', function (src, payload) {
+    var cO = self._connectionManager.newConnection(src, false, true)
+    self._initConnectionEvents(cO)
+    self._connectionManager.setToAll(cO)
+    cO._peer.signal(payload)
+  })
+  this._sigSer.on('answer', function (src, payload) {
+    var cA = self._connectionManager.get(src)
+    if (cA) cA._peer.signal(payload)
+    else debug('SDP answer received without having one connection with: ' + src)
+  })
+  this._sigSer.on('candidate', function (src, payload) {
+    var cC = self._connectionManager.get(src)
+    if (cC) cC._peer.signal(payload)
+    else debug('SDP candidate received without having one connection with: ' + src)
+  })
+  this._sigSer.on('abort', function () { debug('Abort was called') })
 }
 
-Coordinator.prototype._initConnectionEvents = function(c) {
+Coordinator.prototype._initConnectionEvents = function (c) {
+  
   if (!c) return
   var self = this
   c.on('open', function () {})
   c.on('sdp', function (sdp) {
     if (c._usingSigSer) {
       debug('Sending SDP through the server')
-      self._bootService._signalingService.sendSDP(sdp, c._receiver)
+      self._sigSer.sendSDP(sdp, c._receiver)
     } else {
       // TODO
     }
   })
+  c.on('msgReception', function (msg, emitter) {})
 }
+
 /**
 * @memberof Coordinator
 * @method createAlgorithms

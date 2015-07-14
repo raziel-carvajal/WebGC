@@ -1,16 +1,12 @@
 /**
 * @module src/services*/
 module.exports = Bootstrap
-
 var debug = require('debug')('bootstrap')
 var inherits = require('inherits')
 var its = require('its')
 var EventEmitter = require('events').EventEmitter
-var PeerJSProtocol = require('../utils/PeerjsProtocol')
-
 if (typeof window === 'undefined') var XMLHttpRequest = require('xhr2')
 var TIMES_TO_RECONECT = 3
-
 inherits(Bootstrap, EventEmitter)
 /**
 * @class Bootstrap
@@ -37,40 +33,13 @@ function Bootstrap (peerId, host, port, profile) {
   this._reconnectionTime = 3000
   this._tries = 0
   this._url = 'http://' + host + ':' + port + '/peerjs'
-  this._signalingService = new PeerJSProtocol(peerId, host, port)
-  this._initEvents()
-}
-
-Bootstrap.prototype.resetSignalingService = function (peerId) {
-  this._signalingService.destroy()
-  this._signalingService = new PeerJSProtocol(peerId, this._serverOpts.host, this._serverOpts.port)
-  this._initEvents()
-}
-
-Bootstrap.prototype._initEvents = function () {
-  var self = this
-  this._signalingService.on('open', function () { self._getPeerToBootstrap() })
-  this._signalingService.on('idTaken', function () {
-    debug('idTaken')
-    // TODO Coordinator must implement this event if WebGC is open to the public where
-    // the peerID must be generated in a random way (via the 'hat' library for instance)
-    // aviding that two peers have the same identifier
-    // self.emit('resetPeerId')
-  })
-  this._signalingService.on('abort', function () { self.emit('abort') })
-  this._signalingService.on('getFirstPeer', function () {
-    debug('getFitstPeer')
-    // TODO Again these two method must be implemented if WebGC is open to the public
-    // self.emit('removeAllConnections')
-    // self._getPeerToBootstrap()
-  })
 }
 /**
 * @memberof Bootstrap
 * @method postProfile
 * @description Post in the [brokering server]{@link https://github.com/peers/peerjs-server} the
 * peer's profile, which is the payload to exchange on each gossip message.*/
-Bootstrap.prototype._getPeerToBootstrap = function () {
+Bootstrap.prototype.getPeerToBootstrap = function () {
   debug('Connection success with signaling server, getting first peer to bootstrap')
   var xhr = new XMLHttpRequest()
   var url = this._url + '/' + this._id + '/profi' + '/peerToBoot'
