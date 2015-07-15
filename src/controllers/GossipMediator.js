@@ -73,29 +73,20 @@ GossipMediator.prototype.sentActiveCycleStats = function () {
 
 /**
 * @memberof GossipMediator
-* @method scheduleActiveThread
+* @method _doActiveThread
 * @description The periodic execution of one gossip cycle is performed in this method, normally what
 * the protocol does is to chose items from its local view for being exchanged with other peer.*/
-GossipMediator.prototype.scheduleActiveThread = function () {
+GossipMediator.prototype._doActiveThread = function () {
   this.lastActCycTime = new Date()
-  var self = this
-  setInterval(function () {
-    var log = {
-      loop: self.algo.loop,
-      algoId: self.algo.algoId,
-      view: JSON.stringify(self.algo.view)
-    }
-    self.postInMainThread({
-      header: 'logInConsole',
-      log: JSON.stringify(log)
-    })
-    // first try for measuring stats (not a good idea)
-    // self.sentActiveCycleStats()
-    // performing periodic gossip selection (no changes in view are done)
-    self.algo.selectItemsToSend('active')
-    self.algo.loop++
-    self.algo.increaseAge()
-  }, this.algo.gossipPeriod)
+  var log = { loop: this.algo.loop, algoId: this.algo.algoId, view: JSON.stringify(this.algo.view) }
+  this.postInMainThread({ header: 'logInConsole', log: JSON.stringify(log) })
+  // first try for measuring stats (not a good idea)
+  // self.sentActiveCycleStats()
+  // performing periodic gossip selection (no changes in view are done)
+  this.algo.selectItemsToSend('active')
+  this.debug(this.algo.algoId + ': End of loop ' + this.algo.loop)
+  this.algo.loop++
+  this.algo.increaseAge()
 }
 
 /**
@@ -137,8 +128,12 @@ GossipMediator.prototype.listen = function () {
     var msg = e.data
     switch (msg.header) {
       case 'firstView':
+        self.debug(self.algo.algoId + ': First view size ' + msg.view.length)
         self.algo.initialize(msg.view)
-        self.scheduleActiveThread()
+        break
+      case 'gossipLoop':
+        self.debug(self.algo.algoId + ': gossipLoop msg received')
+        self._doActiveThread() 
         break
       case 'incomingMsg':
         self.algo.selectItemsToKeep(msg)

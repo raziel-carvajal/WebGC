@@ -14,8 +14,9 @@ module.exports = GossipUtil
 function GossipUtil (debug) {
   if (!(this instanceof GossipUtil)) return GossipUtil(debug)
   this.debug = debug
-  this.cacheSize = 2
-  this.alreadyChosen = {}
+  this.electionLimit = 5
+  this.alreadyChosen = []
+  this._loopOfElection = 0
   debug('GossipUtil.init')
 }
 
@@ -27,7 +28,7 @@ function GossipUtil (debug) {
 * @param age Age of the item (integer)
 * @param data Object to share by the gossip protocol (application dependant)
 * @return Object Object with the properties age and data*/
-GossipUtil.prototype.newItem = function (age, data) { return {age: age, data: data} }
+GossipUtil.prototype.newItem = function (age, data) { return { age: age, data: data } }
 
 /**
 * @memberof GossipUtil
@@ -37,19 +38,15 @@ GossipUtil.prototype.newItem = function (age, data) { return {age: age, data: da
 * @param src Original object
 * @returns Object Object with a subset of items from the source*/
 GossipUtil.prototype.getRandomSubDict = function (n, src) {
-  if (n <= 0 || Object.keys(src).length === 0) { return {} }
+  if (n <= 0 || Object.keys(src).length === 0) return {}
   if (n >= Object.keys(src).length) {
     return src
   } else {
     var keys = Object.keys(src)
     var tmpDict = {}
     var result = {}
-    var key
-    var tmpAr
-    var i
-    for (i = 0; i < keys.length; i++) {
-      tmpDict[ keys[i] ] = 1
-    }
+    var key, tmpAr, i
+    for (i = 0; i < keys.length; i++) tmpDict[ keys[i] ] = 1
     i = 0
     do {
       tmpAr = Object.keys(tmpDict)
@@ -76,16 +73,17 @@ GossipUtil.prototype.getOldestKey = function (dictio) {
   }
   var i
   var items = []
-  if (Object.keys(this.alreadyChosen).length === this.cacheSize) {
-    this.alreadyChosen = {}
+  this._loopOfElection++
+  if (this._loopOfElection === this.electionLimit) {
+    this.alreadyChosen = []
+    this._loopOfElection = 0
   }
-  for (i = 0; i < keys.length; i++) {
-    items.push({k: keys[i], v: dictio[ keys[i] ].age})
-  }
+  for (i = 0; i < keys.length; i++) items.push({ k: keys[i], v: dictio[ keys[i] ].age })
   items.sort().reverse()
   for (i = 0; i < items.length; i++) {
-    if (!(items[i].k in this.alreadyChosen)) {
-      this.alreadyChosen[ items[i].k ] = 1
+    // items[i].v IN this.alreadyChosen ?
+    if (this.alreadyChosen.indexOf(items[i].k, 0) === -1) {
+      this.alreadyChosen.push(items[i].k)
       return items[i].k
     }
   }

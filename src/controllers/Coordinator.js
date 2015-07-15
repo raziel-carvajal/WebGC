@@ -61,99 +61,27 @@ function Coordinator (gossConfObj, profile, id) {
   }
   this._connectionManager = new ConnectionManager(Object.keys(this.gossipAlgos))
   this._connectionManager.on('destroy', function (peerToDel, idToDel, viewToUpd) { })
+  this._algosPool = {}
 }
-
-/**
-* @memberof Coordinator
-* @method start
-* @description Basically, this method instantiates: i) the [Peer]{@link http://peerjs.com/docs/#api}
-* object, ii) the LookupService (if it is
-* specified in the configuration object) and iii) every implementation of the gossip algorithms. In point
-* iii one [web worker]{@link http://www.w3schools.com/html/html5_webworkers.asp} environment is created
-* per algorithm with an instance of a [GossipMediator]{@link module:src/controllers#GossipMediator} too.
-* Additionally, events of [Peer]{@link http://peerjs.com/docs/#api} are set to receive messages of
-* external peers.*/
-Coordinator.prototype.bootstrap = function () {
-  this._sigSer = new PeerJSProtocol(this._id, this._sigSerOpts.host, this._sigSerOpts.port)
-  var self = this
-  this._sigSer.on('open', function () {
-    var ss = self._sigSerOpts
-    self._bootSer = new Bootstrap(self._id, ss.host, ss.port, self.profile)
-    self._bootSer.on('boot', function (peerToBoot) {
-      var c = self._connectionManager.newConnection(peerToBoot, true, true)
-      self._initConnectionEvents(c)
-      self._connectionManager.setToAll(c)
-    })
-    self._bootSer.getPeerToBootstrap()
-  })
-  this._sigSer.on('idTaken', function () {
-    // TODO Coordinator must implement this event if WebGC is open to the public where
-    // the peerID must be generated in a random way (via the 'hat' library for instance)
-    // aviding that two peers have the same identifier. Call: self.emit('resetPeerId')
-  })
-  this._sigSer.on('abort', function () { /* TODO handle as exception */ })
-  this._sigSer.on('getFirstPeer', function () {
-    // TODO Again these two method must be implemented if WebGC is open to the public
-    // self.emit('removeAllConnections') && self._getPeerToBootstrap()
-  })
-  this._sigSer.on('offer', function (src, payload) {
-    var cO = self._connectionManager.newConnection(src, false, true)
-    self._initConnectionEvents(cO)
-    self._connectionManager.setToAll(cO)
-    cO._peer.signal(payload)
-  })
-  this._sigSer.on('answer', function (src, payload) {
-    var cA = self._connectionManager.get(src)
-    if (cA) cA._peer.signal(payload)
-    else debug('SDP answer received without having one connection with: ' + src)
-  })
-  this._sigSer.on('candidate', function (src, payload) {
-    var cC = self._connectionManager.get(src)
-    if (cC) cC._peer.signal(payload)
-    else debug('SDP candidate received without having one connection with: ' + src)
-  })
-  this._sigSer.on('abort', function () { debug('Abort was called') })
-}
-
-Coordinator.prototype._initConnectionEvents = function (c) {
-  
-  if (!c) return
-  var self = this
-  c.on('open', function () {})
-  c.on('sdp', function (sdp) {
-    if (c._usingSigSer) {
-      debug('Sending SDP through the server')
-      self._sigSer.sendSDP(sdp, c._receiver)
-    } else {
-      // TODO
-    }
-  })
-  c.on('msgReception', function (msg, emitter) {})
-}
-
 /**
 * @memberof Coordinator
 * @method createAlgorithms
 * @description Method in charge of the initialization of objects which implements every
 * gossip protocol specified in the [configuration file]{@link module:src/confObjs#configurationObj}.*/
 Coordinator.prototype.createAlgorithms = function () {
-  var algosNames = Object.keys(this.gossipAlgos)
-  var algOpts
-  var worker
-  for (var i = 0; i < algosNames.length; i++) {
-    debug('Trying to initialize algo with ID: ' + algosNames[i])
-    algOpts = this.gossipAlgos[ algosNames[i] ]
+  this.algosNames = Object.keys(this.gossipAlgos)
+  var algOpts, worker
+  for (var i = 0; i < this.algosNames.length; i++) {
+    debug('Trying to initialize algo with ID: ' + this.algosNames[i])
+    algOpts = this.gossipAlgos[ this.algosNames[i] ]
     algOpts.data = this.profile
-    this.factory.createProtocol(algosNames[i], algOpts, this.statsOpts)
-    worker = this.factory.inventory[algosNames[i]]
-    if (worker !== 'undefined') {
-      this.setWorkerEvents(worker)
-    } else {
-      debug('worker: ' + algosNames[i] + ' is not defined')
-    }
+    this.factory.createProtocol(this.algosNames[i], algOpts, this.statsOpts)
+    worker = this.factory.inventory[this.algosNames[i]]
+    if (worker !== 'undefined') this.setWorkerEvents(worker)
+    else debug('worker: ' + this.algosNames[i] + ' is not defined')
     if (this.statsOpts.activated) {
-      this.actCycHistory[ algosNames[i] ] = {}
-      this.vieUpdHistory[ algosNames[i] ] = {}
+      this.actCycHistory[ this.algosNames[i] ] = {}
+      this.vieUpdHistory[ this.algosNames[i] ] = {}
     }
   }
   debug('Initialization DONE')
@@ -188,6 +116,88 @@ Coordinator.prototype.checkConfFile = function (confObj) {
 }
 /**
 * @memberof Coordinator
+* @method start
+* @description Basically, this method instantiates: i) the [Peer]{@link http://peerjs.com/docs/#api}
+* object, ii) the LookupService (if it is
+* specified in the configuration object) and iii) every implementation of the gossip algorithms. In point
+* iii one [web worker]{@link http://www.w3schools.com/html/html5_webworkers.asp} environment is created
+* per algorithm with an instance of a [GossipMediator]{@link module:src/controllers#GossipMediator} too.
+* Additionally, events of [Peer]{@link http://peerjs.com/docs/#api} are set to receive messages of
+* external peers.*/
+Coordinator.prototype.bootstrap = function () {
+  this._sigSer = new PeerJSProtocol(this._id, this._sigSerOpts.host, this._sigSerOpts.port)
+  var self = this
+  this._sigSer.on('open', function () {
+    self._bootSer = new Bootstrap(self._id, self._sigSerOpts.host, self._sigSerOpts.port, self.profile)
+    self._bootSer.on('boot', function (respToBoot) {
+      if (respToBoot.peer !== 'undefined') {
+        var c = self._connectionManager.newConnection(respToBoot.peer, true, true, respToBoot.profile)
+        self._initConnectionEvents(c)
+        self._connectionManager.setToAll(c)
+      } else {
+        debug('I am the first peer in the overlay, eventually other peer will contact me')
+      }
+      var algoCurrentView, worker, period
+      for (var i = 0; i < self.algosNames.length; i++) {
+        algoCurrentView = self._connectionManager.getCurrentView(self.algosNames[i])
+        worker = self.workers[self.algosNames[i]]
+        worker.postMessage({ header: 'firstView', view: algoCurrentView })
+        period = self.gossipAlgos[self.algosNames[i]].gossipPeriod
+        self._bootGossipCycle(self.algosNames[i], worker, period)
+      }
+    })
+    self._bootSer.getPeerToBootstrap()
+  })
+  this._sigSer.on('idTaken', function () {
+    // TODO Coordinator must implement this event if WebGC is open to the public where
+    // the peerID must be generated in a random way (via the 'hat' library for instance)
+    // aviding that two peers have the same identifier. Call: self.emit('resetPeerId')
+  })
+  this._sigSer.on('abort', function () { /* TODO handle as exception */ })
+  this._sigSer.on('getFirstPeer', function () {
+    // TODO Again these two method must be implemented if WebGC is open to the public
+    // self.emit('removeAllConnections') && self._getPeerToBootstrap()
+  })
+  this._sigSer.on('offer', function (src, payload) {
+    var cO = self._connectionManager.newConnection(src, false, true)
+    self._initConnectionEvents(cO)
+    self._connectionManager.setToAll(cO)
+    cO._peer.signal(payload)
+  })
+  this._sigSer.on('answer', function (src, payload) {
+    var cA = self._connectionManager.get(src)
+    if (cA) cA._peer.signal(payload)
+    else debug('SDP answer received without having one connection with: ' + src)
+  })
+  this._sigSer.on('candidate', function (src, payload) {
+    var cC = self._connectionManager.get(src)
+    if (cC) cC._peer.signal(payload)
+    else debug('SDP candidate received without having one connection with: ' + src)
+  })
+  this._sigSer.on('abort', function () { debug('Abort was called') })
+}
+
+Coordinator.prototype._bootGossipCycle = function (algoId, worker, period) {
+  this._algosPool[algoId] = setInterval(function () {
+    worker.postMessage({ header: 'gossipLoop' })
+  }, period) 
+}
+
+Coordinator.prototype._initConnectionEvents = function (c) {
+  if (!c) return
+  var self = this
+  c.on('sdp', function (sdp) {
+    if (c._usingSigSer) {
+      debug('Sending SDP through the server')
+      self._sigSer.sendSDP(sdp, c._receiver)
+    } else {
+      // TODO
+    }
+  })
+  c.on('msgReception', function (msg, emitter) {})
+}
+/**
+* @memberof Coordinator
 * @method setWorkerEvents
 * @description This method sets the event "message" of a web worker for handling any message exchange
 * in WebGC. These are the possible message exchanges: i) from the Coordinator to an external peer, ii)
@@ -201,7 +211,10 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
     switch (msg.header) {
       case 'outgoingMsg':
         debug('OutgoingMsg to reach: ' + msg.receiver + ' with algoId: ' + msg.algoId)
-        self.sendTo(msg)
+        if (msg.receiver !== null) {
+          var c = self._connectionManager.getFrom(msg.algoId, msg.receiver)
+        }
+        // self.sendTo(msg)
         break
       case 'getDep':
         worker = self.workers[msg.depId]
@@ -252,6 +265,7 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
   }, false)
   worker.addEventListener('error', function (e) {
     debug('In Worker: ' + e.message + ', lineno: ' + e.lineno)
+    debug(e)
   }, false)
 }
 /**
@@ -431,5 +445,4 @@ Coordinator.prototype.handleIncomingData = function (data) {
 * application layer.
 * @param fn Reference to an external function*/
 Coordinator.prototype.setApplicationLevelFunction = function (fn) { this.appFn = fn }
-
 module.exports = Coordinator

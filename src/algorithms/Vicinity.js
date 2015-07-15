@@ -77,7 +77,7 @@ Vicinity.prototype.initialize = function (keys) {
   if (keys.length > 0) {
     var i = 0
     while (i < this.viewSize && i < keys.length) {
-      this.view[ keys[i].id ] = this.gossipUtil.newItem(0, keys[i].profile[this.algoId])
+      this.view[ keys[i].id ] = this.gossipUtil.newItem(0, keys[i].profile)
       i++
     }
   }

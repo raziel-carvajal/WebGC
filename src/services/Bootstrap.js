@@ -29,7 +29,8 @@ function Bootstrap (peerId, host, port, profile) {
   EventEmitter.call(this)
   this._id = peerId
   this._serverOpts = {'host': host, 'port': port}
-  this._profile = profile
+  this._profileTxt = ''
+  for (var i = 0; i < profile.length; i++) this._profileTxt += profile[i] + '-'
   this._reconnectionTime = 3000
   this._tries = 0
   this._url = 'http://' + host + ':' + port + '/peerjs'
@@ -42,7 +43,7 @@ function Bootstrap (peerId, host, port, profile) {
 Bootstrap.prototype.getPeerToBootstrap = function () {
   debug('Connection success with signaling server, getting first peer to bootstrap')
   var xhr = new XMLHttpRequest()
-  var url = this._url + '/' + this._id + '/profi' + '/peerToBoot'
+  var url = this._url + '/' + this._id + '/' + this._profileTxt + '/peerToBoot'
   xhr.open('GET', url, true)
   var self = this
   xhr.onreadystatechange = function () {
@@ -51,17 +52,19 @@ Bootstrap.prototype.getPeerToBootstrap = function () {
       xhr.onerror()
       return
     }
+    var resp = JSON.parse(xhr.responseText)
     debug('Peer to boot is: ' + xhr.responseText)
-    var peerToBootstrap = xhr.responseText
-    its.string(peerToBootstrap)
+    its.string(resp.peer)
+    its.string(resp.profile)
     // when the peer to bootstrap isn't defined, it means that the local
     // peer is the first peer to contact the server which means that eventually
     // the local peer will be contacted by another peer
-    if (peerToBootstrap !== 'undefined') {
-      self.emit('boot', peerToBootstrap)
-    } else {
-      debug('I am the first peer in the overlay, eventually other peer will contact me')
+    if (resp.peer !== 'undefined') {
+      var ar = resp.profile.split('-')
+      resp.profile = []
+      for (var i = 0; i < ar.length; i++) if (typeof ar[i] !== 'undefined') resp.profile.push(ar[i])
     }
+    self.emit('boot', resp)
   }
   xhr.onerror = function () {
     self._tries++

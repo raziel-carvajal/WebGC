@@ -43,8 +43,8 @@ ConnectionManager.prototype.updView = function (algoId, newView) {
   for (i = 0; i < newView.length; i++) this.emit('connect', newView[i], oldView)
 }
 
-ConnectionManager.prototype.newConnection = function (receiver, initiator, viaSigSer) {
-  return new Connection(receiver, initiator, viaSigSer)
+ConnectionManager.prototype.newConnection = function (receiver, initiator, viaSigSer, profile) {
+  return new Connection(receiver, initiator, viaSigSer, profile)
 }
 
 ConnectionManager.prototype.get = function (id) {
@@ -54,7 +54,25 @@ ConnectionManager.prototype.get = function (id) {
   }
 }
 
+ConnectionManager.prototype.getFrom = function (algoId, id) {
+  if (this._cons[algoId] && this._cons[algoId][id]) return this._cons[algoId][id]
+  debug('Peer id: ' + id + ' from view: ' + algoId + ' does not exist')
+}
+
 ConnectionManager.prototype.setToAll = function (c) {
   var keys = Object.keys(this._cons)
-  for (var i = 0; i < keys.length; i++) { if (!this._cons[keys[i]][c._receiver]) this._cons[keys[i]][c._receiver] = c }
+  for (var i = 0; i < keys.length; i++) {
+    if (!this._cons[keys[i]][c._receiver]) this._cons[keys[i]][c._receiver] = c
+  }
+}
+
+ConnectionManager.prototype.getCurrentView = function (algoId) {
+  var connection
+  var view = []
+  var keys = Object.keys(this._cons[algoId])
+  for (var i = 0; i < keys.length; i++) {
+    connection = this._cons[algoId][keys[i]]
+    view.push({ id: keys[i] , profile: connection._rcvProfile })
+  }
+  return view
 }
