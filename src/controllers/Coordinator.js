@@ -46,21 +46,20 @@ function Coordinator (gossConfObj, profile, id) {
   this._id = id || hat()
   this._sigSerOpts = gossConfObj.signalingService
   this.gossipAlgos = gossConfObj.gossipAlgos
+  this.algosNames = Object.keys(this.gossipAlgos)
   this.statsOpts = gossConfObj.statsOpts
   this._usingSs = gossConfObj.usingSs
   if (this.statsOpts.activated) {
     this.actCycHistory = {}
     this.vieUpdHistory = {}
   }
-  try {
-    this.gossipUtil = new GossipUtil(debug)
-    this.factory = new GossipFactory(this.gossipUtil)
-    this.createAlgorithms()
-  } catch (e) {
-    debug('During the instantiaton of gossip objects. ' + e)
-  }
-  this._connectionManager = new ConnectionManager(Object.keys(this.gossipAlgos))
-  this._connectionManager.on('destroy', function (peerToDel, idToDel, viewToUpd) { })
+  this._maxNumOfCon = 0
+  this.gossipUtil = new GossipUtil(debug)
+  this.factory = new GossipFactory(this.gossipUtil)
+  try { this.createAlgorithms() }
+  catch (e) { debug('During the instantiaton of gossip objects. ' + e) }
+  this._connectionManager = new ConnectionManager(this._maxNumOfCon)
+  // this._connectionManager.on('destroy', function (peerToDel, idToDel, viewToUpd) { })
   this._algosPool = {}
 }
 /**
@@ -69,11 +68,12 @@ function Coordinator (gossConfObj, profile, id) {
 * @description Method in charge of the initialization of objects which implements every
 * gossip protocol specified in the [configuration file]{@link module:src/confObjs#configurationObj}.*/
 Coordinator.prototype.createAlgorithms = function () {
-  this.algosNames = Object.keys(this.gossipAlgos)
   var algOpts, worker
+  
   for (var i = 0; i < this.algosNames.length; i++) {
     debug('Trying to initialize algo with ID: ' + this.algosNames[i])
     algOpts = this.gossipAlgos[ this.algosNames[i] ]
+    this._maxNumOfCon += algOpts.viewSize
     algOpts.data = this.profile
     this.factory.createProtocol(this.algosNames[i], algOpts, this.statsOpts)
     worker = this.factory.inventory[this.algosNames[i]]
@@ -133,13 +133,13 @@ Coordinator.prototype.bootstrap = function () {
       if (respToBoot.peer !== 'undefined') {
         var c = self._connectionManager.newConnection(respToBoot.peer, true, true, respToBoot.profile)
         self._initConnectionEvents(c)
-        self._connectionManager.setToAll(c)
+        self._connectionManager.set(c)
       } else {
         debug('I am the first peer in the overlay, eventually other peer will contact me')
       }
       var algoCurrentView, worker, period
       for (var i = 0; i < self.algosNames.length; i++) {
-        algoCurrentView = self._connectionManager.getCurrentView(self.algosNames[i])
+        algoCurrentView = Object.keys(self._connectionManager._cons)
         worker = self.workers[self.algosNames[i]]
         worker.postMessage({ header: 'firstView', view: algoCurrentView })
         period = self.gossipAlgos[self.algosNames[i]].gossipPeriod
@@ -161,17 +161,17 @@ Coordinator.prototype.bootstrap = function () {
   this._sigSer.on('offer', function (src, payload) {
     var cO = self._connectionManager.newConnection(src, false, true)
     self._initConnectionEvents(cO)
-    self._connectionManager.setToAll(cO)
+    self._connectionManager.set(cO)
     cO._peer.signal(payload)
   })
   this._sigSer.on('answer', function (src, payload) {
     var cA = self._connectionManager.get(src)
-    if (cA) cA._peer.signal(payload)
+    if (cA !== -1) cA._peer.signal(payload)
     else debug('SDP answer received without having one connection with: ' + src)
   })
   this._sigSer.on('candidate', function (src, payload) {
     var cC = self._connectionManager.get(src)
-    if (cC) cC._peer.signal(payload)
+    if (cC !== -1) cC._peer.signal(payload)
     else debug('SDP candidate received without having one connection with: ' + src)
   })
   this._sigSer.on('abort', function () { debug('Abort was called') })
@@ -212,7 +212,10 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
       case 'outgoingMsg':
         debug('OutgoingMsg to reach: ' + msg.receiver + ' with algoId: ' + msg.algoId)
         if (msg.receiver !== null) {
-          var c = self._connectionManager.getFrom(msg.algoId, msg.receiver)
+          var c = self._connectionManager.getFrom(msg.receiver)
+          if (c !== -1){
+
+          }else {}
         }
         // self.sendTo(msg)
         break
