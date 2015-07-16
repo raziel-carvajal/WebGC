@@ -1,5 +1,6 @@
 /**
 * @module src/controllers*/
+module.exports = Coordinator
 var debug = require('debug')('coordinator')
 var its = require('its')
 var hat = require('hat')
@@ -55,12 +56,16 @@ function Coordinator (gossConfObj, profile, id) {
   }
   this._maxNumOfCon = 0
   this.gossipUtil = new GossipUtil(debug)
-  this.factory = new GossipFactory(this.gossipUtil)
-  try { this.createAlgorithms() }
-  catch (e) { debug('During the instantiaton of gossip objects. ' + e) }
+  this.factory = new GossipFactory(this.gossipUtil, this._id)
+  try {
+    this.createAlgorithms()
+  } catch (e) {
+    debug('During the instantiaton of gossip objects. ' + e)
+  }
   this._connectionManager = new ConnectionManager(this._maxNumOfCon)
-  // this._connectionManager.on('destroy', function (peerToDel, idToDel, viewToUpd) { })
   this._algosPool = {}
+  this._routingTable = {}
+  this._toDel
 }
 /**
 * @memberof Coordinator
@@ -69,7 +74,6 @@ function Coordinator (gossConfObj, profile, id) {
 * gossip protocol specified in the [configuration file]{@link module:src/confObjs#configurationObj}.*/
 Coordinator.prototype.createAlgorithms = function () {
   var algOpts, worker
-  
   for (var i = 0; i < this.algosNames.length; i++) {
     debug('Trying to initialize algo with ID: ' + this.algosNames[i])
     algOpts = this.gossipAlgos[ this.algosNames[i] ]
@@ -130,18 +134,17 @@ Coordinator.prototype.bootstrap = function () {
   this._sigSer.on('open', function () {
     self._bootSer = new Bootstrap(self._id, self._sigSerOpts.host, self._sigSerOpts.port, self.profile)
     self._bootSer.on('boot', function (respToBoot) {
+      var firstView = []
       if (respToBoot.peer !== 'undefined') {
-        var c = self._connectionManager.newConnection(respToBoot.peer, true, true, respToBoot.profile)
+        var c = self._connectionManager.newConnection(respToBoot.peer, true, true).connection
         self._initConnectionEvents(c)
         self._connectionManager.set(c)
-      } else {
-        debug('I am the first peer in the overlay, eventually other peer will contact me')
-      }
-      var algoCurrentView, worker, period
+        firstView.push({ id: respToBoot.peer, profile: respToBoot.profile })
+      } else debug('I am the first peer in the overlay, eventually other peer will contact me')
+      var worker, period
       for (var i = 0; i < self.algosNames.length; i++) {
-        algoCurrentView = Object.keys(self._connectionManager._cons)
         worker = self.workers[self.algosNames[i]]
-        worker.postMessage({ header: 'firstView', view: algoCurrentView })
+        worker.postMessage({ header: 'firstView', view: firstView })
         period = self.gossipAlgos[self.algosNames[i]].gossipPeriod
         self._bootGossipCycle(self.algosNames[i], worker, period)
       }
@@ -160,29 +163,28 @@ Coordinator.prototype.bootstrap = function () {
   })
   this._sigSer.on('offer', function (src, payload) {
     var cO = self._connectionManager.newConnection(src, false, true)
-    self._initConnectionEvents(cO)
-    self._connectionManager.set(cO)
-    cO._peer.signal(payload)
+    if (cO.conLimReached) self._connectionManager.deleteOneCon()
+    self._initConnectionEvents(cO.connection)
+    self._connectionManager.set(cO.connection)
+    cO.connection._peer.signal(payload)
   })
   this._sigSer.on('answer', function (src, payload) {
     var cA = self._connectionManager.get(src)
-    if (cA !== -1) cA._peer.signal(payload)
-    else debug('SDP answer received without having one connection with: ' + src)
+    if (cA) cA._peer.signal(payload)
+    else debug('SDP.sigSer.answer received without having one connection with: ' + src)
   })
   this._sigSer.on('candidate', function (src, payload) {
     var cC = self._connectionManager.get(src)
-    if (cC !== -1) cC._peer.signal(payload)
-    else debug('SDP candidate received without having one connection with: ' + src)
+    if (cC) cC._peer.signal(payload)
+    else debug('SDP.sigSer.candidate received without having one connection with: ' + src)
   })
-  this._sigSer.on('abort', function () { debug('Abort was called') })
+  this._sigSer.on('abort', function () { debug('Abort.sigSer was called') })
 }
-
 Coordinator.prototype._bootGossipCycle = function (algoId, worker, period) {
   this._algosPool[algoId] = setInterval(function () {
     worker.postMessage({ header: 'gossipLoop' })
-  }, period) 
+  }, period)
 }
-
 Coordinator.prototype._initConnectionEvents = function (c) {
   if (!c) return
   var self = this
@@ -191,10 +193,21 @@ Coordinator.prototype._initConnectionEvents = function (c) {
       debug('Sending SDP through the server')
       self._sigSer.sendSDP(sdp, c._receiver)
     } else {
-      // TODO
+      debug('Sending SDP via DataConnections')
+      var proxy = self._routingTable[c._receiver]
+      var proxyCon = self._connectionManager.get(proxy)
+      if (proxyCon) {
+        var type = typeof sdp.type !== 'undefined' ? sdp.type.toUpperCase() : 'CANDIDATE'
+        proxyCon.send({
+          service: 'SDP',
+          emitter: self._id,
+          receiver: c._receiver,
+          payload: { 'type': type, 'payload': sdp}
+        })
+      } else debug('No proxy, why?')// TODO What to do if proxy is absent ?
     }
   })
-  c.on('msgReception', function (msg, emitter) {})
+  c.on('msgReception', function (msg) { self.handleIncomingData(msg, c._receiver) })
 }
 /**
 * @memberof Coordinator
@@ -210,48 +223,40 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
     var worker
     switch (msg.header) {
       case 'outgoingMsg':
-        debug('OutgoingMsg to reach: ' + msg.receiver + ' with algoId: ' + msg.algoId)
+        debug('OutgoingMsg to reach: ' + msg.receiver + ' msg: ' + JSON.stringify(msg))
         if (msg.receiver !== null) {
-          var c = self._connectionManager.getFrom(msg.receiver)
-          if (c !== -1){
-
-          }else {}
+          var c = self._connectionManager.get(msg.receiver)
+          if (!c) {
+            debug('Connection with: ' + msg.receiver + ' does not exist, doing connection')
+            c = self._connectionManager.newConnection(msg.receiver, true, self._usingSs)
+            if (c.conLimReached) self._connectionManager.deleteOneCon()
+            self._initConnectionEvents(c.connection)
+            self._connectionManager.set(c.connection)
+          }
+          delete msg.header
+          c.send(msg)
         }
-        // self.sendTo(msg)
         break
       case 'getDep':
         worker = self.workers[msg.depId]
-        if (worker !== 'undefined') {
-          worker.postMessage(msg)
-        } else {
-          debug('there is not a worker for algorithm: ' + msg.depId)
-        }
+        if (worker !== 'undefined') worker.postMessage(msg)
+        else debug('there is not a worker for algorithm: ' + msg.depId)
         break
       case 'setDep':
         worker = self.workers[msg.emitter]
         if (worker !== 'undefined') {
           msg.header = 'applyDep'
           worker.postMessage(msg)
-        } else {
-          debug('there is not a worker for algorithm: ' + msg.emitter)
-        }
+        } else { debug('there is not a worker for algorithm: ' + msg.emitter) }
         break
       case 'drawGraph':
         if (typeof self.plotterObj !== 'undefined') {
           self.plotterObj.buildGraph(msg.algoId, msg.graph, msg.view)
-        } else {
-          debug(msg)
-        }
+        } else { debug(msg) }
         break
-      // Logging to which extend the view of each algorithm is updated and which
-      // is the overload in gossip cycles with the use of web workers
       case 'actCycLog':
         if (self.actCycHistory) {
-          self.actCycHistory[msg.algoId][msg.counter] = {
-            algoId: msg.algoId,
-            loop: msg.loop,
-            offset: msg.offset
-          }
+          self.actCycHistory[msg.algoId][msg.counter] = { algoId: msg.algoId, loop: msg.loop, offset: msg.offset }
         }
         break
       case 'viewUpdsLog':
@@ -262,14 +267,10 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
         break
       default:
         debug('message: ' + msg.header + ' is not recoginized')
-        debug('message: ' + msg.header + ' is not recoginized')
         break
     }
   }, false)
-  worker.addEventListener('error', function (e) {
-    debug('In Worker: ' + e.message + ', lineno: ' + e.lineno)
-    debug(e)
-  }, false)
+  worker.addEventListener('error', function (e) {debug('In Worker:' + e.message + ', lineno:' + e.lineno)}, false)
 }
 /**
 * @memberof Coordinator
@@ -291,7 +292,8 @@ Coordinator.prototype.getActiCycHistory = function () { return this.actCycHistor
 * points to an empty object*/
 Coordinator.prototype.emptyHistoryOfLogs = function () {
   var keys = Object.keys(this.vieUpdHistory)
-  for (var i = 0; i < keys.length; i++) {
+  var i
+  for (i = 0; i < keys.length; i++) {
     delete this.vieUpdHistory[ keys[i] ]
     this.vieUpdHistory[ keys[i] ] = {}
   }
@@ -303,128 +305,53 @@ Coordinator.prototype.emptyHistoryOfLogs = function () {
 }
 /**
 * @memberof Coordinator
-* @method sendViaSigServer
-* @description Send a message to peer msg.receiver via one connection created with the help of the
-* brokering server, i. e., the emitter of the message will exchange information with the receiver
-* through the brokering server to perform a data connection between both peers once the connection
-* is open, the message msg will be sent to the receiver.
-* @param msg Payload to send
-* @return connection Reference to the connection established by two peers via the brokering server*/
-Coordinator.prototype.sendViaSigServer = function (msg) {
-  var self = this
-  // Peer.connect
-  var connection = this.connect(msg.receiver, {serialization: 'json'})
-  connection.on('open', function () {
-    debug('Connection open, sending msg: ' + msg.service +
-      ' to: ' + msg.receiver)
-    if (!self._usingSs) {
-      self.isFirstConDone = true
-    }
-    connection.send(msg)
-    connection.on('data', function (data) { self.handleIncomingData(data) })
-  })
-  connection.on('error', function (e) {
-    debug('Trying to connect with: ' + msg.receiver + ' ' + e)
-  })
-  return connection
-}
-/**
-* @memberof Coordinator
-* @method sendViaLookupService
-* @description Send a message to peer msg.receiver via one connection created by the
-* [LookupService]{@link module:src/services#LookupService}. Basically, msg.receiver will be found
-* among the actual connections in the overlay with the forwarding of lookup messages. When the
-* connection is open, the message msg will be sent to the receiver.
-* @param msg Payload to send*/
-Coordinator.prototype.sendViaLookupService = function (msg) {
-  debug('Trying to send msg: ' + msg.service + ' to: ' + msg.receiver +
-    ' with existing connections')
-  if (!this.isFirstConDone) {
-    debug('Doing first connection via the signaling server')
-    this.sendViaSigServer(msg)
-    return
-  } else {
-    var connections = this.connections[msg.receiver]
-    var con
-    if (connections) {
-      debug('Peer.connections is not empty, searching at least one connection open')
-      for (var i = 0; i < connections.length; i++) {
-        con = connections[i]
-        if (con) {
-          debug('Connection with: ' + msg.receiver + ' at Peer was found')
-          if (con.open) {
-            debug('Sending message')
-            con.send(msg)
-            return
-          } else {
-            debug('Connection in Peer is still not ready')
-          }
-        }
-      }
-    }
-    debug('Any connection available at Peer, checking LookupService')
-    con = this.lookupService.connections[msg.receiver]
-    if (con) {
-      debug('Connection with: ' + msg.receiver + ' at LookupService was found')
-      if (con.open) {
-        debug('Sending message')
-        con.send(msg)
-        return
-      } else {
-        debug('Connection in LookupService is still not ready')
-      }
-    } else {
-      debug('Any connection available at Lookup, doing lookup service')
-    }
-    this.lookupService.apply(msg)
-  }
-}
-/**
-* @memberof Coordinator
-* @method handleConnection
-* @description Once one connection is established among two peers this method is called
-* to set the events to trigger in case of error in the connection, data
-* reception and when the connection is ready to send messages. Additionally, when the
-* connection is open and if the function "appFn" was set then that function is
-* called.
-* @param connection Connection among two peers*/
-Coordinator.prototype.handleConnection = function (connection) {
-  var self = this
-  if (connection.label === 'chat' && this.appFn) {
-    connection.on('open', function () {
-      if (self.appFn !== null) {
-        self.appFn(connection)
-      }
-    })
-  } else {
-    if (!this.isFirstConDone) {
-      this.isFirstConDone = true
-    }
-    connection.on('open', function () {
-      debug('Bi-directional communication with: ' + connection.peer + ' is ready')
-      connection.on('data', function (data) { self.handleIncomingData(data) })
-    })
-    connection.on('error', function (err) {
-      debug('In communication with: ' + connection.peer +
-        ' (call handleConnection) ' + err)
-    })
-  }
-}
-/**
-* @memberof Coordinator
 * @method handleIncomingData
 * @description Every message received by peers contains one header to differentiate its payload,
 * this method handles the reception of messages according to the next two headers: gossip and
 * lookup. The latter serves to discover peers in the overlay and the former contains what it is
 * exchanged by each gossip protocol (normally, the view of each peer).
 * @param data Message exchange between two peers*/
-Coordinator.prototype.handleIncomingData = function (data) {
-  debug(data)
+Coordinator.prototype.handleIncomingData = function (data, emitter) {
+  debug('Msg reception in DataChannel: ' + JSON.stringify(data))
   switch (data.service) {
-    case 'LOOKUP':
-      this.lookupService.dispatch(data)
+    case 'SDP':
+      if (data.receiver === this._id || data.payload.type === 'LEAVE') {
+        switch (data.payload.type) {
+          case 'LEAVE':
+            break
+          case 'OFFER':
+            var cO = this._connectionManager.newConnection(data.emitter, false, this._usingSs)
+            if (cO.conLimReached) this._connectionManager.deleteOneCon()
+            this._initConnectionEvents(cO.connection)
+            this._connectionManager.set(cO.connection)
+            cO.connection._peer.signal(data.payload.payload)
+            break
+          case 'ANSWER':
+            var cA = this._connectionManager.get(data.emitter)
+            if (cA) cA._peer.sginal(data.payload.payload)
+            else debug('DataChannel.SDP.answ received without having a connection with: ' + data.emitter)
+            break
+          case 'CANDIDATE':
+            var cC = this._connectionManager.get(data.emitter)
+            if (cC) cC._peer.sginal(data.payload.payload)
+            else debug('DataChannel.SDP.candi received without having a connection with: ' + data.emitter)
+            break
+          default:
+            debug('SDP in DataChannel unknown: ' + data.service)
+            break
+        }
+      } else {
+        var c = this._connectionManager.get(data.receiver)
+        if (c) {
+          debug('Forward msg to reach: ' + data.receiver)
+          c.send(data)
+        } else {
+          // TODO cope with the LEAVE message in SDP
+        }
+      }
       break
     case 'GOSSIP':
+      this._updRoutingTable(Object.keys(data.payload), emitter)
       var worker = this.workers[data.algoId]
       var msg = {
         header: 'incomingMsg',
@@ -433,13 +360,21 @@ Coordinator.prototype.handleIncomingData = function (data) {
       }
       worker.postMessage(msg)
       break
-    case 'VOID':
-      debug('VOID was received from: ' + data.emitter)
-      break
     default:
       debug(data + ' is not recognized')
       break
   }
+}
+Coordinator.prototype._updRoutingTable = function (view, emitter) {
+  var keys = Object.keys(this._routingTable)
+  var currentCons = this._connectionManager.getConnections()
+  var index, i
+  for (i = 0; i < keys.length; i++) {
+    index = view.indexOf(keys[i], 0)
+    if (index !== -1) view[index] = null
+    if (currentCons.indexOf(this._routingTable[keys[i]], 0) === -1) delete this._routingTable[keys[i]]
+  }
+  for (i = 0; i < view.length; i++) if (view[i] !== null) this._routingTable[view[i]] = emitter
 }
 /**
 * @memberof Coordinator
@@ -448,4 +383,3 @@ Coordinator.prototype.handleIncomingData = function (data) {
 * application layer.
 * @param fn Reference to an external function*/
 Coordinator.prototype.setApplicationLevelFunction = function (fn) { this.appFn = fn }
-module.exports = Coordinator

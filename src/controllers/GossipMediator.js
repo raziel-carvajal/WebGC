@@ -133,7 +133,7 @@ GossipMediator.prototype.listen = function () {
         break
       case 'gossipLoop':
         self.debug(self.algo.algoId + ': gossipLoop msg received')
-        self._doActiveThread() 
+        self._doActiveThread()
         break
       case 'incomingMsg':
         self.algo.selectItemsToKeep(msg)

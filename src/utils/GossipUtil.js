@@ -4,7 +4,6 @@
 // used with "workerify" but not in "webworker-threads" for NodeJS. Now the solution is to
 // remove every require (which isn't elegant) and replace it whith the anonymous function to
 // export. Other solution could be to edit the sources on the fly adding the right headers
-// 
 module.exports = GossipUtil
 
 /**

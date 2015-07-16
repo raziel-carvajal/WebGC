@@ -23,8 +23,9 @@ var fs = require('fs')
 * @param opts Object with one [logger]{@link module:src/utils#LoggerForWebWorker} and with one reference
 * to a [GossipUtil]{@link module:src/utils#GossipUtil} object.
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function GossipFactory (gossipUtil) {
+function GossipFactory (gossipUtil, id) {
   this.gossipUtil = gossipUtil
+  this._id = id
   this.inventory = {}
   if (typeof window === 'undefined') {
     this.modifInfo = {
@@ -79,7 +80,7 @@ GossipFactory.prototype.createProtocol = function (algoId, algOpts, statsOpts) {
     var cls = require('../algorithms/' + algOpts.class)
     this.gossipUtil.extendProperties(algOpts, cls.defaultOpts)
     // additional options are given for logging proposes
-    this.gossipUtil.extendProperties(algOpts, {'algoId': algoId})
+    this.gossipUtil.extendProperties(algOpts, {'algoId': algoId, peerId: this._id})
     this.checkProperties(algOpts)
     var opts = {
       activated: statsOpts.activated,

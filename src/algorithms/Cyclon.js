@@ -9,7 +9,6 @@ module.exports = Cyclon
 var inherits = require('inherits')
 var GossipProtocol = require('../superObjs/GossipProtocol')
 var ViewSelector = require('../superObjs/ViewSelector')
-
 inherits(Cyclon, GossipProtocol)
 
 /**

@@ -6,7 +6,6 @@
 // export. Other solution could be to edit the sources on the fly adding the right headers
 module.exports = GossipProtocol
 
-// (function (exports) {
 /**
 * @class GossipProtocol
 * @description Representation of one generic gossip protocol, every implementation must inherits
@@ -83,6 +82,3 @@ GossipProtocol.prototype.selectItemsToKeep = function (thisId, rcvCache) { throw
 * @param peerId:String - Identifier of the local peer
 * @deprecated For version 0.4.1, see the NOTE at the top of this file*/
 GossipProtocol.prototype.getPlotInfo = function (peerId) { throw new Error(this.nonImpMsg) }
-
-//exports.GossipProtocol = GossipProtocol
-//}) (this)
