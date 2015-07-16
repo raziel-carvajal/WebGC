@@ -223,7 +223,7 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
     var worker
     switch (msg.header) {
       case 'outgoingMsg':
-        debug('OutgoingMsg to reach: ' + msg.receiver + ' msg: ' + JSON.stringify(msg))
+        debug('OutgoingMsg to reach: ' + msg.receiver)
         if (msg.receiver !== null) {
           var c = self._connectionManager.get(msg.receiver)
           if (!c) {
@@ -312,7 +312,7 @@ Coordinator.prototype.emptyHistoryOfLogs = function () {
 * exchanged by each gossip protocol (normally, the view of each peer).
 * @param data Message exchange between two peers*/
 Coordinator.prototype.handleIncomingData = function (data, emitter) {
-  debug('Msg reception in DataChannel: ' + JSON.stringify(data))
+  debug('Msg reception in DataChannel: ' + data.service)
   switch (data.service) {
     case 'SDP':
       if (data.receiver === this._id || data.payload.type === 'LEAVE') {

@@ -213,12 +213,8 @@ Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
     result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data[this.algoId])
   }
   var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result)
-  if (this.peerId in mergedViews) { delete mergedViews[this.peerId] }
-  var similarNeig = this.selector.getClosestNeighbours(this.viewSize, mergedViews, null)
-  keys = Object.keys(this.view)
-  for (i = 0; i < keys.length; i++) { delete this.view[ keys[i] ] }
-  keys = Object.keys(similarNeig)
-  for (i = 0; i < keys.length; i++) { this.view[ keys[i] ] = similarNeig[ keys[i] ] }
+  if (Object.keys(mergedViews).indexOf(this.peerId, 0) !== -1) delete mergedViews[this.peerId]
+  this.view = this.selector.getClosestNeighbours(this.viewSize, mergedViews, null)
   var viewUpdOffset = new Date() - msg.receptionTime
   var msgToSend = {
     service: 'GOSSIP',

@@ -117,33 +117,35 @@ Cyclon.prototype.selectItemsToSend = function (thread) {
 * for more details.*/
 Cyclon.prototype.selectItemsToKeep = function (msg) {
   var rcvKeys = Object.keys(msg.payload)
-  if (rcvKeys.length === 0) { return }
+  if (rcvKeys.length === 0) return
   var i
   var currentKeys = Object.keys(this.view)
   if (currentKeys.length === 0) {
     i = 0
     do {
       this.view[ rcvKeys[i] ] = msg.payload[ rcvKeys[i] ]
-      i += 1
+      i++
     } while (i < rcvKeys.length && Object.keys(this.view).length < this.viewSize)
   } else {
     var newCache = {}
-    if (this.algoId in msg.payload) {
-      delete msg.payload[this.algoId]
+    if (rcvKeys.indexOf(this.peerId, 0) !== -1) {
+      delete msg.payload[this.peerId]
       rcvKeys = Object.keys(msg.payload)
     }
-    for (i = 0; i < rcvKeys.length; i++) {
-      if (!(rcvKeys[i] in this.view)) { newCache[ rcvKeys[i] ] = msg.payload[ rcvKeys[i] ] }
-    }
+    i = 0
+    do {
+      if (currentKeys.indexOf(rcvKeys[i], 0) === -1) newCache[ rcvKeys[i] ] = msg.payload[ rcvKeys[i] ]
+      else {
+        if (msg.payload[ rcvKeys[i] ].age < this.view[ rcvKeys[i] ].age) this.view[ rcvKeys[i] ].age = msg.payload[ rcvKeys[i] ].age
+      }
+      i++
+    } while (i < rcvKeys.length && Object.keys(newCache).length < this.viewSize)
     i = 0
     while (Object.keys(newCache).length < this.viewSize && i < currentKeys.length) {
       newCache[ currentKeys[i] ] = this.view[ currentKeys[i] ]
       i += 1
     }
-    var keys = Object.keys(this.view)
-    for (i = 0; i < keys.length; i++) { delete this.view[ keys[i] ] }
-    keys = Object.keys(newCache)
-    for (i = 0; i < keys.length; i++) { this.view[ keys[i] ] = newCache[ keys[i] ] }
+    this.view = newCache
     // Logging information of view update
     var viewUpdOffset = new Date() - msg.receptionTime
     var msgToSend = {

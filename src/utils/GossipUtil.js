@@ -142,19 +142,13 @@ GossipUtil.prototype.mergeViews = function (v1, v2) {
   var keysV1 = Object.keys(v1)
   var keysV2 = Object.keys(v2)
   var i
-  var prop
   var result = {}
-  for (i = 0; i < keysV1.length; i++) {
-    result[ keysV1[i] ] = v1[ keysV1[i] ]
-  }
+  for (i = 0; i < keysV1.length; i++) result[ keysV1[i] ] = v1[ keysV1[i] ]
   for (i = 0; i < keysV2.length; i++) {
-    prop = keysV2[i]
-    if (prop in result) {
-      if (v2[prop].age < result[prop].age) {
-        result[prop] = v2[prop]
-      }
+    if (Object.keys(result).indexOf(keysV2[i], 0) !== -1) {
+      if (v2[ keysV2[i] ].age < result[ keysV2[i] ].age) result[ keysV2[i] ].age =  v2[ keysV2[i] ].age
     } else {
-      result[prop] = v2[prop]
+      result[ keysV2[i] ] = v2[ keysV2[i] ]
     }
   }
   return result
