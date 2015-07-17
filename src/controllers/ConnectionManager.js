@@ -28,12 +28,11 @@ ConnectionManager.prototype.getConnections = function () { return Object.keys(th
 ConnectionManager.prototype.deleteOneCon = function () {
   var keys = Object.keys(this._cons)
   debug('DelOneCon before: ' + JSON.stringify(keys))
-  var toDel = Math.floor(Math.random() * keys.length)
-  debug('DelOneCon called, connection to remove: ' + keys[toDel])
-  this._cons[keys[toDel]].closeAndAnnounce()
-  delete this._cons[keys[toDel]]
+  debug('DelOneCon called, connection to remove: ' + keys[0])
+  this._cons[keys[0]].closeAndAnnounce()
+  delete this._cons[keys[0]]
   debug('DelOneCon after:' + JSON.stringify(Object.keys(this._cons)))
-  return keys[toDel]
+  return keys[0]
 }
 
 ConnectionManager.prototype.deleteConnection = function (id) {

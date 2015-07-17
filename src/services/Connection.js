@@ -26,6 +26,7 @@ function Connection (receiver, initiator, usingSigSer) {
     debug('Connection with: ' + self._receiver + ' is open')
     for (var i = 0; i < self._msgsQueue.length; i++) self._peer.send(self._msgsQueue[i])
     self._msgsQueue = []
+    if (!self._usingSigSer) self.emit('open')
   })
   this._peer.on('signal', function (data) {
     debug('SDP: [' + Object.keys(data) + '] to exchange with: ' + self._receiver)

@@ -41,7 +41,7 @@ var configurationObj = {
     cyclon1: {
       class: 'Cyclon',
       viewSize: 4,
-      fanout: 3,
+      fanout: 2,
       gossipPeriod: 6000,
       propagationPolicy: { push: true, pull: true }
     }

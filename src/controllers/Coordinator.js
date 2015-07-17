@@ -176,7 +176,7 @@ Coordinator.prototype.bootstrap = function () {
       var toDel = self._connectionManager.deleteOneCon()
       if (!self._usingSs){
         self._delItemInViews(toDel)
-        delete self._routingTable[toDel]
+        // delete self._routingTable[toDel]
       }
     }
     self._initConnectionEvents(cO.connection)
@@ -204,6 +204,9 @@ Coordinator.prototype._bootGossipCycle = function (algoId, worker, period) {
 Coordinator.prototype._initConnectionEvents = function (c) {
   if (!c) return
   var self = this
+  c.on('open', function () {
+    if (Object.keys(self._routingTable).indexOf(c._receiver, 0) !== -1) delete self._routingTable[c._receiver]
+  })
   c.on('sdp', function (sdp) {
     if (c._usingSigSer) {
       debug('Sending SDP through the server')
@@ -400,15 +403,9 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
   }
 }
 Coordinator.prototype._updRoutingTable = function (view, emitter) {
-  var keys = Object.keys(this._routingTable)
-  var currentCons = this._connectionManager.getConnections()
-  var index, i
-  for (i = 0; i < keys.length; i++) {
-    index = view.indexOf(keys[i], 0)
-    if (index !== -1) view[index] = null
-    if (currentCons.indexOf(this._routingTable[keys[i]], 0) === -1) delete this._routingTable[keys[i]]
+  for (var i = 0; i < view.length; i++) {
+    if (view[i] !== emitter) this._routingTable[view[i]] = emitter
   }
-  for (i = 0; i < view.length; i++) if (view[i] !== null) this._routingTable[view[i]] = emitter
 }
 /**
 * @memberof Coordinator
