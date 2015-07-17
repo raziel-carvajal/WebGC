@@ -65,7 +65,6 @@ function Coordinator (gossConfObj, profile, id) {
   this._connectionManager = new ConnectionManager(this._maxNumOfCon)
   this._algosPool = {}
   this._routingTable = {}
-  this._toDel
 }
 /**
 * @memberof Coordinator
@@ -91,6 +90,15 @@ Coordinator.prototype.createAlgorithms = function () {
   debug('Initialization DONE')
   this.workers = this.factory.inventory
 }
+
+Coordinator.prototype._delItemInViews = function (id) {
+  var keys = Object.keys(this._routingTable)
+
+  for (var i = 0; i < this.algosNames.length; i++) {
+    this.workers[this.algosNames[i]].postMessage({ header: 'delete', item: id })
+  }
+}
+
 /**
 * @memberof Coordinator
 * @method checkConfFile
@@ -118,6 +126,7 @@ Coordinator.prototype.checkConfFile = function (confObj) {
   }
   return true
 }
+
 /**
 * @memberof Coordinator
 * @method start
@@ -163,7 +172,13 @@ Coordinator.prototype.bootstrap = function () {
   })
   this._sigSer.on('offer', function (src, payload) {
     var cO = self._connectionManager.newConnection(src, false, true)
-    if (cO.conLimReached) self._connectionManager.deleteOneCon()
+    if (cO.conLimReached) {
+      var toDel = self._connectionManager.deleteOneCon()
+      if (!self._usingSs){
+        self._delItemInViews(toDel)
+        delete self._routingTable[toDel]
+      }
+    }
     self._initConnectionEvents(cO.connection)
     self._connectionManager.set(cO.connection)
     cO.connection._peer.signal(payload)
@@ -180,6 +195,7 @@ Coordinator.prototype.bootstrap = function () {
   })
   this._sigSer.on('abort', function () { debug('Abort.sigSer was called') })
 }
+
 Coordinator.prototype._bootGossipCycle = function (algoId, worker, period) {
   this._algosPool[algoId] = setInterval(function () {
     worker.postMessage({ header: 'gossipLoop' })
@@ -229,7 +245,13 @@ Coordinator.prototype.setWorkerEvents = function (worker) {
           if (!c) {
             debug('Connection with: ' + msg.receiver + ' does not exist, doing connection')
             c = self._connectionManager.newConnection(msg.receiver, true, self._usingSs)
-            if (c.conLimReached) self._connectionManager.deleteOneCon()
+            if (c.conLimReached) {
+              var toDel = self._connectionManager.deleteOneCon()
+              if (!self._usingSs) {
+                self._delItemInViews(toDel)
+                delete self._routingTable[toDel]
+              }
+            }
             self._initConnectionEvents(c.connection)
             self._connectionManager.set(c.connection)
           }
@@ -315,25 +337,30 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
   debug('Msg reception in DataChannel: ' + data.service)
   switch (data.service) {
     case 'SDP':
-      if (data.receiver === this._id || data.payload.type === 'LEAVE') {
+      if (data.receiver === this._id) {
+        this._routingTable[data.emitter] = emitter
         switch (data.payload.type) {
-          case 'LEAVE':
-            break
           case 'OFFER':
             var cO = this._connectionManager.newConnection(data.emitter, false, this._usingSs)
-            if (cO.conLimReached) this._connectionManager.deleteOneCon()
+            if (cO.conLimReached) {
+              var toDel = this._connectionManager.deleteOneCon()
+              if (!this._usingSs) {
+                this._delItemInViews(toDel)
+                delete this._routingTable[toDel]
+              }
+            }
             this._initConnectionEvents(cO.connection)
             this._connectionManager.set(cO.connection)
             cO.connection._peer.signal(data.payload.payload)
             break
           case 'ANSWER':
             var cA = this._connectionManager.get(data.emitter)
-            if (cA) cA._peer.sginal(data.payload.payload)
+            if (cA) cA._peer.signal(data.payload.payload)
             else debug('DataChannel.SDP.answ received without having a connection with: ' + data.emitter)
             break
           case 'CANDIDATE':
             var cC = this._connectionManager.get(data.emitter)
-            if (cC) cC._peer.sginal(data.payload.payload)
+            if (cC) cC._peer.signal(data.payload.payload)
             else debug('DataChannel.SDP.candi received without having a connection with: ' + data.emitter)
             break
           default:
@@ -359,6 +386,13 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
         receptionTime: new Date()
       }
       worker.postMessage(msg)
+      break
+    case 'LEAVE':
+      this._connectionManager.deleteConnection(emitter)
+      if (!this._usingSs) {
+        this._delItemInViews(emitter)
+        delete this._routingTable[emitter]
+      }
       break
     default:
       debug(data + ' is not recognized')

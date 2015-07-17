@@ -42,8 +42,7 @@ function GossipMediator (algo, worker, debug) {
 * [configuration object]{@link module:src/confObjs#configurationObj}) initialized in the web worker
 * context*/
 GossipMediator.prototype.setDependencies = function (algoDependencies) {
-  var external
-  var dep
+  var external, dep
   for (var i = 0; i < algoDependencies.length; i++) {
     dep = algoDependencies[i]
     external = typeof exports[dep.algoId] === 'undefined'
@@ -100,21 +99,16 @@ GossipMediator.prototype._doActiveThread = function () {
 GossipMediator.prototype.applyDependency = function (msg) {
   if (this.dependencies.hasOwnProperty(msg.depId)) {
     var dep = this.dependencies[msg.depId]
-    if (dep.isExternal) {
-      this.postInMainThread(msg)
-    } else {
+    if (dep.isExternal) this.postInMainThread(msg)
+    else {
       var objInWorker = exports[msg.depId]
       var obj = objInWorker[msg.depAtt]
       if (objInWorker !== 'undefined' && typeof obj === 'object') {
         msg.result = obj
         msg.callback(msg)
-      } else {
-        this.debug('dependency obj is not in worker scope')
-      }
+      } else this.debug('dependency obj is not in worker scope')
     }
-  } else {
-    this.debug('dependency: ' + msg.depId + ' is not recognized')
-  }
+  } else this.debug('dependency: ' + msg.depId + ' is not recognized')
 }
 
 /**
@@ -156,6 +150,9 @@ GossipMediator.prototype.listen = function () {
         msg.view = Object.keys(self.algo.view)
         msg.algoId = self.algo.algoId
         self.worker.postMessage(msg)
+        break
+      case 'delete':
+        if (Object.keys(self.algo.view).indexOf(msg.item, 0) !== -1) delete self.algo.view[msg.item]
         break
       default:
         self.log.warn('header: ' + msg.header + ' is unknown')

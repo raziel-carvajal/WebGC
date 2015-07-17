@@ -1,5 +1,5 @@
 module.exports = ConnectionManager
-var debug = require('debug')('gossipCoManager')
+var debug = require('debug')('connection-manager')
 var Connection = require('../services/Connection')
 
 function ConnectionManager (maxNumOfCon) {
@@ -27,8 +27,18 @@ ConnectionManager.prototype.getConnections = function () { return Object.keys(th
 
 ConnectionManager.prototype.deleteOneCon = function () {
   var keys = Object.keys(this._cons)
+  debug('DelOneCon before: ' + JSON.stringify(keys))
   var toDel = Math.floor(Math.random() * keys.length)
-  debug('DelOneCon called, connection to remove: ' + toDel)
-  this._cons[keys[toDel]].close()
+  debug('DelOneCon called, connection to remove: ' + keys[toDel])
+  this._cons[keys[toDel]].closeAndAnnounce()
   delete this._cons[keys[toDel]]
+  debug('DelOneCon after:' + JSON.stringify(Object.keys(this._cons)))
+  return keys[toDel]
+}
+
+ConnectionManager.prototype.deleteConnection = function (id) {
+  debug('DelCon before: ' + JSON.stringify(Object.keys(this._cons)))
+  this._cons[id].close()
+  delete this._cons[id]
+  debug('DelCon after: ' + JSON.stringify(Object.keys(this._cons)))
 }

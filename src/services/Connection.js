@@ -47,4 +47,9 @@ Connection.prototype.send = function (msg) {
   }
 }
 
+Connection.prototype.closeAndAnnounce = function () {
+  this.send({service: 'LEAVE'})
+  this._peer.destroy()
+}
+
 Connection.prototype.close = function () { this._peer.destroy() }

@@ -42,7 +42,7 @@ var configurationObj = {
       class: 'Cyclon',
       viewSize: 4,
       fanout: 3,
-      gossipPeriod: 10000,
+      gossipPeriod: 6000,
       propagationPolicy: { push: true, pull: true }
     }
     // vicinity1: {
@@ -92,7 +92,7 @@ var configurationObj = {
     activated: false,
     feedbackPeriod: 20000
   },
-  usingSs: true
+  usingSs: false
 }
 
 module.exports = configurationObj
