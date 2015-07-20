@@ -30,7 +30,14 @@ function Bootstrap (peerId, host, port, profile) {
   this._id = peerId
   this._serverOpts = {'host': host, 'port': port}
   this._profileTxt = ''
-  for (var i = 0; i < profile.length; i++) this._profileTxt += profile[i] + '-'
+  var keys = Object.keys(profile)
+  var j
+  for (var i = 0; i < keys.length; i++) {
+    this._profileTxt += keys[i] + '_'
+    for(j = 0; j < profile[keys[i]].length - 1; j++) this._profileTxt += profile[keys[i]][j] + '-'
+    this._profileTxt += profile[keys[i]][j]
+  }
+  debug('ProfileTxt: ' + this._profileTxt)
   this._reconnectionTime = 3000
   this._tries = 0
   this._url = 'http://' + host + ':' + port + '/peerjs'
@@ -54,15 +61,22 @@ Bootstrap.prototype.getPeerToBootstrap = function () {
     }
     var resp = JSON.parse(xhr.responseText)
     debug('Peer to boot is: ' + xhr.responseText)
-    its.string(resp.peer)
-    its.string(resp.profile)
     // when the peer to bootstrap isn't defined, it means that the local
     // peer is the first peer to contact the server which means that eventually
     // the local peer will be contacted by another peer
     if (resp.peer !== 'undefined') {
-      var ar = resp.profile.split('-')
-      resp.profile = []
-      for (var i = 0; i < ar.length; i++) if (typeof ar[i] !== 'undefined') resp.profile.push(ar[i])
+      its.string(resp.peer)
+      its.string(resp.profile)
+      var ar = resp.profile.split('_')
+      debug(JSON.stringify(ar))
+      resp.profile = {}
+      for (var i = 0; i < ar.length; i = i + 2) {
+        resp.profile[ar[i]] = []
+        var items = ar[i+1].split('-')
+        for (var j = 0; j < items.length; j++) {
+          resp.profile[ar[i]].push(items[j])
+        }
+      }
     }
     self.emit('boot', resp)
   }

@@ -1,34 +1,64 @@
 #!/bin/bash
+#===============================================================================
+#
+#          FILE:  launchTest.sh
+# 
+#         USAGE:  ./launchTest.sh 
+# 
+#   DESCRIPTION:  
+# 
+#       OPTIONS:  ---
+#  REQUIREMENTS:  ---
+#          BUGS:  ---
+#         NOTES:  ---
+#        AUTHOR:  Raziel Carvajal-Gomez (), raziel.carvajal-gomez@inria.fr
+#       COMPANY:  INRIA, Rennes
+#       VERSION:  1.0
+#       CREATED:  20/07/2015 10:58:26 CEST
+#      REVISION:  ---
+#===============================================================================
 #===  FUNCTION  ================================================================
 #          NAME:  generateProfile
 #   DESCRIPTION:  
 #    PARAMETERS:  
 #       RETURNS:  
 #===============================================================================
-function generateProfile ()
-{
-  doubleProf=""
-  for (( COUNTER2=1; COUNTER2<=$profilesNum; COUNTER2++ )); do
-    doubleProf=$doubleProf"vicinity"$COUNTER2": ["
-    lines=`cat preferences$COUNTER2 | wc -l`
-    for (( COUNTER3=1; COUNTER3<$lines; COUNTER3++ )); do
-      pref=`head -$COUNTER3 preferences$COUNTER2 | tail -1`
-      if [ $(( $RANDOM%2 )) = 1 ] ; then
-        doubleProf=$doubleProf$pref", "
-      else
-        doubleProf=$doubleProf"'undefined', "
-      fi
-    done
-    pref=`head -$lines preferences$COUNTER2 | tail -1`
-    if [ $(( $RANDOM%2 )) = 1 ] ; then
-      doubleProf=$doubleProf$pref"], "
-    else
-      doubleProf=$doubleProf"'undefined'], "
-    fi
-  done
-  doubleProf="{"$doubleProf"}"
-}    # ----------  end of function generateProfile  ----------
 peers=$1
 exeTime=$2
 profilesNum=$3
-for ((COUNTER=1; COUNTER<=))
+serverDir=$4
+origin=`pwd`
+rm -fr ./logs
+mkdir logs
+cd $serverDir
+cd examples
+rm -f signlaing.log
+echo "Launching signaling service"
+DEBUG=* node launch.js 9990 &>signlaing.log &
+sleep 5
+sigServPid=$!
+echo -e "\tDONE. Signaling service at process: "$sigServPid
+cd $origin
+declare -a peerPids
+echo "Launching peers"
+for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
+  DEBUG=* node launchCoordi.js peer_$COUNTER $profilesNum &>logs/peer_$COUNTER".log" &
+  peerPids[$COUNTER]=$!
+  echo -e "\tPeer wit PID: "${peerPids[$COUNTER]}" was launched"
+  sleep 3
+done
+echo "Waiting until the end of the experiment"
+timeout=$(( $exeTime * 60 ))
+sleep $timeout
+echo -e "\tTimeout of experiment was reached"
+kill -9 $sigServPid
+for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
+  kill -9 ${peerPids[$COUNTER]}
+done
+echo -e "\tDONE. All processes were killed"
+# rm -fr ./logs
+cd $serverDir
+cd examples
+# rm -f signlaing.log
+cd $origin
+echo "END OF EXECUTION"

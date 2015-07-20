@@ -93,7 +93,6 @@ Coordinator.prototype.createAlgorithms = function () {
 
 Coordinator.prototype._delItemInViews = function (id) {
   var keys = Object.keys(this._routingTable)
-
   for (var i = 0; i < this.algosNames.length; i++) {
     this.workers[this.algosNames[i]].postMessage({ header: 'delete', item: id })
   }

@@ -40,7 +40,7 @@ var configurationObj = {
   gossipAlgos: {
     cyclon1: {
       class: 'Cyclon',
-      viewSize: 4,
+      viewSize: 5,
       fanout: 2,
       gossipPeriod: 6000,
       propagationPolicy: { push: true, pull: true }

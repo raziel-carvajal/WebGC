@@ -9,3 +9,4 @@ examples/showingLogs/peer_*
 src/*/.*.swp
 examples/*/.*.swp
 examples/*/*.log
+examples/withNodejs/logs
