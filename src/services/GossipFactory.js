@@ -4,8 +4,12 @@ module.exports = GossipFactory
 
 var debug = require('debug')('gossip_factory')
 var its = require('its')
-// XXX exports.Worker could be better ?
+// XXX exports.Worker could be better ? when the client runs in a web browser
+// XXX This implementation of web workers is totally useful but it is not possible to
+// install it in G5K nodes
 var Worker = require('webworker-threads').Worker
+// XXX This package is used for doing experiments on G5K
+// var Worker = require('webworker')
 // var Worker = require('webworkify')
 // XXX probably browserify-fs isn't needed
 // var fs = require('fs') || require('browserify-fs')
