@@ -1,27 +1,19 @@
 /**
 * @module src/services*/
 module.exports = GossipFactory
-
-var debug
-if (typeof window === 'undefined') debug = require('debug')('gossip_factory')
-else {
+var debug, Worker, fs
+if (typeof window === 'undefined') {
+  debug = require('debug')('factory')
+  Worker = require('webworker-threads').Worker
+  fs = require('browserify-fs')
+} else {
   window.factoryDebug = require('debug')
   factoryDebug.enable('factory')
   debug = debug('factory')
+  if (typeof Worker === 'undefined') throw new Error('Your browser does not support web-workers')
+  fs = require('fs')
 }
-
 var its = require('its')
-// XXX exports.Worker could be better ? when the client runs in a web browser
-// XXX This implementation of web workers is totally useful but it is not possible to
-// install it in G5K nodes
-var Worker = require('webworker-threads').Worker
-// XXX This package is used for doing experiments on G5K
-// var Worker = require('webworker')
-// var Worker = require('webworkify')
-// XXX probably browserify-fs isn't needed
-// var fs = require('fs') || require('browserify-fs')
-var fs = require('fs')
-
 /**
 * @class GossipFactory
 * @description Implementation of the
@@ -120,9 +112,7 @@ GossipFactory.prototype.createWebWorker = function (algOpts, statsOpts, algoId) 
   var keysWithFunc = this.searchFunctions(algOpts)
   var i
   if (keysWithFunc.length > 0) {
-    for (i = 0; i < keysWithFunc.length; i++) {
-      algOpts[ keysWithFunc[i] ] = String(algOpts[ keysWithFunc[i] ])
-    }
+    for (i = 0; i < keysWithFunc.length; i++) algOpts[ keysWithFunc[i] ] = String(algOpts[ keysWithFunc[i] ])
   }
   code += 'var algOpts = ' + JSON.stringify(algOpts) + '\n'
   for (i = 0; i < keysWithFunc.length; i++) {
@@ -150,29 +140,33 @@ GossipFactory.prototype.createWebWorker = function (algOpts, statsOpts, algoId) 
 }
 
 GossipFactory.prototype._buildWorkerHeader = function (algoId, algoClass, statsActiv) {
+  var classToExport, fP
   var code = ''
   var inNodejs = typeof window === 'undefined'
-  var classToExport
   if (inNodejs) {
     var isCommon, content, headers, j, workerPath
+    fP = __filename.split('services/GossipFactory.js')[0]
     code += 'var debug = console.log\n'
   } else {
-    code += "var debug = require('debug')('" + algoId + "')\n"
+    fP = window.location.split('peerjs-gossip')[0]
+    fP += 'src/'
+    code += "this.debugWorker = require('debug')\n"
+    code += "this.debugWorker.enable('worker')\n"
+    code += "this.debug = this.debug('worker')\n"
   }
   code += "debug('Initialization of worker')\n"
-  var fP = __filename.split('services/GossipFactory.js')[0]
   var filesToModif = Object.keys(this.modifInfo.files)
   for (var i = 0; i < filesToModif.length; i++) {
     classToExport = filesToModif[i].split('/')[1].split('.')[0]
+    isCommon = this.modifInfo.files[filesToModif[i]]
+    content = fs.readFileSync(fP + filesToModif[i], {encoding: 'utf8'})
+    if (isCommon) headers = this.modifInfo.commonHeaders
+    else headers = this.modifInfo.nonCommonHeaders
+    for (j = 0; j < headers.length; j++) content = content.replace(headers[j], '//')
+    content = '(function (exports) {\n' + content
+    content += 'exports.' + classToExport + ' = ' + classToExport + '\n'
+    content += '}) (this)'
     if (inNodejs) {
-      isCommon = this.modifInfo.files[filesToModif[i]]
-      content = fs.readFileSync(fP + filesToModif[i], {encoding: 'utf8'})
-      if (isCommon) headers = this.modifInfo.commonHeaders
-      else headers = this.modifInfo.nonCommonHeaders
-      for (j = 0; j < headers.length; j++) content = content.replace(headers[j], '//')
-      content = '(function (exports) {\n' + content
-      content += 'exports.' + classToExport + ' = ' + classToExport + '\n'
-      content += '}) (this)'
       workerPath = fP + 'workers/' + filesToModif[i].split('/')[1]
       fs.writeFileSync(workerPath, content)
       if (!fs.existsSync(workerPath)) throw Error('While building worker')
