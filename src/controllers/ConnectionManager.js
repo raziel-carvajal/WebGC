@@ -1,5 +1,12 @@
 module.exports = ConnectionManager
-var debug = require('debug')('connection-manager')
+var debug
+if (typeof window === 'undefined') debug = require('debug')('connnection_manager')
+else {
+  window.conManDebug = require('debug')
+  conManDebug.enable('connnection_manager')
+  debug = debug('connection_manager')
+}
+
 var Connection = require('../services/Connection')
 
 function ConnectionManager (maxNumOfCon) {

@@ -2,7 +2,14 @@
 * @module src/services*/
 module.exports = GossipFactory
 
-var debug = require('debug')('gossip_factory')
+var debug
+if (typeof window === 'undefined') debug = require('debug')('gossip_factory')
+else {
+  window.factoryDebug = require('debug')
+  factoryDebug.enable('factory')
+  debug = debug('factory')
+}
+
 var its = require('its')
 // XXX exports.Worker could be better ? when the client runs in a web browser
 // XXX This implementation of web workers is totally useful but it is not possible to

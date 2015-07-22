@@ -1,6 +1,13 @@
 module.exports = PeerJSProtocol
 
-var debug = require('debug')('peerjs-protocol')
+var debug
+if (typeof window === 'undefined') debug = require('debug')('peerJSproto')
+else {
+  window.peerJSprotoDebug = require('debug')
+  peerJSprotoDebug.enable('peerJSproto')
+  debug = debug('peerJSproto')
+}
+
 var inherits = require('inherits')
 var EventEmitter = require('events').EventEmitter
 var Socket = require('./Socket')

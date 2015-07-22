@@ -1,7 +1,14 @@
 /**
 * @module src/services*/
 module.exports = Bootstrap
-var debug = require('debug')('bootstrap')
+var debug
+if (typeof window === 'undefined') debug = require('debug')('bootstrap')
+else {
+  window.bootDebug = require('debug')
+  bootDebug.enable('bootstrap')
+  debug = debug('bootstrap')
+}
+
 var inherits = require('inherits')
 var its = require('its')
 var EventEmitter = require('events').EventEmitter

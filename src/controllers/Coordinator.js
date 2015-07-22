@@ -1,7 +1,13 @@
 /**
 * @module src/controllers*/
 module.exports = Coordinator
-var debug = require('debug')('coordinator')
+var debug
+if (typeof window === 'undefined') debug = require('debug')('coordinator')
+else {
+  window.coordiDebug = require('debug')
+  coordiDebug.enable('coordinator')
+  debug = debug('coordinator')
+}
 var its = require('its')
 var hat = require('hat')
 var GossipUtil = require('../utils/GossipUtil')
