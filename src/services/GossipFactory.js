@@ -148,8 +148,8 @@ GossipFactory.prototype._buildWorkerHeader = function (algoId, algoClass, statsA
     fP = __filename.split('services/GossipFactory.js')[0]
     code += 'var debug = console.log\n'
   } else {
-    fP = window.location.split('peerjs-gossip')[0]
-    fP += 'src/'
+    fP = window.location.href.split('peerjs-gossip')[0]
+    fP += 'peerjs-gossip/src/'
     code += "this.debugWorker = require('debug')\n"
     code += "this.debugWorker.enable('worker')\n"
     code += "this.debug = this.debug('worker')\n"
