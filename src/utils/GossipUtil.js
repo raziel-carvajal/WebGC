@@ -5,7 +5,6 @@
 // remove every require (which isn't elegant) and replace it whith the anonymous function to
 // export. Other solution could be to edit the sources on the fly adding the right headers
 module.exports = GossipUtil
-
 /**
 * @class GossipUtil
 * @description This class contains miscellaneous operations used by gossip protocols.
@@ -18,7 +17,6 @@ function GossipUtil (debug) {
   this._loopOfElection = 0
   debug('GossipUtil.init')
 }
-
 /**
 * @memberof GossipUtil
 * @method newItem
@@ -28,7 +26,6 @@ function GossipUtil (debug) {
 * @param data Object to share by the gossip protocol (application dependant)
 * @return Object Object with the properties age and data*/
 GossipUtil.prototype.newItem = function (age, data) { return { age: age, data: data } }
-
 /**
 * @memberof GossipUtil
 * @method getRandomSubDict
@@ -52,12 +49,11 @@ GossipUtil.prototype.getRandomSubDict = function (n, src) {
       key = tmpAr[ Math.floor(Math.random() * tmpAr.length) ]
       result[key] = src[key]
       delete tmpDict[key]
-      i += 1
+      i++
     } while (i !== n)
     return result
   }
 }
-
 /**
 * @memberof GossipUtil
 * @method getOldestKey
@@ -87,7 +83,6 @@ GossipUtil.prototype.getOldestKey = function (dictio) {
     }
   }
 }
-
 /**
 * @memberof GossipUtil
 * @method getRandomKey
@@ -105,7 +100,6 @@ GossipUtil.prototype.getRandomKey = function (dict) {
   }
   return key
 }
-
 /**
 * @memberof GossipUtil
 * @method removeRandomly
@@ -130,7 +124,6 @@ GossipUtil.prototype.removeRandomly = function (n, dic) {
     }
   }
 }
-
 /**
 * @memberof GossipUtil
 * @method mergeViews
@@ -153,7 +146,6 @@ GossipUtil.prototype.mergeViews = function (v1, v2) {
   }
   return result
 }
-
 /**
 * @memberof GossipUtil
 * @method setData
@@ -162,11 +154,8 @@ GossipUtil.prototype.mergeViews = function (v1, v2) {
 * @param key Property to search in the source
 * @param d Value to update*/
 GossipUtil.prototype.setData = function (dic, key, d) {
-  if (key in dic) {
-    dic[key].data = d
-  }
+  if (key in dic) dic[key].data = d
 }
-
 /**
 * @memberof GossipUtil
 * @method extendProperties
@@ -176,28 +165,6 @@ GossipUtil.prototype.setData = function (dic, key, d) {
 GossipUtil.prototype.extendProperties = function (dst, src) {
   var keys = Object.keys(src)
   for (var i = 0; i < keys.length; i++) {
-    if (!dst.hasOwnProperty(keys[i])) {
-      dst[keys[i]] = src[keys[i]]
-    }
+    if (!dst.hasOwnProperty(keys[i])) dst[keys[i]] = src[keys[i]]
   }
-}
-
-/**
-* @memberof GossipUtil
-* @method inherits
-* @deprecated Due to the lack of inheritance between the abstract class GossipProtocol and
-* gossip implementations in web workers (version 0.4.1 of WebGC)
-* @description Extends the "ctor" object with the attributes and methods of the "superCtor" object
-* @param ctor Object to extend
-* @param superCtor Object from which "ctor" inherits its methods and attributes*/
-GossipUtil.prototype.inherits = function (ctor, superCtor) {
-  ctor.super_ = superCtor
-  ctor.prototype = Object.create(superCtor.prototype, {
-    constructor: {
-      value: ctor,
-      enumerable: false,
-      writable: true,
-      configurable: true
-    }
-  })
 }

@@ -10,7 +10,7 @@ var debug, Worker, fs
 if (inNodeJS) {
   debug = require('debug')('factory')
   // TODO find why the source of this lib isn't in JS format 
-  // Worker = require('webworker-threads').Worker
+  Worker = require('webworker-threads').Worker
   fs = require('fs')
 } else {
   debug = require('debug').log
@@ -192,7 +192,7 @@ GossipFactory.prototype._editSrcs = function (fileToModif, code) {
       var blobUrl = window.URL.createObjectURL(blob)
       code += "this.importScripts('" + blobUrl + "')\n"
       self._srcChanges = blobUrl
-      if (self._alreadyModified === filesToModif.length)
+      //if (self._alreadyModified === filesToModif.length)
     })
   } 
 }
