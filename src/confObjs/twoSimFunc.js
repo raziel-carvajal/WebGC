@@ -88,6 +88,7 @@ var configurationObj = {
     //   ]
     // }
   },
+  otherAlgos: {},
   statsOpts: {
     activated: false,
     feedbackPeriod: 20000

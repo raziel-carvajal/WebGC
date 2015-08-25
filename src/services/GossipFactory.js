@@ -1,15 +1,16 @@
 /**
 * @module src/services*/
 module.exports = GossipFactory
+
 var inNodeJS = typeof window === 'undefined'
 var inherits = require('inherits')
 var EventEmitter = require('events').EventEmitter
 var its = require('its')
 inherits(GossipFactory, EventEmitter)
 var debug, Worker, fs
+
 if (inNodeJS) {
   debug = require('debug')('factory')
-  // TODO find why the source of this lib isn't in JS format 
   Worker = require('webworker-threads').Worker
   fs = require('fs')
 } else {
@@ -88,6 +89,19 @@ GossipFactory.prototype.checkProperties = function (opts) {
   its.boolean(opts.propagationPolicy.push)
   its.boolean(opts.propagationPolicy.pull)
 }
+GossipFactory.prototype.createProtocols = function (confObj) {
+  var names = Object.keys(confObj)
+  var otherAlgos = Object.keys(confObj.otherAlgos)
+  if (inNodeJS) {
+    var files = fs.readdirSync('../algorithms') 
+  } else {
+    fs.readdir('../algorithms', function (err, files) {
+      if (err) {}
+
+    })
+  }
+}
+
 /**
 * @memberof GossipFactory
 * @method createProtocol
@@ -163,6 +177,7 @@ GossipFactory.prototype._buildWorkerHeader = function (algoId, algoClass, statsA
     for (i = 0; i < filesToModif.length; i++) this._editSrc(filesToModif[i], code)
   }
 }
+
 GossipFactory.prototype._editSrcs = function (fileToModif, code) {
   var content
   var classToExport = fileToModif.split('/')[1].split('.')[0]
@@ -196,6 +211,7 @@ GossipFactory.prototype._editSrcs = function (fileToModif, code) {
     })
   } 
 }
+
 GossipFactory.prototype._alterFile = function (cls, isCommon, content) {
   var headers
   if (isCommon) headers = this.modifInfo.commonHeaders
@@ -206,6 +222,7 @@ GossipFactory.prototype._alterFile = function (cls, isCommon, content) {
   content += '}) (this)'
   return content
 }
+
 GossipFactory.prototype._completeWorker = function (algOpts, code) {
   var keysWithFunc = this.searchFunctions(algOpts)
   var i
