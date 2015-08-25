@@ -1,11 +1,12 @@
 module.exports = Connection
-
 var inherits = require('inherits')
-var debug = require('debug')('connection')
 var EventEmitter = require('events').EventEmitter
 var Peer = require('simple-peer')
-
-if (typeof window === 'undefined') var wrtc = require('wrtc')
+var debug
+if (typeof window === 'undefined') {
+  var wrtc = require('wrtc')
+  debug = require('debug')('connection')
+} else debug = require('debug').log
 inherits(Connection, EventEmitter)
 
 function Connection (receiver, initiator, usingSigSer) {

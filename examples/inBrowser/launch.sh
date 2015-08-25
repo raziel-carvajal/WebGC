@@ -106,15 +106,15 @@ echo "Launching instances of Chrome (one of them represents one peer)..."
 declare -a chromePids
 cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
-  mkdir $testDir/"peer_$COUNTER"
-  mainFile="peer_$COUNTER"".js"
-  bundleFile="peer_$COUNTER""_bundle.js"
-  htmlFile="peer_$COUNTER"".html"
+  mkdir $testDir/"peer$COUNTER"
+  mainFile="peer$COUNTER"".js"
+  bundleFile="peer$COUNTER""_bundle.js"
+  htmlFile="peer$COUNTER"".html"
   generateProfile
-  cat "main.js" | sed "s/#userProfile/$doubleProf/;s/#userId/peer_$COUNTER/;" >$mainFile
+  cat "main.js" | sed "s/#userProfile/$doubleProf/;s/#userId/peer$COUNTER/;" >$mainFile
   browserify $mainFile > $bundleFile
   cat "index.html" | sed "s/#bundle/$bundleFile/;" >$htmlFile
-  "$chromeCommand" $chromeStr$testDir/"peer_$COUNTER" $htmlFile >/dev/null &
+  "$chromeCommand" $chromeStr$testDir/"peer$COUNTER" $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
   echo "Chrome PID: "${chromePids[$COUNTER]}
 done

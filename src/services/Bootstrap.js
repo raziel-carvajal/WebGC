@@ -1,18 +1,17 @@
 /**
 * @module src/services*/
 module.exports = Bootstrap
-var debug
-if (typeof window === 'undefined') debug = require('debug')('bootstrap')
-else {
-  window.bootDebug = require('debug')
-  bootDebug.enable('bootstrap')
-  debug = debug('bootstrap')
+var debug, XMLHttpRequest
+if (typeof window === 'undefined') {
+  debug = require('debug')('bootstrap')
+  // XMLHttpRequest = require('xhr2')
+} else {
+  debug = require('debug').log
+  XMLHttpRequest = window.XMLHttpRequest
 }
-
 var inherits = require('inherits')
 var its = require('its')
 var EventEmitter = require('events').EventEmitter
-if (typeof window === 'undefined') var XMLHttpRequest = require('xhr2')
 var TIMES_TO_RECONECT = 3
 inherits(Bootstrap, EventEmitter)
 /**

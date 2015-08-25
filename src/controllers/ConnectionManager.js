@@ -1,13 +1,8 @@
 module.exports = ConnectionManager
 var debug
-if (typeof window === 'undefined') debug = require('debug')('connnection_manager')
-else {
-  window.conManDebug = require('debug')
-  conManDebug.enable('connnection_manager')
-  debug = debug('connection_manager')
-}
-
 var Connection = require('../services/Connection')
+if (typeof window === 'undefined') debug = require('debug')('connnection_manager')
+else debug = require('debug').log
 
 function ConnectionManager (maxNumOfCon) {
   if (!(this instanceof ConnectionManager)) return new ConnectionManager(maxNumOfCon)

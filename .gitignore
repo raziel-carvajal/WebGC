@@ -10,3 +10,5 @@ src/*/.*.swp
 examples/*/.*.swp
 examples/*/*.log
 examples/withNodejs/logs
+examples/inBrowser/output/
+examples/inBrowser/peer*

@@ -1,16 +1,15 @@
 module.exports = Socket
-
-var debug = require('debug')('socket')
+var debug
 var inherits = require('inherits')
 var EventEmitter = require('events').EventEmitter
-if (typeof window === 'undefined') var WebSocket = require('websocket').w3cwebsocket
-
+var WebSocket = require('websocket').w3cwebsocket
+if (typeof window === 'undefined') debug = require('debug')('socket')
+else debug = require('debug').log
 var OPTS = {
   urlPrefix: 'ws://',
   randomToken: function () { return Math.random().toString(36).substr(2) },
   key: 'peerjs'
 }
-
 inherits(Socket, EventEmitter)
 
 function Socket (peerId, host, port) {

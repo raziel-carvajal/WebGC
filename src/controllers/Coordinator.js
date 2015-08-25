@@ -3,11 +3,7 @@
 module.exports = Coordinator
 var debug
 if (typeof window === 'undefined') debug = require('debug')('coordinator')
-else {
-  window.coordiDebug = require('debug')
-  coordiDebug.enable('coordinator')
-  debug = debug('coordinator')
-}
+else debug = require('debug').log
 var its = require('its')
 var hat = require('hat')
 var GossipUtil = require('../utils/GossipUtil')
@@ -63,6 +59,8 @@ function Coordinator (gossConfObj, profile, id) {
   this._maxNumOfCon = 0
   this.gossipUtil = new GossipUtil(debug)
   this.factory = new GossipFactory(this.gossipUtil, this._id)
+
+
   try {
     this.createAlgorithms()
   } catch (e) {
@@ -71,6 +69,10 @@ function Coordinator (gossConfObj, profile, id) {
   this._connectionManager = new ConnectionManager(this._maxNumOfCon)
   this._algosPool = {}
   this._routingTable = {}
+  var self = this
+  this.factory.on('setWorkerEvents', function (worker) {
+    self.setWorkerEvents(worker)
+  })
 }
 /**
 * @memberof Coordinator
@@ -86,8 +88,8 @@ Coordinator.prototype.createAlgorithms = function () {
     algOpts.data = this.profile
     this.factory.createProtocol(this.algosNames[i], algOpts, this.statsOpts)
     worker = this.factory.inventory[this.algosNames[i]]
-    if (worker !== 'undefined') this.setWorkerEvents(worker)
-    else debug('worker: ' + this.algosNames[i] + ' is not defined')
+    if (worker) this.setWorkerEvents(worker)
+    else debug('worker: ' + this.algosNames[i] + ' is not defined or its creation is async')
     if (this.statsOpts.activated) {
       this.actCycHistory[ this.algosNames[i] ] = {}
       this.vieUpdHistory[ this.algosNames[i] ] = {}
@@ -241,6 +243,7 @@ Coordinator.prototype._initConnectionEvents = function (c) {
 * from one worker to another one via the Coordinator and iii) from the Coordinator to a web application
 * @param worker Reference to a [web worker]{@link http://www.w3schools.com/html/html5_webworkers.asp}*/
 Coordinator.prototype.setWorkerEvents = function (worker) {
+  debug('Setting events of worker')
   var self = this
   worker.addEventListener('message', function (e) {
     var msg = e.data
