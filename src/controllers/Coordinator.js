@@ -59,10 +59,8 @@ function Coordinator (gossConfObj, profile, id) {
   this._maxNumOfCon = 0
   this.gossipUtil = new GossipUtil(debug)
   this.factory = new GossipFactory(this.gossipUtil, this._id)
-
-
   try {
-    this.createAlgorithms()
+    this.factory.createProtocols(this.gossipAlgos, {}, this.profile, this.statsOpts)
   } catch (e) {
     debug('During the instantiaton of gossip objects. ' + e)
   }
