@@ -15,4 +15,4 @@ for (var i = 0; i < profNum; i++){
   }
 }
 var coordi = new Coordinator(confObj, profile, peerId)
-//coordi.bootstrap()
+coordi.bootstrap()

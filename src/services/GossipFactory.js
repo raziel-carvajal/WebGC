@@ -2,10 +2,7 @@
 * @module src/services*/
 module.exports = GossipFactory
 var inNodeJS = typeof window === 'undefined'
-var inherits = require('inherits')
-var EventEmitter = require('events').EventEmitter
 var its = require('its')
-inherits(GossipFactory, EventEmitter)
 var debug, Worker, fs
 if (inNodeJS) {
   debug = require('debug')('factory')
@@ -31,11 +28,13 @@ if (inNodeJS) {
 * @param opts Object with one [logger]{@link module:src/utils#LoggerForWebWorker} and with one reference
 * to a [GossipUtil]{@link module:src/utils#GossipUtil} object.
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function GossipFactory (gossipUtil, id) {
+function GossipFactory (gossipUtil, id, coordi) {
   if (!(this instanceof GossipFactory)) return new GossipFactory(gossipUtil, id)
   this.gossipUtil = gossipUtil
   this._id = id
+  this._coordinator = coordi
   this.inventory = {}
+  this._algosDB = {}
   if (inNodeJS) this._origin = __filename.split('services/GossipFactory.js')[0]
   else {
     debug('__filename in Browser: ' + __filename)
@@ -44,31 +43,20 @@ function GossipFactory (gossipUtil, id) {
   }
   debug('Origin: ' + this._origin)
   this.modifInfo = {
-    files: {},
-    contentAltered: {},
-    commonHeaders: ['module.exports'],
+    files: {}, contentAltered: {}, commonHeaders: ['module.exports'],
     nonCommonHeaders: [
-      'module.exports',
-      'var inherits',
-      'var GossipProtocol',
-      'var ViewSelector',
-      'inherits('
+      'module.exports', 'var inherits', 'var GossipProtocol',
+      'var ViewSelector', 'inherits('
     ]
   }
   this.filesToAltered = [
-    'utils/GossipUtil.js',
-    'superObjs/GossipProtocol.js',
-    'superObjs/ViewSelector.js',
-    'controllers/GossipMediator.js'
+    'utils/GossipUtil.js', 'superObjs/GossipProtocol.js',
+    'superObjs/ViewSelector.js', 'controllers/GossipMediator.js'
   ]
   for (var i = 0; i < this.filesToAltered.length; i++) {
     this.modifInfo.files[ this.filesToAltered[i] ] = true
     this.modifInfo.contentAltered[ this.filesToAltered[i] ] = ''
   }
-  EventEmitter.call(this)
-  this._algosDB = {}
-  this.on('readFile', function () {
-  })
 }
 GossipFactory.prototype._setProperties = function (files) {
   for (var i = 0; i < files.length; i++) {
@@ -77,17 +65,18 @@ GossipFactory.prototype._setProperties = function (files) {
     this._algosDB[files[i].split('.')[0]] = require(this._origin + 'algorithms/' + files[i])
     this.modifInfo.files[ 'algorithms/' + files[i] ] = false
     this.modifInfo.contentAltered[ 'algorithms/' + files[i] ] = ''
-    this.filesToAltered.push( 'algorithms/' + files[i] )
+    this.filesToAltered.push('algorithms/' + files[i])
   }
 }
+
+// TODO find the way to import, in the worker file, the algorithm that will be instantited. For the moment,
+// all algorithms in src/algorithms are added
+// var otherIds = Object.keys(otherAlgos)
 GossipFactory.prototype.createProtocols = function (gossipObj, otherAlgos, profile, statsOpts) {
-  // TODO find the way to import, in the worker file, the algorithm that will be instantited. For the moment,
-  // all algorithms in src/algorithms are added
-  // var otherIds = Object.keys(otherAlgos)
   var isCommon, file, classToExport, srcToModif, i, content, workerPath, algosIds, algOpts
   if (inNodeJS) {
     var files = fs.readdirSync(this._origin + 'algorithms')
-    debug(files)
+    debug('DB of gossip protocols ' + files)
     this._setProperties(files)
     for (i = 0; i < this.filesToAltered.length; i++) {
       file = this.filesToAltered[i]
@@ -107,12 +96,20 @@ GossipFactory.prototype.createProtocols = function (gossipObj, otherAlgos, profi
     for (i = 0; i < algosIds.length; i++) {
       algOpts = gossipObj[ algosIds[i] ]
       algOpts.data = profile
+      this._coordinator._maxNumOfCon += algOpts.viewSize
+      if (statsOpts.activated) {
+        this._coordinator.actCycHistory[ algosIds[i] ] = {}
+        this._coordinator.vieUpdHistory[ algosIds[i] ] = {}
+      }
       this._createProtocol(algosIds[i], algOpts, statsOpts)
+      this._coordinator.setWorkerEvents(this.inventory[ algosIds[i] ], algosIds[i])
     }
+    this._coordinator.workers = this.inventory
   } else {
     var self = this
     fs.readdir(this._origin + 'algorithms', function (err, files) {
-      if (err) return new Error('Error while listing gossip implementations. ' + e)
+      debug('DB of gossip protocols ' + files)
+      if (err) return new Error('Error while listing gossip implementations. ' + err)
       self._setProperties(files)
       for (i = 0; i < self.filesToAltered.length; i++) {
         file = self.filesToAltered[i]
@@ -120,20 +117,30 @@ GossipFactory.prototype.createProtocols = function (gossipObj, otherAlgos, profi
         isCommon = self.modifInfo.files[file]
         srcToModif = self._origin + file
         fs.readFile(srcToModif, function (err, data) {
-          if (err) return new Error('While reading file ' + fileToModif + err)
+          debug('Reading file ' + file)
+          if (err) return new Error('While reading file ' + file + err)
           self._alterFile(classToExport, isCommon, data)
+          debug('File after being altered')
+          debug(data)
           var blob = new Blob([data], {type: 'text/javascript'})
           var blobUrl = window.URL.createObjectURL(blob)
           self.modifInfo.contentAltered[file] = blobUrl
           // Every file was altered to be compatible in a webworker context
-          if ( i === self.filesToAltered.length - 1 ) {
+          if (i === self.filesToAltered.length - 1) {
+            debug('All files were altered to run as web-workers')
             algosIds = Object.keys(gossipObj)
             for (var j = 0; j < algosIds.length; j++) {
               algOpts = gossipObj[ algosIds[j] ]
               algOpts.data = profile
+              self._coordinator._maxNumOfCon += algOpts.viewSize
+              if (statsOpts.activated) {
+                self._coordinator.actCycHistory[ algosIds[j] ] = {}
+                self._coordinator.vieUpdHistory[ algosIds[j] ] = {}
+              }
               self._createProtocol(algosIds[j], algOpts, statsOpts)
-              // TODO if j === algosIds.length -1 >> launch bootstrap event
+              self._coordinator.setWorkerEvents(self.inventory[ algosIds[j] ], algosIds[j])
             }
+            self._coordinator.workers = self.inventory
           }
         })
       }
@@ -164,7 +171,7 @@ GossipFactory.prototype._createProtocol = function (algoId, algOpts, statsOpts) 
     }
     if (!this.inventory[algoId]) {
       var fP
-      var code = this._buildWorkerHeader(algoId, algOpts.class, opts, algOpts)
+      var code = this._buildWorkerHeader(algoId, algOpts.class, opts.activated, algOpts)
       if (inNodeJS) {
         fP = this._origin + 'workers/' + algoId + '_' + this._id + '.js'
         fs.writeFileSync(fP, code)
@@ -174,7 +181,7 @@ GossipFactory.prototype._createProtocol = function (algoId, algOpts, statsOpts) 
         fP = window.URL.createObjectURL(blob)
       }
       this.inventory[algoId] = new Worker(fP)
-      debug('Worker ' + this._id + ' was created')
+      debug('Worker ' + algoId + ' was created')
     } else throw new Error("The Object's identifier (" + algoId + ') already exists')
   } catch (e) {
     debug(e)
@@ -206,12 +213,13 @@ GossipFactory.prototype._buildWorkerHeader = function (algoId, algoClass, statsA
   for (i = 0; i < this.filesToAltered.length; i++) {
     file = this.filesToAltered[i]
     if (file.match('algorithms') === null) {
-      code += "this.importScripts('" + this.modifInfo.contentAltered[file] + "')\n" 
+      code += "importScripts('" + this.modifInfo.contentAltered[file] + "')\n"
+      code += "debug('file: " + i + " was loaded')\n"
     }
   }
-  if (this.modifInfo.contentAltered['algorithms/' + algoClass + '.js']) debug('File to import exists') 
+  if (this.modifInfo.contentAltered['algorithms/' + algoClass + '.js']) debug('File to import exists')
   else debug('File to import does not exists')
-  code += "this.importScripts('" + this.modifInfo.contentAltered['algorithms/' + algoClass + '.js'] + "')\n"
+  code += "importScripts('" + this.modifInfo.contentAltered['algorithms/' + algoClass + '.js'] + "')\n"
   var keysWithFunc = this.searchFunctions(algOpts)
   if (keysWithFunc.length > 0) {
     for (i = 0; i < keysWithFunc.length; i++) algOpts[ keysWithFunc[i] ] = String(algOpts[ keysWithFunc[i] ])

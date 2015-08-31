@@ -40,7 +40,7 @@ var PeerJSProtocol = require('../utils/PeerjsProtocol')
 * @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
 function Coordinator (gossConfObj, profile, id) {
   if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, profile, id)
-  if (!this.checkConfFile(gossConfObj)) return
+  if (!this._checkConfFile(gossConfObj)) return
   its.defined(profile)
   its.defined(gossConfObj.signalingService)
   its.defined(gossConfObj.gossipAlgos)
@@ -58,52 +58,24 @@ function Coordinator (gossConfObj, profile, id) {
   }
   this._maxNumOfCon = 0
   this.gossipUtil = new GossipUtil(debug)
-  this.factory = new GossipFactory(this.gossipUtil, this._id)
+  this.factory = new GossipFactory(this.gossipUtil, this._id, this)
   try {
+    debug('Instantiation of gossip protocols starts')
     this.factory.createProtocols(this.gossipAlgos, {}, this.profile, this.statsOpts)
+    debug('Instantiation of gossip protocols is finished')
   } catch (e) {
-    debug('During the instantiaton of gossip objects. ' + e)
+    debug('While the instantiation of gossip protocols. ' + e)
   }
   this._connectionManager = new ConnectionManager(this._maxNumOfCon)
   this._algosPool = {}
   this._routingTable = {}
-  var self = this
-  this.factory.on('setWorkerEvents', function (worker) {
-    self.setWorkerEvents(worker)
-  })
 }
-/**
-* @memberof Coordinator
-* @method createAlgorithms
-* @description Method in charge of the initialization of objects which implements every
-* gossip protocol specified in the [configuration file]{@link module:src/confObjs#configurationObj}.*/
-Coordinator.prototype.createAlgorithms = function () {
-  var algOpts, worker
-  for (var i = 0; i < this.algosNames.length; i++) {
-    debug('Trying to initialize algo with ID: ' + this.algosNames[i])
-    algOpts = this.gossipAlgos[ this.algosNames[i] ]
-    this._maxNumOfCon += algOpts.viewSize
-    algOpts.data = this.profile
-    this.factory.createProtocol(this.algosNames[i], algOpts, this.statsOpts)
-    worker = this.factory.inventory[this.algosNames[i]]
-    if (worker) this.setWorkerEvents(worker)
-    else debug('worker: ' + this.algosNames[i] + ' is not defined or its creation is async')
-    if (this.statsOpts.activated) {
-      this.actCycHistory[ this.algosNames[i] ] = {}
-      this.vieUpdHistory[ this.algosNames[i] ] = {}
-    }
-  }
-  debug('Initialization DONE')
-  this.workers = this.factory.inventory
-}
-
 Coordinator.prototype._delItemInViews = function (id) {
-  var keys = Object.keys(this._routingTable)
+  // var keys = Object.keys(this._routingTable)
   for (var i = 0; i < this.algosNames.length; i++) {
     this.workers[this.algosNames[i]].postMessage({ header: 'delete', item: id })
   }
 }
-
 /**
 * @memberof Coordinator
 * @method checkConfFile
@@ -111,7 +83,7 @@ Coordinator.prototype._delItemInViews = function (id) {
 * [configuration file]{@link module:src/confObjs#configurationObj} is well structured is performed
 * by this method
 * @param confObj Configuration object*/
-Coordinator.prototype.checkConfFile = function (confObj) {
+Coordinator.prototype._checkConfFile = function (confObj) {
   debug('Cecking configuration file')
   try {
     var opts = confObj.signalingService
@@ -131,7 +103,6 @@ Coordinator.prototype.checkConfFile = function (confObj) {
   }
   return true
 }
-
 /**
 * @memberof Coordinator
 * @method start
@@ -179,7 +150,7 @@ Coordinator.prototype.bootstrap = function () {
     var cO = self._connectionManager.newConnection(src, false, true)
     if (cO.conLimReached) {
       var toDel = self._connectionManager.deleteOneCon()
-      if (!self._usingSs){
+      if (!self._usingSs) {
         self._delItemInViews(toDel)
         // delete self._routingTable[toDel]
       }
@@ -200,7 +171,6 @@ Coordinator.prototype.bootstrap = function () {
   })
   this._sigSer.on('abort', function () { debug('Abort.sigSer was called') })
 }
-
 Coordinator.prototype._bootGossipCycle = function (algoId, worker, period) {
   this._algosPool[algoId] = setInterval(function () {
     worker.postMessage({ header: 'gossipLoop' })
@@ -240,8 +210,8 @@ Coordinator.prototype._initConnectionEvents = function (c) {
 * in WebGC. These are the possible message exchanges: i) from the Coordinator to an external peer, ii)
 * from one worker to another one via the Coordinator and iii) from the Coordinator to a web application
 * @param worker Reference to a [web worker]{@link http://www.w3schools.com/html/html5_webworkers.asp}*/
-Coordinator.prototype.setWorkerEvents = function (worker) {
-  debug('Setting events of worker')
+Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
+  debug('Setting events of worker ' + algoId)
   var self = this
   worker.addEventListener('message', function (e) {
     var msg = e.data

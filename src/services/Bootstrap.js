@@ -4,7 +4,7 @@ module.exports = Bootstrap
 var debug, XMLHttpRequest
 if (typeof window === 'undefined') {
   debug = require('debug')('bootstrap')
-  // XMLHttpRequest = require('xhr2')
+  XMLHttpRequest = require('xhr2')
 } else {
   debug = require('debug').log
   XMLHttpRequest = window.XMLHttpRequest

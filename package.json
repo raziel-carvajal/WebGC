@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "simple-peer": "~5.11.2",
-    "wrtc": "0.0.56",
+    "wrtc": "~0.0.56",
     "inherits": "~2.0.1",
     "webworker-threads": "~0.5.6",
     "webworkify": "~1.0.2",

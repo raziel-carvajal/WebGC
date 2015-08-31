@@ -93,7 +93,7 @@ var configurationObj = {
     activated: false,
     feedbackPeriod: 20000
   },
-  usingSs: false
+  usingSs: true
 }
 
 module.exports = configurationObj
