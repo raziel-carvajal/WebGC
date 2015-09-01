@@ -64,7 +64,7 @@ function Coordinator (gossConfObj, profile, id) {
     this.factory.createProtocols(this.gossipAlgos, {}, this.profile, this.statsOpts)
     debug('Instantiation of gossip protocols is finished')
   } catch (e) {
-    debug('While the instantiation of gossip protocols. ' + e)
+    debug('During the instantiation of gossip protocols. ' + e)
   }
   this._connectionManager = new ConnectionManager(this._maxNumOfCon)
   this._algosPool = {}

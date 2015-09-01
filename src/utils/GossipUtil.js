@@ -15,6 +15,7 @@ function GossipUtil (debug) {
   this.electionLimit = 5
   this.alreadyChosen = []
   this._loopOfElection = 0
+  this._algorithmsDb = ['algorithms/Vicinity.js', 'algorithms/Cyclon.js']
   debug('GossipUtil.init')
 }
 /**

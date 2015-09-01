@@ -112,7 +112,7 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   htmlFile="peer$COUNTER"".html"
   generateProfile
   cat "main.js" | sed "s/#userProfile/$doubleProf/;s/#userId/peer$COUNTER/;" >$mainFile
-  browserify --insert-globals -i webworker-threads,xhr2 $mainFile -o $bundleFile
+  browserify --insert-globals -i webworker-threads -i xhr2 -r '../../src/algorithms/Cyclon.js' -r '../../src/algorithms/Vicinity.js'  $mainFile -o $bundleFile
   cat "index.html" | sed "s/#bundle/$bundleFile/;" >$htmlFile
   "$chromeCommand" $chromeStr$testDir/"peer$COUNTER" $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
