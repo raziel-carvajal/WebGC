@@ -3,18 +3,16 @@
 module.exports = GossipFactory
 var inNodeJS = typeof window === 'undefined'
 var its = require('its')
-var debug, Worker, fs
+var debug, Worker, fs, Blob
 if (inNodeJS) {
   debug = require('debug')('factory')
   Worker = require('webworker-threads').Worker
-  fs = require('fs')
 } else {
   debug = require('debug').log
-  fs = require('browserify-fs')
   Worker = window.Worker
   if (typeof Worker === 'undefined') throw new Error('Your browser does not support web-workers')
   window.URL = window.URL || window.webkitURL
-  var Blob = window.Blob
+  Blob = window.Blob
 }
 /**
 * @class GossipFactory
@@ -28,45 +26,63 @@ if (inNodeJS) {
 * @param opts Object with one [logger]{@link module:src/utils#LoggerForWebWorker} and with one reference
 * to a [GossipUtil]{@link module:src/utils#GossipUtil} object.
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function GossipFactory (gossipUtil, id, coordi) {
+function GossipFactory (gossipUtil, id, coordi, userImpls) {
   if (!(this instanceof GossipFactory)) return new GossipFactory(gossipUtil, id)
   this.gossipUtil = gossipUtil
   this._id = id
   this._coordinator = coordi
   this.inventory = {}
   this._algosDB = {}
+  this._
   if (inNodeJS) this._origin = __filename.split('services/GossipFactory.js')[0]
-  else {
-    this._origin = window.location.href.split('peerjs-gossip')[0]
-    this._origin += 'peerjs-gossip/src/'
-  }
+  else this._origin = window.location.href.split('peerjs-gossip')[0] + 'peerjs-gossip/src/'
   debug('Origin: ' + this._origin)
-  this.modifInfo = {
-    files: {}, contentAltered: {}, commonHeaders: ['module.exports'],
-    nonCommonHeaders: [
-      'module.exports', 'var inherits', 'var GossipProtocol',
-      'var ViewSelector', 'inherits('
-    ]
-  }
-  this.filesToAltered = [
+  this._webWorkerCls = [ 
     'utils/GossipUtil.js', 'superObjs/GossipProtocol.js',
     'superObjs/ViewSelector.js', 'controllers/GossipMediator.js'
   ]
-  for (var i = 0; i < this.filesToAltered.length; i++) {
-    this.modifInfo.files[ this.filesToAltered[i] ] = true
-    this.modifInfo.contentAltered[ this.filesToAltered[i] ] = ''
+  var algosImpl = this.gossipUtil._algorithmsDb
+  for (var i = 0; i < algosImpl.length; i++) this._webWorkerCls.push(algosImpl[i])
+  this._makeClsWebworkCompatible(userImpls)
+}
+GossipFactory.prototype._makeClsWebworkCompatible = function (userImpls) {
+  var path = inNodeJS ? this._origin : '/../../src/'
+  var i, cls, code
+  for (i = 0; i < this._webWorkerCls.length; i++) {
+    cls = this._webWorkerCls[i].split('/')[1].split('.')[0]
+    try {
+      this._algosDB[cls] = require(path + this._webWorkerCls[i])
+      code = this._turnIntoWebworkerClass(new this._algosDB[cls](), cls)  
+    } catch(e) {
+      
+    }
   }
+  
+
+
+
+
+
+}
+GossipFactory.prototype._turnIntoWebworkerClass = function (obj, clsName) {
+  var methods = Object.keys(obj.prototype)
+  var webworkerClass = '(function (exports) {\n'
+  for (var i = 0; i < methods.length; i++) webworkerClass += obj[methods[i]].toString() + '\n'
+  webworkerClass += 'exports.' + clsName + ' = ' + clsName + '\n'
+  webworkerClass += '}) (this)'
+  return webworkerClass
 }
 GossipFactory.prototype._setProperties = function (files) {
-  var lib
+  var lib, x
   for (var i = 0; i < files.length; i++) {
     // TODO if new protocols are added by the user, consider to add a new option with the full path of
     // the protocols in the configuration file that WebGC receives as input
     // TODO '/../../src/' must be the the way to reach each algo from the creation of the bundle
     // when WebGC for browsers in needed
     lib = inNodeJS ? this._origin + files[i] : '/../../src/' + files[i]
-    debug(Object.keys(require(lib)))
     this._algosDB[files[i].split('/')[1].split('.')[0]] = require(lib)
+    x = require(lib)
+    debug( (new x()).constructor.toString() )
     this.modifInfo.files[files[i]] = false
     this.modifInfo.contentAltered[files[i]] = ''
     this.filesToAltered.push(files[i])
