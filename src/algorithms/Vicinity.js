@@ -31,7 +31,6 @@ function Vicinity (algOpts, debug, gossipUtil, isLogActivated) {
   this.dependencies = algOpts.dependencies
   debug('Vicinity.init')
 }
-function Vicinity () {}
 /**
 * @memberof Vicinity
 * @const defaultOpts

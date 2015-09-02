@@ -39,7 +39,6 @@ function GossipProtocol (opts, debug, gossipUtil) {
   this.debug = debug
   this.debug('GossipProtocol.init')
 }
-
 /**
 * @memberof GossipProtocol
 * @method increaseAge

@@ -58,10 +58,10 @@ function Coordinator (gossConfObj, profile, id) {
   }
   this._maxNumOfCon = 0
   this.gossipUtil = new GossipUtil(debug)
-  this.factory = new GossipFactory(this.gossipUtil, this._id, this)
+  this.factory = new GossipFactory(this.gossipUtil, this._id, this, gossConfObj.userImplementations)
   try {
     debug('Instantiation of gossip protocols starts')
-    this.factory.createProtocols(this.gossipAlgos, {}, this.profile, this.statsOpts)
+    this.factory.createProtocols(this.gossipAlgos, this.profile, this.statsOpts)
     debug('Instantiation of gossip protocols is finished')
   } catch (e) {
     debug('During the instantiation of gossip protocols. ' + e)

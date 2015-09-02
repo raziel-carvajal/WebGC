@@ -27,7 +27,6 @@ function Cyclon (algOpts, debug, gossipUtil, isLogActivated) {
   GossipProtocol.call(this, algOpts, debug, gossipUtil)
   this.debug('Cyclon.init')
 }
-function Cyclon () {}
 /**
 * @memberof Cyclon
 * @const defaultOpts

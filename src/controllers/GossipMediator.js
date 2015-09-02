@@ -32,7 +32,6 @@ function GossipMediator (algo, worker, debug) {
   this.activCycLogCounter = 0
   this.debug('GossipMediator.init')
 }
-
 /**
 * @memberof GossipMediator
 * @method setDependencies

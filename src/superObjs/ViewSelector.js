@@ -17,7 +17,6 @@ function ViewSelector (profile, debug, simFunc) {
   this.simFunc = simFunc
   this.noImMsg = 'It is required to provide an implementation for this method'
 }
-
 /**
 * @memberof ViewSelector
 * @method checkBaseCase
