@@ -83,6 +83,7 @@ GossipUtil.prototype.getOldestKey = function (dictio) {
       return items[i].k
     }
   }
+  return null
 }
 /**
 * @memberof GossipUtil

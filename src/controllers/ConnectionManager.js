@@ -1,8 +1,6 @@
 module.exports = ConnectionManager
-var debug
+var debug = typeof window === 'undefined' ? require('debug')('connnection_manager') : require('debug').log
 var Connection = require('../services/Connection')
-if (typeof window === 'undefined') debug = require('debug')('connnection_manager')
-else debug = require('debug').log
 
 function ConnectionManager (maxNumOfCon) {
   if (!(this instanceof ConnectionManager)) return new ConnectionManager(maxNumOfCon)
@@ -17,12 +15,11 @@ ConnectionManager.prototype.newConnection = function (receiver, initiator, viaSi
   }
 }
 
-ConnectionManager.prototype.get = function (id) { return this._cons[id] }
+ConnectionManager.prototype.get = function (id) { return this._cons[id] !== 'undefined' ? this._cons[id] : null }
 
 ConnectionManager.prototype.set = function (c) {
   if (!this._cons[c._receiver]) this._cons[c._receiver] = c
   else debug('Connection with: ' + c._receiver + ' already exists')
-  return 0
 }
 
 ConnectionManager.prototype.getConnections = function () { return Object.keys(this._cons) }

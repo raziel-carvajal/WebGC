@@ -93,15 +93,17 @@ Cyclon.prototype.selectItemsToSend = function (thread) {
       this.debug('Unknown selection policy')
       break
   }
-  var msg = {
-    service: 'GOSSIP',
-    header: 'outgoingMsg',
-    emitter: this.peerId,
-    receiver: dstPeer,
-    payload: subDict,
-    algoId: this.algoId
+  if (dstPeer) {
+    var msg = {
+      service: 'GOSSIP',
+      header: 'outgoingMsg',
+      emitter: this.peerId,
+      receiver: dstPeer,
+      payload: subDict,
+      algoId: this.algoId
+    }
+    this.gossipMediator.postInMainThread(msg)
   }
-  this.gossipMediator.postInMainThread(msg)
   this.gossipMediator.sentActiveCycleStats()
 }
 

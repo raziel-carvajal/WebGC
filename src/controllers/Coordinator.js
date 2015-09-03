@@ -1,9 +1,7 @@
 /**
 * @module src/controllers*/
 module.exports = Coordinator
-var debug
-if (typeof window === 'undefined') debug = require('debug')('coordinator')
-else debug = require('debug').log
+var debug = typeof window === 'undefined' ? require('debug')('coordinator') : require('debug').log
 var its = require('its')
 var hat = require('hat')
 var GossipUtil = require('../utils/GossipUtil')
@@ -87,14 +85,12 @@ Coordinator.prototype._checkConfFile = function (confObj) {
   debug('Cecking configuration file')
   try {
     var opts = confObj.signalingService
-    if (!opts.hasOwnProperty('host') || !opts.hasOwnProperty('port')) {
+    if (!opts.hasOwnProperty('host') || !opts.hasOwnProperty('port'))
       throw new Error('Host and/or port of signaling server is absent')
-    }
     var keys = Object.keys(confObj.gossipAlgos)
     for (var i = 0; i < keys.length; i++) {
-      if (!confObj.gossipAlgos[ keys[i] ].hasOwnProperty('class')) {
+      if (!confObj.gossipAlgos[ keys[i] ].hasOwnProperty('class'))
         throw new Error('Class name of the protocol is absent')
-      }
     }
     debug('configuration file is well formed')
   } catch (e) {
@@ -139,7 +135,7 @@ Coordinator.prototype.bootstrap = function () {
   this._sigSer.on('idTaken', function () {
     // TODO Coordinator must implement this event if WebGC is open to the public where
     // the peerID must be generated in a random way (via the 'hat' library for instance)
-    // aviding that two peers have the same identifier. Call: self.emit('resetPeerId')
+    // avoiding that two peers have the same identifier. Call: self.emit('resetPeerId')
   })
   this._sigSer.on('abort', function () { /* TODO handle as exception */ })
   this._sigSer.on('getFirstPeer', function () {
@@ -152,7 +148,6 @@ Coordinator.prototype.bootstrap = function () {
       var toDel = self._connectionManager.deleteOneCon()
       if (!self._usingSs) {
         self._delItemInViews(toDel)
-        // delete self._routingTable[toDel]
       }
     }
     self._initConnectionEvents(cO.connection)
@@ -219,7 +214,8 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
     switch (msg.header) {
       case 'outgoingMsg':
         debug('OutgoingMsg to reach: ' + msg.receiver)
-        if (msg.receiver !== null) {
+        if (msg.header) {
+          delete msg.header
           var c = self._connectionManager.get(msg.receiver)
           if (!c) {
             debug('Connection with: ' + msg.receiver + ' does not exist, doing connection')
@@ -233,10 +229,9 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
             }
             self._initConnectionEvents(c.connection)
             self._connectionManager.set(c.connection)
-          }
-          delete msg.header
-          c.send(msg)
-        }
+            c.connection.send(msg)
+          } else c.send(msg)
+        } else debug('Receiver is null. Msg: ' + JSON.stringify(msg))
         break
       case 'getDep':
         worker = self.workers[msg.depId]
@@ -261,7 +256,7 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
         }
         break
       case 'viewUpdsLog':
-        self.vieUpdHistory[msg.trace.algoId][msg.counter] = msg.trace
+        if (self.statsOpts.activated) self.vieUpdHistory[msg.trace.algoId][msg.counter] = msg.trace
         break
       case 'logInConsole':
         debug('WebGClog &&' + msg.log + '&&')
