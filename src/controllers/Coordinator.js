@@ -385,3 +385,20 @@ Coordinator.prototype._updRoutingTable = function (view, emitter) {
 * application layer.
 * @param fn Reference to an external function*/
 Coordinator.prototype.setApplicationLevelFunction = function (fn) { this.appFn = fn }
+/** Damien requirements */
+Coordinator.prototype.setNeighbourhoodSize = function (n) {
+  if (!its.number(n)) throw new Error('Neighbourhood new size is not a number')
+  if (!its.range(n >= 1)) throw new Error('Neighbourhood new size must be at least bigger then one')
+  var algoId = this.algosNames[0]
+  var fanout = this.gossipAlgos[algoId].fanout
+  if (!its.range(n > fanout)) {
+    throw new Error('Neighbourhood new size must be bigger than ' + fanout + ', which it is the fanout value' +
+      ' of the algorithm ' + algoId)
+  }
+  var connections = this._connectionManager.getConnections()
+  if (connections.length > n) {
+    var toRemove = connection.length - n
+    for (var i = 0; i < toRemove; i++) this._connectionManager.deleteConnection(connections[i])
+  }
+  this._connectionManager._maxNumOfCon = n
+}
