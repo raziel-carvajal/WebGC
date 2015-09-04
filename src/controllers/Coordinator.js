@@ -85,12 +85,14 @@ Coordinator.prototype._checkConfFile = function (confObj) {
   debug('Cecking configuration file')
   try {
     var opts = confObj.signalingService
-    if (!opts.hasOwnProperty('host') || !opts.hasOwnProperty('port'))
+    if (!opts.hasOwnProperty('host') || !opts.hasOwnProperty('port')) {
       throw new Error('Host and/or port of signaling server is absent')
+    }
     var keys = Object.keys(confObj.gossipAlgos)
     for (var i = 0; i < keys.length; i++) {
-      if (!confObj.gossipAlgos[ keys[i] ].hasOwnProperty('class'))
+      if (!confObj.gossipAlgos[ keys[i] ].hasOwnProperty('class')) {
         throw new Error('Class name of the protocol is absent')
+      }
     }
     debug('configuration file is well formed')
   } catch (e) {
@@ -230,8 +232,8 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
             self._initConnectionEvents(c.connection)
             self._connectionManager.set(c.connection)
             c.connection.send(msg)
-          } else c.send(msg)
-        } else debug('Receiver is null. Msg: ' + JSON.stringify(msg))
+          } else { c.send(msg) }
+        } else { debug('Receiver is null. Msg: ' + JSON.stringify(msg)) }
         break
       case 'getDep':
         worker = self.workers[msg.depId]
@@ -387,18 +389,25 @@ Coordinator.prototype._updRoutingTable = function (view, emitter) {
 Coordinator.prototype.setApplicationLevelFunction = function (fn) { this.appFn = fn }
 /** Damien requirements */
 Coordinator.prototype.setNeighbourhoodSize = function (n) {
-  if (!its.number(n)) throw new Error('Neighbourhood new size is not a number')
-  if (!its.range(n >= 1)) throw new Error('Neighbourhood new size must be at least bigger then one')
+  its.number(n, 'Neighbourhood new size is not a number')
+  its.range(n >= 1, 'Neighbourhood new size must be at least bigger then one')
   var algoId = this.algosNames[0]
   var fanout = this.gossipAlgos[algoId].fanout
-  if (!its.range(n > fanout)) {
-    throw new Error('Neighbourhood new size must be bigger than ' + fanout + ', which it is the fanout value' +
-      ' of the algorithm ' + algoId)
-  }
+  its.range(n > fanout, 'Neighbourhood new size must be bigger than ' + fanout +
+    ', which it is the fanout value of the algorithm ' + algoId)
   var connections = this._connectionManager.getConnections()
+  var toRemove = []
+  debug('cons ' + connections)
   if (connections.length > n) {
-    var toRemove = connection.length - n
-    for (var i = 0; i < toRemove; i++) this._connectionManager.deleteConnection(connections[i])
+    for (var i = 0; i < connections.length - n; i++) {
+      toRemove.push(connections[i])
+      this._connectionManager.deleteConnection(connections[i])
+    }
   }
+  debug('Next connections will be removed: ' + toRemove)
+  this.workers[algoId].postMessage({ header: 'deleteViewItems', items: toRemove, newSize: n })
   this._connectionManager._maxNumOfCon = n
+  debug('New neighbourhood size: ' + n)
 }
+Coordinator.prototype.getNeighbourhood = function () { return this._connectionManager.getConnections() }
+Coordinator.prototype.sendTo = function () {}

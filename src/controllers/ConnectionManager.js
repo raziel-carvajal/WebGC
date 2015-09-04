@@ -22,7 +22,7 @@ ConnectionManager.prototype.set = function (c) {
   else debug('Connection with: ' + c._receiver + ' already exists')
 }
 
-ConnectionManager.prototype.getConnections = function () { return Object.keys(this._cons) }
+ConnectionManager.prototype.getConnections = function () { return Object.keys(this._cons) || [] }
 
 ConnectionManager.prototype.deleteOneCon = function () {
   var keys = Object.keys(this._cons)

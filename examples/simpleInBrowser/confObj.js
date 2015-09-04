@@ -1,4 +1,3 @@
-module.exports = configurationObj
 var configurationObj = {
   signalingService: {
     host: 'localhost',
@@ -20,3 +19,4 @@ var configurationObj = {
   },
   usingSs: true
 }
+module.exports = configurationObj

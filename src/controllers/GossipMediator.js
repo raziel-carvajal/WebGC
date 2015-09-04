@@ -153,6 +153,14 @@ GossipMediator.prototype.listen = function () {
       case 'delete':
         if (Object.keys(self.algo.view).indexOf(msg.item, 0) !== -1) delete self.algo.view[msg.item]
         break
+      case 'deleteViewItems':
+        var items = Object.keys(self.algo.view)
+        debug('DeleteViewItems was called, items to remove: ' + msg.items)
+        for (var i = 0; i < msg.items.length; i++)
+          if (items.indexOf(msg.items[i],0) !== -1 ) delete self.algo.view[msg.items[i]]
+        self.algo.viewSize = msg.newSize
+        debug('Current view: ' + Object.keys(self.algo.view))
+        break;
       default:
         self.log.warn('header: ' + msg.header + ' is unknown')
         break
