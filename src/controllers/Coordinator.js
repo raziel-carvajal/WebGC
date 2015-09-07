@@ -9,6 +9,7 @@ var GossipFactory = require('../services/GossipFactory')
 var Bootstrap = require('../services/Bootstrap')
 var ConnectionManager = require('../controllers/ConnectionManager')
 var PeerJSProtocol = require('../utils/PeerjsProtocol')
+var GossipWrapper = require('../utils/GossipWrapper')
 /**
 * @class Coordinator
 * @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
@@ -67,6 +68,12 @@ function Coordinator (gossConfObj, profile, id) {
   this._connectionManager = new ConnectionManager(this._maxNumOfCon)
   this._algosPool = {}
   this._routingTable = {}
+  this._extendAttributes()
+}
+Coordinator.prototype._extendAttributes = function() {
+  for (var i = 0; i < this.algosNames.length; i ++) {
+    this[this.algosNames[i]] = new GossipWrapper(this, this.algosNames[i], this._id)
+  }
 }
 Coordinator.prototype._delItemInViews = function (id) {
   // var keys = Object.keys(this._routingTable)
@@ -412,7 +419,9 @@ Coordinator.prototype.setNeighbourhoodSize = function (n) {
   this._connectionManager._maxNumOfCon = n
   debug('New neighbourhood size: ' + n)
 }
-Coordinator.prototype.getNeighbourhood = function () { return this._connectionManager.getConnections() }
+Coordinator.prototype.getNeighbourhood = function () {
+  return this._connectionManager.getConnections()
+}
 Coordinator.prototype.sendTo = function (neighbour, payload) {
   if (payload === undefined || payload === '') {
     debug('Message is empty or void')
