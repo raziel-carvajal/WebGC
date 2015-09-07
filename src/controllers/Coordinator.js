@@ -370,6 +370,9 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
         delete this._routingTable[emitter]
       }
       break
+    case 'APPLICATION':
+      debug('Message: ' + data.payload + ' received from: ' + data.emitter)
+      break
     default:
       debug(data + ' is not recognized')
       break
@@ -410,4 +413,29 @@ Coordinator.prototype.setNeighbourhoodSize = function (n) {
   debug('New neighbourhood size: ' + n)
 }
 Coordinator.prototype.getNeighbourhood = function () { return this._connectionManager.getConnections() }
-Coordinator.prototype.sendTo = function () {}
+Coordinator.prototype.sendTo = function (neighbour, payload) {
+  if (payload === undefined || payload === '') {
+    debug('Message is empty or void')
+    return
+  }
+  var connection = this._connectionManager.get(neighbour)
+  if (!connection) {
+    debug('There is no connection with: ' + neighbour)
+    return
+  }
+  var msg = { service: 'APPLICATION', 'payload': payload, emitter: this._id }
+  connection.send(msg)
+}
+Coordinator.prototype.sendToNeighbours = function(payload) {
+  if (payload === undefined || payload === '') {
+    debug('Message is empty or void')
+    return
+  }
+  var connections = this._connectionManager.getConnections()
+  if (connections.length === 0) {
+    debug('There is no connection with others peers')
+    return
+  } else {
+    for (var i = 0; i < connections.length; i++) this.sendTo(connections[i], payload)
+  }
+}
