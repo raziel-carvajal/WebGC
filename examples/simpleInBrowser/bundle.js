@@ -998,7 +998,7 @@ var configurationObj = {
   gossipAlgos: {
     cyclon1: {
       class: 'Cyclon',
-      viewSize: 8,
+      viewSize: 10,
       fanout: 4,
       gossipPeriod: 6000,
       propagationPolicy: { push: true, pull: true }
@@ -1021,7 +1021,7 @@ var confObj = require('./confObj.js')
 var Coordinator = require('../../src/controllers/Coordinator.js')
 var coordi = new Coordinator(confObj, {profile: 'NoProfile'}, undefined)
 coordi.bootstrap()
-window['coordi'] = coordi
+window['coordinator'] = coordi
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/main.js","/")
 },{"../../src/controllers/Coordinator.js":21,"./confObj.js":1,"_process":36,"buffer":29}],3:[function(require,module,exports){
@@ -3055,6 +3055,9 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
         delete this._routingTable[emitter]
       }
       break
+    case 'APPLICATION':
+      debug('Message: ' + data.payload + ' received from: ' + data.emitter)
+      break
     default:
       debug(data + ' is not recognized')
       break
@@ -3074,18 +3077,12 @@ Coordinator.prototype._updRoutingTable = function (view, emitter) {
 Coordinator.prototype.setApplicationLevelFunction = function (fn) { this.appFn = fn }
 /** Damien requirements */
 Coordinator.prototype.setNeighbourhoodSize = function (n) {
-  debug('before get -2')
   its.number(n, 'Neighbourhood new size is not a number')
-  debug('before get -1')
   its.range(n >= 1, 'Neighbourhood new size must be at least bigger then one')
-  debug('before get 0')
   var algoId = this.algosNames[0]
-  debug('before get 1')
   var fanout = this.gossipAlgos[algoId].fanout
-  debug('before get 2')
   its.range(n > fanout, 'Neighbourhood new size must be bigger than ' + fanout +
     ', which it is the fanout value of the algorithm ' + algoId)
-  debug('before get 3')
   var connections = this._connectionManager.getConnections()
   var toRemove = []
   debug('cons ' + connections)
@@ -3099,6 +3096,33 @@ Coordinator.prototype.setNeighbourhoodSize = function (n) {
   this.workers[algoId].postMessage({ header: 'deleteViewItems', items: toRemove, newSize: n })
   this._connectionManager._maxNumOfCon = n
   debug('New neighbourhood size: ' + n)
+}
+Coordinator.prototype.getNeighbourhood = function () { return this._connectionManager.getConnections() }
+Coordinator.prototype.sendTo = function (neighbour, payload) {
+  if (payload === undefined || payload === '') {
+    debug('Message is empty or void')
+    return
+  }
+  var connection = this._connectionManager.get(neighbour)
+  if (!connection) {
+    debug('There is no connection with: ' + neighbour)
+    return
+  }
+  var msg = { service: 'APPLICATION', 'payload': payload, emitter: this._id }
+  connection.send(msg)
+}
+Coordinator.prototype.sendToNeighbours = function(payload) {
+  if (payload === undefined || payload === '') {
+    debug('Message is empty or void')
+    return
+  }
+  var connections = this._connectionManager.getConnections()
+  if (connections.length === 0) {
+    debug('There is no connection with others peers')
+    return
+  } else {
+    for (var i = 0; i < connections.length; i++) this.sendTo(connections[i], payload)
+  }
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/controllers/Coordinator.js","/../../src/controllers")
@@ -3255,6 +3279,7 @@ Connection.prototype.send = function (msg) {
     debug('Connection with peer: ' + this._receiver + "isn't open, enqueueing msg")
     this._msgsQueue.push(msg)
   } else {
+    debug('Sending message to: ' + this._receiver)
     this._peer.send(msg)
   }
 }
@@ -3264,7 +3289,10 @@ Connection.prototype.closeAndAnnounce = function () {
   this._peer.destroy()
 }
 
-Connection.prototype.close = function () { this._peer.destroy() }
+Connection.prototype.close = function () {
+  debug('Connection with: ' + this._receiver + ' is closed')
+  this._peer.destroy()
+}
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/services/Connection.js","/../../src/services")
 },{"_process":36,"buffer":29,"debug":3,"events":33,"inherits":7,"simple-peer":10,"wrtc":19}],24:[function(require,module,exports){
