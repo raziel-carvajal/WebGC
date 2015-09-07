@@ -45,6 +45,7 @@ Connection.prototype.send = function (msg) {
     debug('Connection with peer: ' + this._receiver + "isn't open, enqueueing msg")
     this._msgsQueue.push(msg)
   } else {
+    debug('Sending message to: ' + this._receiver)
     this._peer.send(msg)
   }
 }
@@ -54,4 +55,7 @@ Connection.prototype.closeAndAnnounce = function () {
   this._peer.destroy()
 }
 
-Connection.prototype.close = function () { this._peer.destroy() }
+Connection.prototype.close = function () {
+  debug('Connection with: ' + this._receiver + ' is closed')
+  this._peer.destroy()
+}
