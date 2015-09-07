@@ -2,5 +2,31 @@
 <html lang="en">
   <body>
   <script type="text/javascript" src="bundle.js"></script>
+  <script>
+    var configurationObj = {
+      signalingService: {
+        // host: '131.254.213.43',
+        host: 'localhost',
+        port: 9990
+      },
+      gossipAlgos: {
+        cyclon1: {
+          class: 'Cyclon',
+          viewSize: 10,
+          fanout: 4,
+          gossipPeriod: 6000,
+          propagationPolicy: { push: true, pull: true }
+        }
+      },
+      userImplementations: [],
+      statsOpts: {
+        activated: false,
+        feedbackPeriod: 20000
+      },
+      usingSs: true
+    }
+    var coordinator = new Coordinator(configurationObj, {profile: 'Empty'}, undefined)
+    coordinator.bootstrap()
+  </script>
   </body>
 </html>
