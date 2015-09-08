@@ -1,11 +1,6 @@
 /**
 * @module src/superObjs*/
-// TODO Find a way to export (NodeJS fashion) in a Web Worker scope, because "require" could be
-// used with "workerify" but not in "webworker-threads" for NodeJS. Now the solution is to
-// remove every require (which isn't elegant) and replace it whith the anonymous function to
-// export. Other solution could be to edit the sources on the fly adding the right headers
 module.exports = GossipProtocol
-
 /**
 * @class GossipProtocol
 * @description Representation of one generic gossip protocol, every implementation must inherits
@@ -20,23 +15,21 @@ module.exports = GossipProtocol
 * the actions of one gossip protocol
 * @param gossipUtil Object with [gossip utilities]{@link module:src/utils#GossipUtil}
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com> */
-function GossipProtocol (opts, debug, gossipUtil) {
-  this.class = opts.class
-  // attributes in common for each protocol
+function GossipProtocol (opts, debug, gossipUtil, profile) {
   this.view = {}
   this.loop = 0
-  this.data = opts.data
+  this.class = opts.class
   this.viewSize = opts.viewSize
   this.fanout = opts.fanout
   this.gossipPeriod = opts.gossipPeriod
   this.propagationPolicy = opts.propagationPolicy
   this.algoId = opts.algoId// unique ID for the algorithm
   this.debug = debug
-  this.gossipUtil = gossipUtil
   this.peerId = opts.peerId
-  // error and warning messages
-  this.nonImpMsg = 'An implementation for this method is required'
   this.debug = debug
+  this.gossipUtil = gossipUtil
+  this.profile = profile 
+  this.nonImpMsg = 'An implementation for this method is required'
   this.debug('GossipProtocol.init')
 }
 /**

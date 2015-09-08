@@ -19,4 +19,4 @@
 #===============================================================================
 
 rm -f bundle.js
-browserify --insert-globals -i webworker-threads -i xhr2 -r '../../src/algorithms/Cyclon.js' -r '../../src/algorithms/Vicinity.js' -r '../../src/utils/GossipUtil.js' -r '../../src/superObjs/GossipProtocol.js' -r '../../src/superObjs/ViewSelector.js' -r '../../src/controllers/GossipMediator.js' main.js -o bundle.js
+browserify --insert-globals -i webworker-threads -i xhr2 -r '../../src/algorithms/Cyclon.js' -r '../../src/algorithms/Vicinity.js' -r '../../src/utils/GossipUtil.js' -r '../../src/superObjs/GossipProtocol.js' -r '../../src/superObjs/ViewSelector.js' -r '../../src/controllers/GossipMediator.js' -r '../../src/utils/Profile.js' main.js -o bundle.js

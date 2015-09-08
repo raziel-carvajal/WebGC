@@ -37,7 +37,6 @@
   * @default */
   SamplingService.defaultOpts = {
     class: 'SamplingService',
-    data: '?',
     viewSize: 10,
     fanout: 5,
     periodTimeOut: 10000,
@@ -174,7 +173,7 @@
   * @method selectItemsToSend
   * @description See method GossipProtocol.selectItemsToSend() for more information. */
   SamplingService.prototype.selectItemsToSend = function(thisId, dstPeer, thread){
-    var buffer = {}; buffer[thisId] = this.gossipUtil.newItem(0, this.data);
+    var buffer = {}; buffer[thisId] = this.gossipUtil.newItem(0, this.profile);
     this.permuteView();
     this.moveOldest();
     var ii = Math.floor(this.viewSize / 2) - 1;

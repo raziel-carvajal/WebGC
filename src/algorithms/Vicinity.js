@@ -22,12 +22,12 @@ inherits(Vicinity, GossipProtocol)
 * @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
 * functions used by gossip protocols
 * @author Raziel Carvajal-Gomez raziel.carvajal@gmail.com */
-function Vicinity (algOpts, debug, gossipUtil, isLogActivated) {
-  if (!(this instanceof Vicinity)) return Vicinity(algOpts, debug, gossipUtil, isLogActivated)
+function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
+  if (!(this instanceof Vicinity)) return Vicinity(algOpts, debug, gossipUtil, isLogActivated, profile)
   this.isLogActivated = isLogActivated
   GossipProtocol.call(this, algOpts, debug, gossipUtil)
   this.selectionPolicy = algOpts.selectionPolicy
-  this.selector = new ViewSelector(this.data[this.algoId], debug, algOpts.similarityFunction)
+  this.selector = new ViewSelector(profile, debug, algOpts.similarityFunction)
   this.dependencies = algOpts.dependencies
   debug('Vicinity.init')
 }
@@ -39,7 +39,6 @@ function Vicinity (algOpts, debug, gossipUtil, isLogActivated) {
 * @default */
 Vicinity.defaultOpts = {
   class: 'Vicinity',
-  data: '?',
   viewSize: 10,
   fanout: 5,
   periodTimeOut: 10000,
@@ -73,7 +72,7 @@ Vicinity.prototype.initialize = function (keys) {
   if (keys.length > 0) {
     var i = 0
     while (i < this.viewSize && i < keys.length) {
-      this.view[ keys[i].id ] = this.gossipUtil.newItem(0, keys[i].profile)
+      this.view[keys[i]] = this.gossipUtil.newItem(0, undefined)
       i++
     }
   }
@@ -105,7 +104,7 @@ Vicinity.prototype.selectItemsToSend = function (thread) {
       itmsNum = 0
     break
   }
-  var newItem = thread === 'active' ? this.gossipUtil.newItem(0, this.selector.profile) : null
+  var newItem = thread === 'active' ? this.gossipUtil.newItem(0, this.profile) : null
   switch (this.selectionPolicy) {
     case 'random':
       subDict = this.gossipUtil.getRandomSubDict(itmsNum, clone)
@@ -154,7 +153,7 @@ Vicinity.prototype.doAgrBiasedSelection = function (msg) {
   var itm
   for (var i = 0; i < keys.length; i++) {
     itm = msg.result[ keys[i] ]
-    result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data[this.algoId])
+    result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data)
   }
   var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result)
   var similarNeig = this.selector.getClosestNeighbours(msg.n, mergedViews, {k: this.peerId, v: msg.newItem})
@@ -206,7 +205,7 @@ Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
   var itm
   for (i = 0; i < keys.length; i++) {
     itm = msg.result[ keys[i] ]
-    result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data[this.algoId])
+    result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data)
   }
   var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result)
   if (Object.keys(mergedViews).indexOf(this.peerId, 0) !== -1) delete mergedViews[this.peerId]

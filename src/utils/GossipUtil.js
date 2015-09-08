@@ -113,12 +113,10 @@ GossipUtil.prototype.removeRandomly = function (n, dic) {
     return
   } else {
     var tmpDic = {}
-    var tmpAr
-    var key
-    for (key in dic) {
-      tmpDic[key] = 1
-    }
-    for (var i = 0; i < n; i += 1) {
+    var tmpAr, i, key
+    var keys = Object.keys(dic)
+    for (i = 0; i < keys.length; i++) tmpDic[keys[i]] = 1
+    for (i = 0; i < n; i++) {
       tmpAr = Object.keys(tmpDic)
       key = tmpAr[Math.floor(Math.random() * tmpAr.length)]
       delete tmpDic[key]
@@ -147,16 +145,6 @@ GossipUtil.prototype.mergeViews = function (v1, v2) {
     }
   }
   return result
-}
-/**
-* @memberof GossipUtil
-* @method setData
-* @description Updates the value of the property "key" in one object
-* @param dic Source object
-* @param key Property to search in the source
-* @param d Value to update*/
-GossipUtil.prototype.setData = function (dic, key, d) {
-  if (key in dic) dic[key].data = d
 }
 /**
 * @memberof GossipUtil

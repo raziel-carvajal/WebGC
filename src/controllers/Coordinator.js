@@ -5,11 +5,11 @@ var debug = typeof window === 'undefined' ? require('debug')('coordinator') : re
 var its = require('its')
 var hat = require('hat')
 var GossipUtil = require('../utils/GossipUtil')
+var PeerJSProtocol = require('../utils/PeerjsProtocol')
+var GossipWrapper = require('../utils/GossipWrapper')
 var GossipFactory = require('../services/GossipFactory')
 var Bootstrap = require('../services/Bootstrap')
 var ConnectionManager = require('../controllers/ConnectionManager')
-var PeerJSProtocol = require('../utils/PeerjsProtocol')
-var GossipWrapper = require('../utils/GossipWrapper')
 /**
 * @class Coordinator
 * @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
@@ -37,14 +37,12 @@ var GossipWrapper = require('../utils/GossipWrapper')
 * @param id Unique identifier of the peer, if this parameter is not specified one
 * random id will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
 * @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
-function Coordinator (gossConfObj, profile, id) {
-  if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, profile, id)
+function Coordinator (gossConfObj, id, profile) {
+  if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, id, profile)
   if (!this._checkConfFile(gossConfObj)) return
-  its.defined(profile)
   its.defined(gossConfObj.signalingService)
   its.defined(gossConfObj.gossipAlgos)
   its.defined(gossConfObj.statsOpts)
-  this.profile = profile
   this._id = id || hat()
   this._sigSerOpts = gossConfObj.signalingService
   this.gossipAlgos = gossConfObj.gossipAlgos
@@ -57,10 +55,10 @@ function Coordinator (gossConfObj, profile, id) {
   }
   this._maxNumOfCon = 0
   this.gossipUtil = new GossipUtil(debug)
-  this.factory = new GossipFactory(this.gossipUtil, this._id, this, gossConfObj.userImplementations)
+  this.factory = new GossipFactory(this.gossipUtil, this, gossConfObj.userImplementations, profile)
   try {
     debug('Instantiation of gossip protocols starts')
-    this.factory.createProtocols(this.gossipAlgos, this.profile, this.statsOpts)
+    this.factory.createProtocols(this.gossipAlgos, this.statsOpts)
     debug('Instantiation of gossip protocols is finished')
   } catch (e) {
     debug('During the instantiation of gossip protocols. ' + e)
@@ -89,23 +87,16 @@ Coordinator.prototype._delItemInViews = function (id) {
 * by this method
 * @param confObj Configuration object*/
 Coordinator.prototype._checkConfFile = function (confObj) {
-  debug('Cecking configuration file')
-  try {
-    var opts = confObj.signalingService
-    if (!opts.hasOwnProperty('host') || !opts.hasOwnProperty('port')) {
-      throw new Error('Host and/or port of signaling server is absent')
-    }
-    var keys = Object.keys(confObj.gossipAlgos)
-    for (var i = 0; i < keys.length; i++) {
-      if (!confObj.gossipAlgos[ keys[i] ].hasOwnProperty('class')) {
-        throw new Error('Class name of the protocol is absent')
-      }
-    }
-    debug('configuration file is well formed')
-  } catch (e) {
-    debug('Configuration file is malformed. ' + e.message)
-    return
+  debug('Checking if configuration file is well formed')
+  its.defined(confObj.signalingService.host, "Host server isn't defined")
+  its.string(confObj.signalingService.host, "Host server isn't a string")
+  its.defined(confObj.signalingService.port, "Port server isn't defined")
+  its.string(confObj.signalingService.port, "Port server isn't a number")
+  var keys = Object.keys(confObj.gossipAlgos)
+  for (var i = 0; i < keys.length; i++) {
+    its.defined(confObj.gossipAlgos[keys[i]].class, "Class type of the protocol isn't defined")
   }
+  debug('Configuration file is well formed')
   return true
 }
 /**
@@ -397,54 +388,3 @@ Coordinator.prototype._updRoutingTable = function (view, emitter) {
 * application layer.
 * @param fn Reference to an external function*/
 Coordinator.prototype.setApplicationLevelFunction = function (fn) { this.appFn = fn }
-/** Damien requirements */
-Coordinator.prototype.setNeighbourhoodSize = function (n) {
-  its.number(n, 'Neighbourhood new size is not a number')
-  its.range(n >= 1, 'Neighbourhood new size must be at least bigger then one')
-  var algoId = this.algosNames[0]
-  var fanout = this.gossipAlgos[algoId].fanout
-  its.range(n > fanout, 'Neighbourhood new size must be bigger than ' + fanout +
-    ', which it is the fanout value of the algorithm ' + algoId)
-  var connections = this._connectionManager.getConnections()
-  var toRemove = []
-  debug('cons ' + connections)
-  if (connections.length > n) {
-    for (var i = 0; i < connections.length - n; i++) {
-      toRemove.push(connections[i])
-      this._connectionManager.deleteConnection(connections[i])
-    }
-  }
-  debug('Next connections will be removed: ' + toRemove)
-  this.workers[algoId].postMessage({ header: 'deleteViewItems', items: toRemove, newSize: n })
-  this._connectionManager._maxNumOfCon = n
-  debug('New neighbourhood size: ' + n)
-}
-Coordinator.prototype.getNeighbourhood = function () {
-  return this._connectionManager.getConnections()
-}
-Coordinator.prototype.sendTo = function (neighbour, payload) {
-  if (payload === undefined || payload === '') {
-    debug('Message is empty or void')
-    return
-  }
-  var connection = this._connectionManager.get(neighbour)
-  if (!connection) {
-    debug('There is no connection with: ' + neighbour)
-    return
-  }
-  var msg = { service: 'APPLICATION', 'payload': payload, emitter: this._id }
-  connection.send(msg)
-}
-Coordinator.prototype.sendToNeighbours = function(payload) {
-  if (payload === undefined || payload === '') {
-    debug('Message is empty or void')
-    return
-  }
-  var connections = this._connectionManager.getConnections()
-  if (connections.length === 0) {
-    debug('There is no connection with others peers')
-    return
-  } else {
-    for (var i = 0; i < connections.length; i++) this.sendTo(connections[i], payload)
-  }
-}

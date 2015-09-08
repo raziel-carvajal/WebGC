@@ -21,10 +21,10 @@ inherits(Cyclon, GossipProtocol)
 * @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
 * functions used by gossip protocols
 * @author Raziel Carvajal [raziel.carvajal-gomez@inria.fr] */
-function Cyclon (algOpts, debug, gossipUtil, isLogActivated) {
-  if (!(this instanceof Cyclon)) return Cyclon(algOpts, debug, gossipUtil, isLogActivated)
+function Cyclon (algOpts, debug, gossipUtil, isLogActivated, profile) {
+  if (!(this instanceof Cyclon)) return Cyclon(algOpts, debug, gossipUtil, isLogActivated, profile)
   this.isLogActivated = isLogActivated
-  GossipProtocol.call(this, algOpts, debug, gossipUtil)
+  GossipProtocol.call(this, algOpts, debug, gossipUtil, profile)
   this.debug('Cyclon.init')
 }
 /**
@@ -35,7 +35,6 @@ function Cyclon (algOpts, debug, gossipUtil, isLogActivated) {
 * @default */
 Cyclon.defaultOpts = {
   class: 'Cyclon',
-  data: '?',
   viewSize: 10,
   fanout: 5,
   periodTimeOut: 10000,
@@ -65,7 +64,7 @@ Cyclon.prototype.initialize = function (keys) {
   if (keys.length > 0) {
     var i = 0
     while (i < this.viewSize && i < keys.length) {
-      this.view[ keys[i].id ] = this.gossipUtil.newItem(0, keys[i].profile)
+      this.view[keys[i]] = this.gossipUtil.newItem(0, undefined)
       i++
     }
   }
@@ -84,7 +83,7 @@ Cyclon.prototype.selectItemsToSend = function (thread) {
     case 'active':
       delete clone[dstPeer]
       subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
-      subDict[this.peerId] = this.gossipUtil.newItem(0, this.data)
+      subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile)
       break
     case 'passive':
       subDict = this.gossipUtil.getRandomSubDict(this.fanout, this.clone)

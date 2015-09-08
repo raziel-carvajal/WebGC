@@ -5,9 +5,9 @@ var inNodeJS = typeof window === 'undefined'
 var its = require('its')
 var debug, Worker, fs, Blob, Threads
 if (inNodeJS) {
+  // TODO test if Threads could be used to avoid writing files in the directory src/workers
   fs = require('fs')
   debug = require('debug')('factory')
-  // TODO test if Threads could be used to avoid writing files in the directory src/workers
   Threads = require('webworker-threads')
   Worker = Threads.Worker
 } else {
@@ -29,22 +29,23 @@ if (inNodeJS) {
 * @param opts Object with one [logger]{@link module:src/utils#LoggerForWebWorker} and with one reference
 * to a [GossipUtil]{@link module:src/utils#GossipUtil} object.
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function GossipFactory (gossipUtil, id, coordi, userImpls) {
-  if (!(this instanceof GossipFactory)) return new GossipFactory(gossipUtil, id, coordi, userImpls)
+function GossipFactory (gossipUtil, coordi, userImpls, profile) {
+  if (!(this instanceof GossipFactory)) return new GossipFactory(gossipUtil, coordi, userImpls, profile)
   this.gossipUtil = gossipUtil
-  this._id = id
   this._coordinator = coordi
+  this._userImpls = userImpls
+  this._profile = profile
   this.inventory = {}
   this._algosDB = {}
   this._clsCodeWebworkerComp = {}
-  this._userImpls = userImpls
   this._workerLibs = {}
   if (inNodeJS) this._origin = __filename.split('services/GossipFactory.js')[0]
   else this._origin = window.location.href.split('peerjs-gossip')[0] + 'peerjs-gossip/src/'
   debug('Origin: ' + this._origin)
   this._webWorkerCls = [ 
     'utils/GossipUtil.js', 'superObjs/GossipProtocol.js',
-    'superObjs/ViewSelector.js', 'controllers/GossipMediator.js'
+    'superObjs/ViewSelector.js', 'controllers/GossipMediator.js',
+    'utils/Profile.js'
   ]
   var algosImpl = this.gossipUtil._algorithmsDb
   for (var i = 0; i < algosImpl.length; i++) this._webWorkerCls.push(algosImpl[i])
@@ -100,13 +101,12 @@ GossipFactory.prototype._createWorkerLibs = function () {
     this[loadOp](workerLib)
   }
 }
-GossipFactory.prototype.createProtocols = function (gossipObj, profile, statsOpts) {
+GossipFactory.prototype.createProtocols = function (gossipObj, statsOpts) {
   this._createWorkerLibs()
   var algOpts
   var algosIds = Object.keys(gossipObj)
   for (var i = 0; i < algosIds.length; i++) {
     algOpts = gossipObj[ algosIds[i] ]
-    algOpts.data = profile
     this._coordinator._maxNumOfCon += algOpts.viewSize
     if (statsOpts.activated) {
       this._coordinator.actCycHistory[ algosIds[i] ] = {}
@@ -132,7 +132,7 @@ GossipFactory.prototype._createProtocol = function (algoId, algOpts, statsOpts) 
     if (typeof cls === 'undefined') throw new Error('Algorithm: ' + algOpts.class + ' is not in WebGC')
     this.gossipUtil.extendProperties(algOpts, cls.defaultOpts)
     this.checkProperties(algOpts)
-    this.gossipUtil.extendProperties(algOpts, {'algoId': algoId, peerId: this._id})
+    this.gossipUtil.extendProperties(algOpts, {'algoId': algoId, peerId: this._coordinator._id})
     var opts = {
       activated: statsOpts.activated,
       feedbackPeriod: statsOpts.feedbackPeriod,
@@ -142,7 +142,7 @@ GossipFactory.prototype._createProtocol = function (algoId, algOpts, statsOpts) 
       var fP
       var code = this._buildWorkerHeader(algoId, algOpts.class, opts.activated, algOpts)
       if (inNodeJS) {
-        fP = this._origin + 'workers/' + algoId + '_' + this._id + '.js'
+        fP = this._origin + 'workers/' + algoId + '_' + this._coordinator._id + '.js'
         fs.writeFileSync(fP, code)
         if (!fs.existsSync(fP)) throw new Error('While creating worker file')
       } else {
@@ -164,7 +164,6 @@ GossipFactory.prototype._createProtocol = function (algoId, algOpts, statsOpts) 
 * the minimal value.
 * @param opts Object with the attributes of one gossip protocol*/
 GossipFactory.prototype.checkProperties = function (opts) {
-  its.defined(opts.data)
   its.number(opts.viewSize)
   its.range(opts.viewSize > 1)
   its.number(opts.fanout)
@@ -197,7 +196,9 @@ GossipFactory.prototype._buildWorkerHeader = function (algoId, algoClass, statsA
   }
   code += "debug('Worker initialization BEGINS')\n"
   code += 'var gossipUtil = new GossipUtil(debug)\n'
-  code += 'var algo = new ' + algoClass + '(algOpts, debug, gossipUtil, isLogActivated)\n'
+  code += 'var payload = ' + JSON.stringify(this._profile) + '\n'
+  code += 'var profile = new Profile(payload)\n'
+  code += 'var algo = new ' + algoClass + '(algOpts, debug, gossipUtil, isLogActivated, profile)\n'
   code += 'var mediator = new GossipMediator(algo, this, debug)\n'
   code += 'algo.setMediator(mediator)\n'
   code += 'mediator.listen()\n'
