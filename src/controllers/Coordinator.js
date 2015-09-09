@@ -55,7 +55,7 @@ function Coordinator (gossConfObj, id, profile) {
   }
   this._maxNumOfCon = 0
   this.gossipUtil = new GossipUtil(debug)
-  this.factory = new GossipFactory(this.gossipUtil, this, gossConfObj.userImplementations, profile)
+  this.factory = new GossipFactory(this.gossipUtil, this, gossConfObj.userImplementations, profile || 'undefined')
   try {
     debug('Instantiation of gossip protocols starts')
     this.factory.createProtocols(this.gossipAlgos, this.statsOpts)
@@ -69,12 +69,12 @@ function Coordinator (gossConfObj, id, profile) {
   this._extendAttributes()
 }
 Coordinator.prototype._extendAttributes = function() {
+  this.protocols = {}
   for (var i = 0; i < this.algosNames.length; i ++) {
-    this[this.algosNames[i]] = new GossipWrapper(this, this.algosNames[i], this._id)
+    this.protocols[this.algosNames[i]] = new GossipWrapper(this, this.algosNames[i], this._id)
   }
 }
 Coordinator.prototype._delItemInViews = function (id) {
-  // var keys = Object.keys(this._routingTable)
   for (var i = 0; i < this.algosNames.length; i++) {
     this.workers[this.algosNames[i]].postMessage({ header: 'delete', item: id })
   }
@@ -91,7 +91,7 @@ Coordinator.prototype._checkConfFile = function (confObj) {
   its.defined(confObj.signalingService.host, "Host server isn't defined")
   its.string(confObj.signalingService.host, "Host server isn't a string")
   its.defined(confObj.signalingService.port, "Port server isn't defined")
-  its.string(confObj.signalingService.port, "Port server isn't a number")
+  its.number(confObj.signalingService.port, "Port server isn't a number")
   var keys = Object.keys(confObj.gossipAlgos)
   for (var i = 0; i < keys.length; i++) {
     its.defined(confObj.gossipAlgos[keys[i]].class, "Class type of the protocol isn't defined")
@@ -113,14 +113,15 @@ Coordinator.prototype.bootstrap = function () {
   this._sigSer = new PeerJSProtocol(this._id, this._sigSerOpts.host, this._sigSerOpts.port)
   var self = this
   this._sigSer.on('open', function () {
-    self._bootSer = new Bootstrap(self._id, self._sigSerOpts.host, self._sigSerOpts.port, self.profile)
+    self._bootSer = new Bootstrap(self._id, self._sigSerOpts.host, self._sigSerOpts.port)
     self._bootSer.on('boot', function (respToBoot) {
       var firstView = []
       if (respToBoot.peer !== 'undefined') {
         var c = self._connectionManager.newConnection(respToBoot.peer, true, true).connection
         self._initConnectionEvents(c)
         self._connectionManager.set(c)
-        firstView.push({ id: respToBoot.peer, profile: respToBoot.profile })
+        // firstView.push({ id: respToBoot.peer, profile: respToBoot.profile })
+        firstView.push(respToBoot.peer)
       } else debug('I am the first peer in the overlay, eventually other peer will contact me')
       var worker, period
       for (var i = 0; i < self.algosNames.length; i++) {
@@ -388,3 +389,8 @@ Coordinator.prototype._updRoutingTable = function (view, emitter) {
 * application layer.
 * @param fn Reference to an external function*/
 Coordinator.prototype.setApplicationLevelFunction = function (fn) { this.appFn = fn }
+Coordinator.prototype.updateProfile = function (newProfile) {
+  for (var i = 0; i < this.algosNames.length; i ++) {
+    this.workers[this.algosNames[i]].postMessage({ header: 'updateProfile', profile: newProfile })
+  }
+}

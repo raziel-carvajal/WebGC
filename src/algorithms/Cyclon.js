@@ -64,7 +64,7 @@ Cyclon.prototype.initialize = function (keys) {
   if (keys.length > 0) {
     var i = 0
     while (i < this.viewSize && i < keys.length) {
-      this.view[keys[i]] = this.gossipUtil.newItem(0, undefined)
+      this.view[keys[i]] = this.gossipUtil.newItem(0, 'undefined')
       i++
     }
   }
@@ -83,7 +83,8 @@ Cyclon.prototype.selectItemsToSend = function (thread) {
     case 'active':
       delete clone[dstPeer]
       subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
-      subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile)
+      debug('Current profile: ' + this.profile.getPayload())
+      subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile.getPayload())
       break
     case 'passive':
       subDict = this.gossipUtil.getRandomSubDict(this.fanout, this.clone)
@@ -132,7 +133,10 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
     do {
       if (currentKeys.indexOf(rcvKeys[i], 0) === -1) newCache[ rcvKeys[i] ] = msg.payload[ rcvKeys[i] ]
       else {
-        if (msg.payload[ rcvKeys[i] ].age < this.view[ rcvKeys[i] ].age) this.view[ rcvKeys[i] ].age = msg.payload[ rcvKeys[i] ].age
+        if (msg.payload[ rcvKeys[i] ].age < this.view[ rcvKeys[i] ].age) {
+          this.view[ rcvKeys[i] ].age = msg.payload[ rcvKeys[i] ].age
+          this.view[ rcvKeys[i] ].data = msg.payload[ rcvKeys[i] ].data
+        }
       }
       i++
     } while (i < rcvKeys.length && Object.keys(newCache).length < this.viewSize)
@@ -169,5 +173,5 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
 * for more details.*/
 Cyclon.prototype.increaseAge = function () {
   var keys = Object.keys(this.view)
-  for (var i = 0; i < keys.length; i++) { this.view[keys[i]].age++ }
+  for (var i = 0; i < keys.length; i++) this.view[keys[i]].age++
 }

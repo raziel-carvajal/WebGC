@@ -23,10 +23,10 @@ inherits(Cyclon, GossipProtocol)
 * @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
 * functions used by gossip protocols
 * @author Raziel Carvajal [raziel.carvajal-gomez@inria.fr] */
-function Cyclon (algOpts, debug, gossipUtil, isLogActivated) {
-  if (!(this instanceof Cyclon)) return Cyclon(algOpts, debug, gossipUtil, isLogActivated)
+function Cyclon (algOpts, debug, gossipUtil, isLogActivated, profile) {
+  if (!(this instanceof Cyclon)) return Cyclon(algOpts, debug, gossipUtil, isLogActivated, profile)
   this.isLogActivated = isLogActivated
-  GossipProtocol.call(this, algOpts, debug, gossipUtil)
+  GossipProtocol.call(this, algOpts, debug, gossipUtil, profile)
   this.debug('Cyclon.init')
 }
 /**
@@ -37,7 +37,6 @@ function Cyclon (algOpts, debug, gossipUtil, isLogActivated) {
 * @default */
 Cyclon.defaultOpts = {
   class: 'Cyclon',
-  data: '?',
   viewSize: 10,
   fanout: 5,
   periodTimeOut: 10000,
@@ -67,7 +66,7 @@ Cyclon.prototype.initialize = function (keys) {
   if (keys.length > 0) {
     var i = 0
     while (i < this.viewSize && i < keys.length) {
-      this.view[ keys[i].id ] = this.gossipUtil.newItem(0, keys[i].profile)
+      this.view[keys[i]] = this.gossipUtil.newItem(0, 'undefined')
       i++
     }
   }
@@ -86,7 +85,8 @@ Cyclon.prototype.selectItemsToSend = function (thread) {
     case 'active':
       delete clone[dstPeer]
       subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
-      subDict[this.peerId] = this.gossipUtil.newItem(0, this.data)
+      debug('Current profile: ' + this.profile.getPayload())
+      subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile.getPayload())
       break
     case 'passive':
       subDict = this.gossipUtil.getRandomSubDict(this.fanout, this.clone)
@@ -135,7 +135,10 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
     do {
       if (currentKeys.indexOf(rcvKeys[i], 0) === -1) newCache[ rcvKeys[i] ] = msg.payload[ rcvKeys[i] ]
       else {
-        if (msg.payload[ rcvKeys[i] ].age < this.view[ rcvKeys[i] ].age) this.view[ rcvKeys[i] ].age = msg.payload[ rcvKeys[i] ].age
+        if (msg.payload[ rcvKeys[i] ].age < this.view[ rcvKeys[i] ].age) {
+          this.view[ rcvKeys[i] ].age = msg.payload[ rcvKeys[i] ].age
+          this.view[ rcvKeys[i] ].data = msg.payload[ rcvKeys[i] ].data
+        }
       }
       i++
     } while (i < rcvKeys.length && Object.keys(newCache).length < this.viewSize)
@@ -172,7 +175,7 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
 * for more details.*/
 Cyclon.prototype.increaseAge = function () {
   var keys = Object.keys(this.view)
-  for (var i = 0; i < keys.length; i++) { this.view[keys[i]].age++ }
+  for (var i = 0; i < keys.length; i++) this.view[keys[i]].age++
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/algorithms/Cyclon.js","/../../src/algorithms")
@@ -202,12 +205,12 @@ inherits(Vicinity, GossipProtocol)
 * @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
 * functions used by gossip protocols
 * @author Raziel Carvajal-Gomez raziel.carvajal@gmail.com */
-function Vicinity (algOpts, debug, gossipUtil, isLogActivated) {
-  if (!(this instanceof Vicinity)) return Vicinity(algOpts, debug, gossipUtil, isLogActivated)
+function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
+  if (!(this instanceof Vicinity)) return Vicinity(algOpts, debug, gossipUtil, isLogActivated, profile)
   this.isLogActivated = isLogActivated
   GossipProtocol.call(this, algOpts, debug, gossipUtil)
   this.selectionPolicy = algOpts.selectionPolicy
-  this.selector = new ViewSelector(this.data[this.algoId], debug, algOpts.similarityFunction)
+  this.selector = new ViewSelector(this.profile.getPayload(), debug, algOpts.similarityFunction)
   this.dependencies = algOpts.dependencies
   debug('Vicinity.init')
 }
@@ -219,7 +222,6 @@ function Vicinity (algOpts, debug, gossipUtil, isLogActivated) {
 * @default */
 Vicinity.defaultOpts = {
   class: 'Vicinity',
-  data: '?',
   viewSize: 10,
   fanout: 5,
   periodTimeOut: 10000,
@@ -253,7 +255,7 @@ Vicinity.prototype.initialize = function (keys) {
   if (keys.length > 0) {
     var i = 0
     while (i < this.viewSize && i < keys.length) {
-      this.view[ keys[i].id ] = this.gossipUtil.newItem(0, keys[i].profile)
+      this.view[keys[i]] = this.gossipUtil.newItem(0, undefined)
       i++
     }
   }
@@ -285,7 +287,7 @@ Vicinity.prototype.selectItemsToSend = function (thread) {
       itmsNum = 0
     break
   }
-  var newItem = thread === 'active' ? this.gossipUtil.newItem(0, this.selector.profile) : null
+  var newItem = thread === 'active' ? this.gossipUtil.newItem(0, this.profile.getPayload()) : null
   switch (this.selectionPolicy) {
     case 'random':
       subDict = this.gossipUtil.getRandomSubDict(itmsNum, clone)
@@ -334,7 +336,7 @@ Vicinity.prototype.doAgrBiasedSelection = function (msg) {
   var itm
   for (var i = 0; i < keys.length; i++) {
     itm = msg.result[ keys[i] ]
-    result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data[this.algoId])
+    result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data)
   }
   var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result)
   var similarNeig = this.selector.getClosestNeighbours(msg.n, mergedViews, {k: this.peerId, v: msg.newItem})
@@ -382,11 +384,10 @@ Vicinity.prototype.selectItemsToKeep = function (msg) {
 Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
   var keys = Object.keys(msg.result)
   var result = {}
-  var i
-  var itm
+  var i, itm
   for (i = 0; i < keys.length; i++) {
     itm = msg.result[ keys[i] ]
-    result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data[this.algoId])
+    result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data)
   }
   var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result)
   if (Object.keys(mergedViews).indexOf(this.peerId, 0) !== -1) delete mergedViews[this.peerId]
@@ -416,7 +417,7 @@ Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
 * for more details.*/
 Vicinity.prototype.increaseAge = function () {
   var keys = Object.keys(this.view)
-  for (var i = 0; i < keys.length; i++) { this.view[ keys[i] ].age++ }
+  for (var i = 0; i < keys.length; i++) this.view[ keys[i] ].age++
 }
 
 /**
@@ -428,15 +429,12 @@ Vicinity.prototype.increaseAge = function () {
 * @param n Number of the required peer IDs.
 * @returns Array Array of n peer IDs. */
 Vicinity.prototype.getSimilarPeerIds = function (n) {
-  if (n <= 0) { return [] }
+  if (n <= 0) return []
   var iDs = Object.keys(this.view)
-  if (n >= iDs.length) {
-    return iDs
-  } else {
+  if (n >= iDs.length) return iDs
+  else {
     var result = []
-    for (var i = 0; i < n; i++) {
-      result.push(iDs[i])
-    }
+    for (var i = 0; i < n; i++) result.push(iDs[i])
     return result
   }
 }
@@ -606,7 +604,10 @@ GossipMediator.prototype.listen = function () {
           if (items.indexOf(msg.items[i],0) !== -1 ) delete self.algo.view[msg.items[i]]
         self.algo.viewSize = msg.newSize
         debug('Current view: ' + Object.keys(self.algo.view))
-        break;
+        break
+      case 'updateProfile':
+        self.algo.profile.setPayload(msg.profile)
+        break
       default:
         self.log.warn('header: ' + msg.header + ' is unknown')
         break
@@ -627,12 +628,7 @@ GossipMediator.prototype.postInMainThread = function (msg) { this.worker.postMes
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
 * @module src/superObjs*/
-// TODO Find a way to export (NodeJS fashion) in a Web Worker scope, because "require" could be
-// used with "workerify" but not in "webworker-threads" for NodeJS. Now the solution is to
-// remove every require (which isn't elegant) and replace it whith the anonymous function to
-// export. Other solution could be to edit the sources on the fly adding the right headers
 module.exports = GossipProtocol
-
 /**
 * @class GossipProtocol
 * @description Representation of one generic gossip protocol, every implementation must inherits
@@ -647,23 +643,21 @@ module.exports = GossipProtocol
 * the actions of one gossip protocol
 * @param gossipUtil Object with [gossip utilities]{@link module:src/utils#GossipUtil}
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com> */
-function GossipProtocol (opts, debug, gossipUtil) {
-  this.class = opts.class
-  // attributes in common for each protocol
+function GossipProtocol (opts, debug, gossipUtil, profile) {
   this.view = {}
   this.loop = 0
-  this.data = opts.data
+  this.class = opts.class
   this.viewSize = opts.viewSize
   this.fanout = opts.fanout
   this.gossipPeriod = opts.gossipPeriod
   this.propagationPolicy = opts.propagationPolicy
   this.algoId = opts.algoId// unique ID for the algorithm
   this.debug = debug
-  this.gossipUtil = gossipUtil
   this.peerId = opts.peerId
-  // error and warning messages
-  this.nonImpMsg = 'An implementation for this method is required'
   this.debug = debug
+  this.gossipUtil = gossipUtil
+  this.profile = profile 
+  this.nonImpMsg = 'An implementation for this method is required'
   this.debug('GossipProtocol.init')
 }
 /**
@@ -929,12 +923,10 @@ GossipUtil.prototype.removeRandomly = function (n, dic) {
     return
   } else {
     var tmpDic = {}
-    var tmpAr
-    var key
-    for (key in dic) {
-      tmpDic[key] = 1
-    }
-    for (var i = 0; i < n; i += 1) {
+    var tmpAr, i, key
+    var keys = Object.keys(dic)
+    for (i = 0; i < keys.length; i++) tmpDic[keys[i]] = 1
+    for (i = 0; i < n; i++) {
       tmpAr = Object.keys(tmpDic)
       key = tmpAr[Math.floor(Math.random() * tmpAr.length)]
       delete tmpDic[key]
@@ -966,16 +958,6 @@ GossipUtil.prototype.mergeViews = function (v1, v2) {
 }
 /**
 * @memberof GossipUtil
-* @method setData
-* @description Updates the value of the property "key" in one object
-* @param dic Source object
-* @param key Property to search in the source
-* @param d Value to update*/
-GossipUtil.prototype.setData = function (dic, key, d) {
-  if (key in dic) dic[key].data = d
-}
-/**
-* @memberof GossipUtil
 * @method extendProperties
 * @description Increases the number of properties/values from one object
 * @param dst Object to extend
@@ -988,7 +970,25 @@ GossipUtil.prototype.extendProperties = function (dst, src) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/utils/GossipUtil.js","/../../src/utils")
-},{"_process":36,"buffer":29}],1:[function(require,module,exports){
+},{"_process":36,"buffer":29}],"/../../src/utils/Profile.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+module.exports = Profile
+var debug = typeof window === 'undefined' ? require('debug')('profile') : require('debug').log
+
+function Profile (payload) {
+  if (!(this instanceof Profile)) return new Profile(payload)
+  this._payload = payload
+}
+
+Profile.prototype.getPayload = function () { return this._payload }
+
+Profile.prototype.setPayload = function (newPayload) {
+  debug('Setting payload from: ' + JSON.stringify(this._payload) + ' to: ' + JSON.stringify(newPayload))
+  this._payload = newPayload
+}
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/utils/Profile.js","/../../src/utils")
+},{"_process":36,"buffer":29,"debug":2}],1:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // var confObj = require('./confObj.js')
 var Coordinator = require('../../src/controllers/Coordinator.js')
@@ -1857,7 +1857,6 @@ function Peer (opts) {
   self._channelReady = false
   self._iceComplete = false // ice candidate trickle done (got null candidate)
   self._channel = null
-  self._pendingCandidates = []
 
   self._chunk = null
   self._cb = null
@@ -1947,29 +1946,20 @@ Peer.prototype.signal = function (data) {
     }
   }
   self._debug('signal()')
-
-  function addIceCandidate (candidate) {
-    try {
-      self._pc.addIceCandidate(
-        new self._wrtc.RTCIceCandidate(candidate), noop, self._onError.bind(self)
-      )
-    } catch (err) {
-      self._destroy(new Error('error adding candidate: ' + err.message))
-    }
-  }
-
   if (data.sdp) {
     self._pc.setRemoteDescription(new (self._wrtc.RTCSessionDescription)(data), function () {
       if (self.destroyed) return
       if (self._pc.remoteDescription.type === 'offer') self._createAnswer()
-
-      self._pendingCandidates.forEach(addIceCandidate)
-      self._pendingCandidates = []
     }, self._onError.bind(self))
   }
   if (data.candidate) {
-    if (self._pc.remoteDescription) addIceCandidate(data.candidate)
-    else self._pendingCandidates.push(data.candidate)
+    try {
+      self._pc.addIceCandidate(
+        new (self._wrtc.RTCIceCandidate)(data.candidate), noop, self._onError.bind(self)
+      )
+    } catch (err) {
+      self._destroy(new Error('error adding candidate: ' + err.message))
+    }
   }
   if (!data.sdp && !data.candidate) {
     self._destroy(new Error('signal() called with invalid signal data'))
@@ -2193,8 +2183,8 @@ Peer.prototype._maybeReady = function () {
     items.forEach(function (item) {
       if (item.type === 'remotecandidate') {
         self.remoteAddress = item.ipAddress
-        self.remotePort = Number(item.portNumber)
         self.remoteFamily = 'IPv4'
+        self.remotePort = Number(item.portNumber)
         self._debug(
           'connect remote: %s:%s (%s)',
           self.remoteAddress, self.remotePort, self.remoteFamily
@@ -2544,14 +2534,7 @@ module.exports={
     "email": "brian@worlize.com",
     "url": "https://www.worlize.com/"
   },
-  "contributors": [
-    {
-      "name": "Iñaki Baz Castillo",
-      "email": "ibc@aliax.net",
-      "url": "http://dev.sipdoc.net"
-    }
-  ],
-  "version": "1.0.21",
+  "version": "1.0.19",
   "repository": {
     "type": "git",
     "url": "https://github.com/theturtle32/WebSocket-Node.git"
@@ -2561,18 +2544,17 @@ module.exports={
     "node": ">=0.8.0"
   },
   "dependencies": {
-    "debug": "~2.2.0",
-    "nan": "~1.8.x",
-    "typedarray-to-buffer": "~3.0.3",
-    "yaeti": "~0.0.4"
+    "debug": "~2.1.0",
+    "nan": "1.8.x",
+    "typedarray-to-buffer": "~3.0.0"
   },
   "devDependencies": {
-    "buffer-equal": "^0.0.1",
-    "faucet": "^0.0.1",
+    "buffer-equal": "0.0.1",
+    "faucet": "0.0.1",
     "gulp": "git+https://github.com/gulpjs/gulp.git#4.0",
-    "gulp-jshint": "^1.11.2",
-    "jshint-stylish": "^1.0.2",
-    "tape": "^4.0.1"
+    "gulp-jshint": "^1.9.0",
+    "jshint-stylish": "^1.0.0",
+    "tape": "^3.0.0"
   },
   "config": {
     "verbose": false
@@ -2588,13 +2570,17 @@ module.exports={
   },
   "browser": "lib/browser.js",
   "license": "Apache-2.0",
-  "readme": "WebSocket Client & Server Implementation for Node\n=================================================\n\n[![Join the chat at https://gitter.im/theturtle32/WebSocket-Node](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/theturtle32/WebSocket-Node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)\n\n[![npm version](https://badge.fury.io/js/websocket.svg)](http://badge.fury.io/js/websocket)\n\n[![NPM](https://nodei.co/npm/websocket.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/websocket/)\n\n[![NPM](https://nodei.co/npm-dl/websocket.png?height=3)](https://nodei.co/npm/websocket/)\n\n[ ![Codeship Status for theturtle32/WebSocket-Node](https://codeship.com/projects/70458270-8ee7-0132-7756-0a0cf4fe8e66/status?branch=master)](https://codeship.com/projects/61106)\n\nOverview\n--------\nThis is a (mostly) pure JavaScript implementation of the WebSocket protocol versions 8 and 13 for Node.  There are some example client and server applications that implement various interoperability testing protocols in the \"test/scripts\" folder.\n\nFor a WebSocket client written in ActionScript 3, see my [AS3WebScocket](https://github.com/theturtle32/AS3WebSocket) project.\n\n\nDocumentation\n=============\n\n[You can read the full API documentation in the docs folder.](docs/index.md)\n\n\nChangelog\n---------\n\n***Current Version: 1.0.21*** — Released 2015-07-22\n\n***Version 1.0.21***\n\n* Incrememnted and re-published to work around an aborted npm publish of v1.0.20.\n\n***Version 1.0.20***\n\n* Added EventTarget to the W3CWebSocket interface (Thanks, [@ibc](https://github.com/ibc)!)\n* Corrected an inaccurate error message. (Thanks, [@lekoaf](https://github.com/lekoaf)!)\n\n***Version 1.0.19***\n\n* Updated to nan v1.8.x (tested with v1.8.4)\n* Added `\"license\": \"Apache-2.0\"` to package.json via [pull request #199](https://github.com/theturtle32/WebSocket-Node/pull/199) by [@pgilad](https://github.com/pgilad). See [npm1k.org](http://npm1k.org/).\n\n[View the full changelog](CHANGELOG.md)\n\nBrowser Support\n---------------\n\nAll current browsers are fully supported.\n\n* Firefox 7-9 (Old) (Protocol Version 8)\n* Firefox 10+ (Protocol Version 13)\n* Chrome 14,15 (Old) (Protocol Version 8)\n* Chrome 16+ (Protocol Version 13)\n* Internet Explorer 10+ (Protocol Version 13)\n* Safari 6+ (Protocol Version 13)\n\n***Safari older than 6.0 is not supported since it uses a very old draft of WebSockets***\n\n***If you need to simultaneously support legacy browser versions that had implemented draft-75/draft-76/draft-00, take a look here: https://gist.github.com/1428579***\n\nBenchmarks\n----------\nThere are some basic benchmarking sections in the Autobahn test suite.  I've put up a [benchmark page](http://theturtle32.github.com/WebSocket-Node/benchmarks/) that shows the results from the Autobahn tests run against AutobahnServer 0.4.10, WebSocket-Node 1.0.2, WebSocket-Node 1.0.4, and ws 0.3.4.\n\nAutobahn Tests\n--------------\nThe very complete [Autobahn Test Suite](http://autobahn.ws/testsuite/) is used by most WebSocket implementations to test spec compliance and interoperability.\n\n- [View Server Test Results](http://theturtle32.github.com/WebSocket-Node/test-report/servers/)\n- [View Client Test Results](http://theturtle32.github.com/WebSocket-Node/test-report/clients/)\n\nNotes\n-----\nThis library has been used in production on [worlize.com](https://www.worlize.com) since April 2011 and seems to be stable.  Your mileage may vary.\n\n**Tested with the following node versions:**\n\n- 0.8.28\n- 0.10.33\n\nIt may work in earlier or later versions but I'm not actively testing it outside of the listed versions.  YMMV.\n\nInstallation\n------------\n\nA few users have reported difficulties building the native extensions without first manually installing node-gyp.  If you have trouble building the native extensions, make sure you've got a C++ compiler, and have done `npm install -g node-gyp` first. \n\nNative extensions are optional, however, and WebSocket-Node will work even if the extensions cannot be compiled.\n\nIn your project root:\n\n    $ npm install websocket\n  \nThen in your code:\n\n```javascript\nvar WebSocketServer = require('websocket').server;\nvar WebSocketClient = require('websocket').client;\nvar WebSocketFrame  = require('websocket').frame;\nvar WebSocketRouter = require('websocket').router;\nvar W3CWebSocket = require('websocket').w3cwebsocket;\n```\n\nNote for Windows Users\n----------------------\nBecause there is a small C++ component used for validating UTF-8 data, you will need to install a few other software packages in addition to Node to be able to build this module:\n\n- [Microsoft Visual C++](http://www.microsoft.com/visualstudio/en-us/products/2010-editions/visual-cpp-express)\n- [Python 2.7](http://www.python.org/download/) (NOT Python 3.x)\n\n\nCurrent Features:\n-----------------\n- Licensed under the Apache License, Version 2.0\n- Protocol version \"8\" and \"13\" (Draft-08 through the final RFC) framing and handshake\n- Can handle/aggregate received fragmented messages\n- Can fragment outgoing messages\n- Router to mount multiple applications to various path and protocol combinations\n- TLS supported for outbound connections via WebSocketClient\n- TLS supported for server connections (use https.createServer instead of http.createServer)\n  - Thanks to [pors](https://github.com/pors) for confirming this!\n- Cookie setting and parsing\n- Tunable settings\n  - Max Receivable Frame Size\n  - Max Aggregate ReceivedMessage Size\n  - Whether to fragment outgoing messages\n  - Fragmentation chunk size for outgoing messages\n  - Whether to automatically send ping frames for the purposes of keepalive\n  - Keep-alive ping interval\n  - Whether or not to automatically assemble received fragments (allows application to handle individual fragments directly)\n  - How long to wait after sending a close frame for acknowledgment before closing the socket.\n- [W3C WebSocket API](http://www.w3.org/TR/websockets/) for applications running on both Node and browsers (via the `W3CWebSocket` class). \n\n\nKnown Issues/Missing Features:\n------------------------------\n- No API for user-provided protocol extensions.\n\n\nUsage Examples\n==============\n\nServer Example\n--------------\n\nHere's a short example showing a server that echos back anything sent to it, whether utf-8 or binary.\n\n```javascript\n#!/usr/bin/env node\nvar WebSocketServer = require('websocket').server;\nvar http = require('http');\n\nvar server = http.createServer(function(request, response) {\n    console.log((new Date()) + ' Received request for ' + request.url);\n    response.writeHead(404);\n    response.end();\n});\nserver.listen(8080, function() {\n    console.log((new Date()) + ' Server is listening on port 8080');\n});\n\nwsServer = new WebSocketServer({\n    httpServer: server,\n    // You should not use autoAcceptConnections for production\n    // applications, as it defeats all standard cross-origin protection\n    // facilities built into the protocol and the browser.  You should\n    // *always* verify the connection's origin and decide whether or not\n    // to accept it.\n    autoAcceptConnections: false\n});\n\nfunction originIsAllowed(origin) {\n  // put logic here to detect whether the specified origin is allowed.\n  return true;\n}\n\nwsServer.on('request', function(request) {\n    if (!originIsAllowed(request.origin)) {\n      // Make sure we only accept requests from an allowed origin\n      request.reject();\n      console.log((new Date()) + ' Connection from origin ' + request.origin + ' rejected.');\n      return;\n    }\n    \n    var connection = request.accept('echo-protocol', request.origin);\n    console.log((new Date()) + ' Connection accepted.');\n    connection.on('message', function(message) {\n        if (message.type === 'utf8') {\n            console.log('Received Message: ' + message.utf8Data);\n            connection.sendUTF(message.utf8Data);\n        }\n        else if (message.type === 'binary') {\n            console.log('Received Binary Message of ' + message.binaryData.length + ' bytes');\n            connection.sendBytes(message.binaryData);\n        }\n    });\n    connection.on('close', function(reasonCode, description) {\n        console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');\n    });\n});\n```\n\nClient Example\n--------------\n\nThis is a simple example client that will print out any utf-8 messages it receives on the console, and periodically sends a random number.\n\n*This code demonstrates a client in Node.js, not in the browser*\n\n```javascript\n#!/usr/bin/env node\nvar WebSocketClient = require('websocket').client;\n\nvar client = new WebSocketClient();\n\nclient.on('connectFailed', function(error) {\n    console.log('Connect Error: ' + error.toString());\n});\n\nclient.on('connect', function(connection) {\n    console.log('WebSocket Client Connected');\n    connection.on('error', function(error) {\n        console.log(\"Connection Error: \" + error.toString());\n    });\n    connection.on('close', function() {\n        console.log('echo-protocol Connection Closed');\n    });\n    connection.on('message', function(message) {\n        if (message.type === 'utf8') {\n            console.log(\"Received: '\" + message.utf8Data + \"'\");\n        }\n    });\n    \n    function sendNumber() {\n        if (connection.connected) {\n            var number = Math.round(Math.random() * 0xFFFFFF);\n            connection.sendUTF(number.toString());\n            setTimeout(sendNumber, 1000);\n        }\n    }\n    sendNumber();\n});\n\nclient.connect('ws://localhost:8080/', 'echo-protocol');\n```\n\nClient Example using the *W3C WebSocket API*\n--------------------------------------------\n\nSame example as above but using the [W3C WebSocket API](http://www.w3.org/TR/websockets/).\n\n```javascript\nvar W3CWebSocket = require('websocket').w3cwebsocket;\n\nvar client = new W3CWebSocket('ws://localhost:8080/', 'echo-protocol');\n\nclient.onerror = function() {\n    console.log('Connection Error');\n};\n\nclient.onopen = function() {\n    console.log('WebSocket Client Connected');\n\n    function sendNumber() {\n        if (client.readyState === client.OPEN) {\n            var number = Math.round(Math.random() * 0xFFFFFF);\n            client.send(number.toString());\n            setTimeout(sendNumber, 1000);\n        }\n    }\n    sendNumber();\n};\n\nclient.onclose = function() {\n    console.log('echo-protocol Client Closed');\n};\n\nclient.onmessage = function(e) {\n    if (typeof e.data === 'string') {\n        console.log(\"Received: '\" + e.data + \"'\");\n    }\n};\n```\n    \nRequest Router Example\n----------------------\n\nFor an example of using the request router, see `libwebsockets-test-server.js` in the `test` folder.\n\n\nResources\n---------\n\nA presentation on the state of the WebSockets protocol that I gave on July 23, 2011 at the LA Hacker News meetup.  [WebSockets: The Real-Time Web, Delivered](http://www.scribd.com/doc/60898569/WebSockets-The-Real-Time-Web-Delivered)\n",
+  "readme": "WebSocket Client & Server Implementation for Node\n=================================================\n\n[![Join the chat at https://gitter.im/theturtle32/WebSocket-Node](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/theturtle32/WebSocket-Node?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)\n\n[![npm version](https://badge.fury.io/js/websocket.svg)](http://badge.fury.io/js/websocket)\n\n[![NPM](https://nodei.co/npm/websocket.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/websocket/)\n\n[![NPM](https://nodei.co/npm-dl/websocket.png?height=3)](https://nodei.co/npm/websocket/)\n\n[ ![Codeship Status for theturtle32/WebSocket-Node](https://codeship.com/projects/70458270-8ee7-0132-7756-0a0cf4fe8e66/status?branch=master)](https://codeship.com/projects/61106)\n\nOverview\n--------\nThis is a (mostly) pure JavaScript implementation of the WebSocket protocol versions 8 and 13 for Node.  There are some example client and server applications that implement various interoperability testing protocols in the \"test/scripts\" folder.\n\nFor a WebSocket client written in ActionScript 3, see my [AS3WebScocket](https://github.com/theturtle32/AS3WebSocket) project.\n\n\nDocumentation\n=============\n\n[You can read the full API documentation in the docs folder.](docs/index.md)\n\n\nChangelog\n---------\n\n***Current Version: 1.0.19*** — Released 2015-05-28\n\n***Version 1.0.19***\n\n* Updated to nan v1.8.x (tested with v1.8.4)\n* Added `\"license\": \"Apache-2.0\"` to package.json via [pull request #199](https://github.com/theturtle32/WebSocket-Node/pull/199) by [@pgilad](https://github.com/pgilad). See [npm1k.org](http://npm1k.org/).\n\n[View the full changelog](CHANGELOG.md)\n\nBrowser Support\n---------------\n\nAll current browsers are fully supported.\n\n* Firefox 7-9 (Old) (Protocol Version 8)\n* Firefox 10+ (Protocol Version 13)\n* Chrome 14,15 (Old) (Protocol Version 8)\n* Chrome 16+ (Protocol Version 13)\n* Internet Explorer 10+ (Protocol Version 13)\n* Safari 6+ (Protocol Version 13)\n\n***Safari older than 6.0 is not supported since it uses a very old draft of WebSockets***\n\n***If you need to simultaneously support legacy browser versions that had implemented draft-75/draft-76/draft-00, take a look here: https://gist.github.com/1428579***\n\nBenchmarks\n----------\nThere are some basic benchmarking sections in the Autobahn test suite.  I've put up a [benchmark page](http://theturtle32.github.com/WebSocket-Node/benchmarks/) that shows the results from the Autobahn tests run against AutobahnServer 0.4.10, WebSocket-Node 1.0.2, WebSocket-Node 1.0.4, and ws 0.3.4.\n\nAutobahn Tests\n--------------\nThe very complete [Autobahn Test Suite](http://autobahn.ws/testsuite/) is used by most WebSocket implementations to test spec compliance and interoperability.\n\n- [View Server Test Results](http://theturtle32.github.com/WebSocket-Node/test-report/servers/)\n- [View Client Test Results](http://theturtle32.github.com/WebSocket-Node/test-report/clients/)\n\nNotes\n-----\nThis library has been used in production on [worlize.com](https://www.worlize.com) since April 2011 and seems to be stable.  Your mileage may vary.\n\n**Tested with the following node versions:**\n\n- 0.8.28\n- 0.10.33\n\nIt may work in earlier or later versions but I'm not actively testing it outside of the listed versions.  YMMV.\n\nInstallation\n------------\n\nA few users have reported difficulties building the native extensions without first manually installing node-gyp.  If you have trouble building the native extensions, make sure you've got a C++ compiler, and have done `npm install -g node-gyp` first. \n\nNative extensions are optional, however, and WebSocket-Node will work even if the extensions cannot be compiled.\n\nIn your project root:\n\n    $ npm install websocket\n  \nThen in your code:\n\n```javascript\nvar WebSocketServer = require('websocket').server;\nvar WebSocketClient = require('websocket').client;\nvar WebSocketFrame  = require('websocket').frame;\nvar WebSocketRouter = require('websocket').router;\nvar W3CWebSocket = require('websocket').w3cwebsocket;\n```\n\nNote for Windows Users\n----------------------\nBecause there is a small C++ component used for validating UTF-8 data, you will need to install a few other software packages in addition to Node to be able to build this module:\n\n- [Microsoft Visual C++](http://www.microsoft.com/visualstudio/en-us/products/2010-editions/visual-cpp-express)\n- [Python 2.7](http://www.python.org/download/) (NOT Python 3.x)\n\n\nCurrent Features:\n-----------------\n- Licensed under the Apache License, Version 2.0\n- Protocol version \"8\" and \"13\" (Draft-08 through the final RFC) framing and handshake\n- Can handle/aggregate received fragmented messages\n- Can fragment outgoing messages\n- Router to mount multiple applications to various path and protocol combinations\n- TLS supported for outbound connections via WebSocketClient\n- TLS supported for server connections (use https.createServer instead of http.createServer)\n  - Thanks to [pors](https://github.com/pors) for confirming this!\n- Cookie setting and parsing\n- Tunable settings\n  - Max Receivable Frame Size\n  - Max Aggregate ReceivedMessage Size\n  - Whether to fragment outgoing messages\n  - Fragmentation chunk size for outgoing messages\n  - Whether to automatically send ping frames for the purposes of keepalive\n  - Keep-alive ping interval\n  - Whether or not to automatically assemble received fragments (allows application to handle individual fragments directly)\n  - How long to wait after sending a close frame for acknowledgment before closing the socket.\n- [W3C WebSocket API](http://www.w3.org/TR/websockets/) for applications running on both Node and browsers (via the `W3CWebSocket` class). \n\n\nKnown Issues/Missing Features:\n------------------------------\n- No API for user-provided protocol extensions.\n\n\nUsage Examples\n==============\n\nServer Example\n--------------\n\nHere's a short example showing a server that echos back anything sent to it, whether utf-8 or binary.\n\n```javascript\n#!/usr/bin/env node\nvar WebSocketServer = require('websocket').server;\nvar http = require('http');\n\nvar server = http.createServer(function(request, response) {\n    console.log((new Date()) + ' Received request for ' + request.url);\n    response.writeHead(404);\n    response.end();\n});\nserver.listen(8080, function() {\n    console.log((new Date()) + ' Server is listening on port 8080');\n});\n\nwsServer = new WebSocketServer({\n    httpServer: server,\n    // You should not use autoAcceptConnections for production\n    // applications, as it defeats all standard cross-origin protection\n    // facilities built into the protocol and the browser.  You should\n    // *always* verify the connection's origin and decide whether or not\n    // to accept it.\n    autoAcceptConnections: false\n});\n\nfunction originIsAllowed(origin) {\n  // put logic here to detect whether the specified origin is allowed.\n  return true;\n}\n\nwsServer.on('request', function(request) {\n    if (!originIsAllowed(request.origin)) {\n      // Make sure we only accept requests from an allowed origin\n      request.reject();\n      console.log((new Date()) + ' Connection from origin ' + request.origin + ' rejected.');\n      return;\n    }\n    \n    var connection = request.accept('echo-protocol', request.origin);\n    console.log((new Date()) + ' Connection accepted.');\n    connection.on('message', function(message) {\n        if (message.type === 'utf8') {\n            console.log('Received Message: ' + message.utf8Data);\n            connection.sendUTF(message.utf8Data);\n        }\n        else if (message.type === 'binary') {\n            console.log('Received Binary Message of ' + message.binaryData.length + ' bytes');\n            connection.sendBytes(message.binaryData);\n        }\n    });\n    connection.on('close', function(reasonCode, description) {\n        console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');\n    });\n});\n```\n\nClient Example\n--------------\n\nThis is a simple example client that will print out any utf-8 messages it receives on the console, and periodically sends a random number.\n\n*This code demonstrates a client in Node.js, not in the browser*\n\n```javascript\n#!/usr/bin/env node\nvar WebSocketClient = require('websocket').client;\n\nvar client = new WebSocketClient();\n\nclient.on('connectFailed', function(error) {\n    console.log('Connect Error: ' + error.toString());\n});\n\nclient.on('connect', function(connection) {\n    console.log('WebSocket Client Connected');\n    connection.on('error', function(error) {\n        console.log(\"Connection Error: \" + error.toString());\n    });\n    connection.on('close', function() {\n        console.log('echo-protocol Connection Closed');\n    });\n    connection.on('message', function(message) {\n        if (message.type === 'utf8') {\n            console.log(\"Received: '\" + message.utf8Data + \"'\");\n        }\n    });\n    \n    function sendNumber() {\n        if (connection.connected) {\n            var number = Math.round(Math.random() * 0xFFFFFF);\n            connection.sendUTF(number.toString());\n            setTimeout(sendNumber, 1000);\n        }\n    }\n    sendNumber();\n});\n\nclient.connect('ws://localhost:8080/', 'echo-protocol');\n```\n\nClient Example using the *W3C WebSocket API*\n--------------------------------------------\n\nSame example as above but using the [W3C WebSocket API](http://www.w3.org/TR/websockets/).\n\n```javascript\nvar W3CWebSocket = require('websocket').w3cwebsocket;\n\nvar client = new W3CWebSocket('ws://localhost:8080/', 'echo-protocol');\n\nclient.onerror = function() {\n    console.log('Connection Error');\n};\n\nclient.onopen = function() {\n    console.log('WebSocket Client Connected');\n\n    function sendNumber() {\n        if (client.readyState === client.OPEN) {\n            var number = Math.round(Math.random() * 0xFFFFFF);\n            client.send(number.toString());\n            setTimeout(sendNumber, 1000);\n        }\n    }\n    sendNumber();\n};\n\nclient.onclose = function() {\n    console.log('echo-protocol Client Closed');\n};\n\nclient.onmessage = function(e) {\n    if (typeof e.data === 'string') {\n        console.log(\"Received: '\" + e.data + \"'\");\n    }\n};\n```\n    \nRequest Router Example\n----------------------\n\nFor an example of using the request router, see `libwebsockets-test-server.js` in the `test` folder.\n\n\nResources\n---------\n\nA presentation on the state of the WebSockets protocol that I gave on July 23, 2011 at the LA Hacker News meetup.  [WebSockets: The Real-Time Web, Delivered](http://www.scribd.com/doc/60898569/WebSockets-The-Real-Time-Web-Delivered)\n",
   "readmeFilename": "README.md",
   "bugs": {
     "url": "https://github.com/theturtle32/WebSocket-Node/issues"
   },
-  "_id": "websocket@1.0.21",
-  "_from": "websocket@~1.0.19"
+  "_id": "websocket@1.0.19",
+  "dist": {
+    "shasum": "8279f75285e3bda9e73d4b3af6c12231208b73bd"
+  },
+  "_from": "websocket@",
+  "_resolved": "https://registry.npmjs.org/websocket/-/websocket-1.0.19.tgz"
 }
 
 },{}],18:[function(require,module,exports){
@@ -2663,11 +2649,11 @@ var debug = typeof window === 'undefined' ? require('debug')('coordinator') : re
 var its = require('its')
 var hat = require('hat')
 var GossipUtil = require('../utils/GossipUtil')
+var PeerJSProtocol = require('../utils/PeerjsProtocol')
+var GossipWrapper = require('../utils/GossipWrapper')
 var GossipFactory = require('../services/GossipFactory')
 var Bootstrap = require('../services/Bootstrap')
 var ConnectionManager = require('../controllers/ConnectionManager')
-var PeerJSProtocol = require('../utils/PeerjsProtocol')
-var GossipWrapper = require('../utils/GossipWrapper')
 /**
 * @class Coordinator
 * @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
@@ -2695,14 +2681,12 @@ var GossipWrapper = require('../utils/GossipWrapper')
 * @param id Unique identifier of the peer, if this parameter is not specified one
 * random id will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
 * @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
-function Coordinator (gossConfObj, profile, id) {
-  if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, profile, id)
+function Coordinator (gossConfObj, id, profile) {
+  if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, id, profile)
   if (!this._checkConfFile(gossConfObj)) return
-  its.defined(profile)
   its.defined(gossConfObj.signalingService)
   its.defined(gossConfObj.gossipAlgos)
   its.defined(gossConfObj.statsOpts)
-  this.profile = profile
   this._id = id || hat()
   this._sigSerOpts = gossConfObj.signalingService
   this.gossipAlgos = gossConfObj.gossipAlgos
@@ -2715,10 +2699,10 @@ function Coordinator (gossConfObj, profile, id) {
   }
   this._maxNumOfCon = 0
   this.gossipUtil = new GossipUtil(debug)
-  this.factory = new GossipFactory(this.gossipUtil, this._id, this, gossConfObj.userImplementations)
+  this.factory = new GossipFactory(this.gossipUtil, this, gossConfObj.userImplementations, profile || 'undefined')
   try {
     debug('Instantiation of gossip protocols starts')
-    this.factory.createProtocols(this.gossipAlgos, this.profile, this.statsOpts)
+    this.factory.createProtocols(this.gossipAlgos, this.statsOpts)
     debug('Instantiation of gossip protocols is finished')
   } catch (e) {
     debug('During the instantiation of gossip protocols. ' + e)
@@ -2729,12 +2713,12 @@ function Coordinator (gossConfObj, profile, id) {
   this._extendAttributes()
 }
 Coordinator.prototype._extendAttributes = function() {
+  this.protocols = {}
   for (var i = 0; i < this.algosNames.length; i ++) {
-    this[this.algosNames[i]] = new GossipWrapper(this, this.algosNames[i], this._id)
+    this.protocols[this.algosNames[i]] = new GossipWrapper(this, this.algosNames[i], this._id)
   }
 }
 Coordinator.prototype._delItemInViews = function (id) {
-  // var keys = Object.keys(this._routingTable)
   for (var i = 0; i < this.algosNames.length; i++) {
     this.workers[this.algosNames[i]].postMessage({ header: 'delete', item: id })
   }
@@ -2747,23 +2731,16 @@ Coordinator.prototype._delItemInViews = function (id) {
 * by this method
 * @param confObj Configuration object*/
 Coordinator.prototype._checkConfFile = function (confObj) {
-  debug('Cecking configuration file')
-  try {
-    var opts = confObj.signalingService
-    if (!opts.hasOwnProperty('host') || !opts.hasOwnProperty('port')) {
-      throw new Error('Host and/or port of signaling server is absent')
-    }
-    var keys = Object.keys(confObj.gossipAlgos)
-    for (var i = 0; i < keys.length; i++) {
-      if (!confObj.gossipAlgos[ keys[i] ].hasOwnProperty('class')) {
-        throw new Error('Class name of the protocol is absent')
-      }
-    }
-    debug('configuration file is well formed')
-  } catch (e) {
-    debug('Configuration file is malformed. ' + e.message)
-    return
+  debug('Checking if configuration file is well formed')
+  its.defined(confObj.signalingService.host, "Host server isn't defined")
+  its.string(confObj.signalingService.host, "Host server isn't a string")
+  its.defined(confObj.signalingService.port, "Port server isn't defined")
+  its.number(confObj.signalingService.port, "Port server isn't a number")
+  var keys = Object.keys(confObj.gossipAlgos)
+  for (var i = 0; i < keys.length; i++) {
+    its.defined(confObj.gossipAlgos[keys[i]].class, "Class type of the protocol isn't defined")
   }
+  debug('Configuration file is well formed')
   return true
 }
 /**
@@ -2780,14 +2757,15 @@ Coordinator.prototype.bootstrap = function () {
   this._sigSer = new PeerJSProtocol(this._id, this._sigSerOpts.host, this._sigSerOpts.port)
   var self = this
   this._sigSer.on('open', function () {
-    self._bootSer = new Bootstrap(self._id, self._sigSerOpts.host, self._sigSerOpts.port, self.profile)
+    self._bootSer = new Bootstrap(self._id, self._sigSerOpts.host, self._sigSerOpts.port)
     self._bootSer.on('boot', function (respToBoot) {
       var firstView = []
       if (respToBoot.peer !== 'undefined') {
         var c = self._connectionManager.newConnection(respToBoot.peer, true, true).connection
         self._initConnectionEvents(c)
         self._connectionManager.set(c)
-        firstView.push({ id: respToBoot.peer, profile: respToBoot.profile })
+        // firstView.push({ id: respToBoot.peer, profile: respToBoot.profile })
+        firstView.push(respToBoot.peer)
       } else debug('I am the first peer in the overlay, eventually other peer will contact me')
       var worker, period
       for (var i = 0; i < self.algosNames.length; i++) {
@@ -3055,55 +3033,9 @@ Coordinator.prototype._updRoutingTable = function (view, emitter) {
 * application layer.
 * @param fn Reference to an external function*/
 Coordinator.prototype.setApplicationLevelFunction = function (fn) { this.appFn = fn }
-/** Damien requirements */
-Coordinator.prototype.setNeighbourhoodSize = function (n) {
-  its.number(n, 'Neighbourhood new size is not a number')
-  its.range(n >= 1, 'Neighbourhood new size must be at least bigger then one')
-  var algoId = this.algosNames[0]
-  var fanout = this.gossipAlgos[algoId].fanout
-  its.range(n > fanout, 'Neighbourhood new size must be bigger than ' + fanout +
-    ', which it is the fanout value of the algorithm ' + algoId)
-  var connections = this._connectionManager.getConnections()
-  var toRemove = []
-  debug('cons ' + connections)
-  if (connections.length > n) {
-    for (var i = 0; i < connections.length - n; i++) {
-      toRemove.push(connections[i])
-      this._connectionManager.deleteConnection(connections[i])
-    }
-  }
-  debug('Next connections will be removed: ' + toRemove)
-  this.workers[algoId].postMessage({ header: 'deleteViewItems', items: toRemove, newSize: n })
-  this._connectionManager._maxNumOfCon = n
-  debug('New neighbourhood size: ' + n)
-}
-Coordinator.prototype.getNeighbourhood = function () {
-  return this._connectionManager.getConnections()
-}
-Coordinator.prototype.sendTo = function (neighbour, payload) {
-  if (payload === undefined || payload === '') {
-    debug('Message is empty or void')
-    return
-  }
-  var connection = this._connectionManager.get(neighbour)
-  if (!connection) {
-    debug('There is no connection with: ' + neighbour)
-    return
-  }
-  var msg = { service: 'APPLICATION', 'payload': payload, emitter: this._id }
-  connection.send(msg)
-}
-Coordinator.prototype.sendToNeighbours = function(payload) {
-  if (payload === undefined || payload === '') {
-    debug('Message is empty or void')
-    return
-  }
-  var connections = this._connectionManager.getConnections()
-  if (connections.length === 0) {
-    debug('There is no connection with others peers')
-    return
-  } else {
-    for (var i = 0; i < connections.length; i++) this.sendTo(connections[i], payload)
+Coordinator.prototype.updateProfile = function (newProfile) {
+  for (var i = 0; i < this.algosNames.length; i ++) {
+    this.workers[this.algosNames[i]].postMessage({ header: 'updateProfile', profile: newProfile })
   }
 }
 
@@ -3139,23 +3071,14 @@ inherits(Bootstrap, EventEmitter)
 * of [GossipProtocol]{@link module:src/superObjs#GossipProtocol}).
 * @param coordi Reference to the [Coordinator]{@link module:src/controllers#Coordinator}
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function Bootstrap (peerId, host, port, profile) {
-  if (!(this instanceof Bootstrap)) return new Bootstrap(peerId, host, port, profile)
+function Bootstrap (peerId, host, port) {
+  if (!(this instanceof Bootstrap)) return new Bootstrap(peerId, host, port)
   its.string(peerId)
   its.string(host)
   its.number(port)
   EventEmitter.call(this)
   this._id = peerId
   this._serverOpts = {'host': host, 'port': port}
-  this._profileTxt = ''
-  var keys = Object.keys(profile)
-  var j
-  for (var i = 0; i < keys.length; i++) {
-    this._profileTxt += keys[i] + '_'
-    for(j = 0; j < profile[keys[i]].length - 1; j++) this._profileTxt += profile[keys[i]][j] + '-'
-    this._profileTxt += profile[keys[i]][j]
-  }
-  debug('ProfileTxt: ' + this._profileTxt)
   this._reconnectionTime = 3000
   this._tries = 0
   this._url = 'http://' + host + ':' + port + '/peerjs'
@@ -3168,7 +3091,7 @@ function Bootstrap (peerId, host, port, profile) {
 Bootstrap.prototype.getPeerToBootstrap = function () {
   debug('Connection success with signaling server, getting first peer to bootstrap')
   var xhr = new XMLHttpRequest()
-  var url = this._url + '/' + this._id + '/' + this._profileTxt + '/peerToBoot'
+  var url = this._url + '/' + this._id + '/peerToBoot'
   xhr.open('GET', url, true)
   var self = this
   xhr.onreadystatechange = function () {
@@ -3182,20 +3105,21 @@ Bootstrap.prototype.getPeerToBootstrap = function () {
     // when the peer to bootstrap isn't defined, it means that the local
     // peer is the first peer to contact the server which means that eventually
     // the local peer will be contacted by another peer
-    if (resp.peer !== 'undefined') {
-      its.string(resp.peer)
-      its.string(resp.profile)
-      var ar = resp.profile.split('_')
-      debug(JSON.stringify(ar))
-      resp.profile = {}
-      for (var i = 0; i < ar.length; i = i + 2) {
-        resp.profile[ar[i]] = []
-        var items = ar[i+1].split('-')
-        for (var j = 0; j < items.length; j++) {
-          resp.profile[ar[i]].push(items[j])
-        }
-      }
-    }
+    if (resp.peer !== 'undefined') its.string(resp.peer)
+    // if (resp.peer !== 'undefined') {
+    //   its.string(resp.peer)
+    //   its.string(resp.profile)
+    //   var ar = resp.profile.split('_')
+    //   debug(JSON.stringify(ar))
+    //   resp.profile = {}
+    //   for (var i = 0; i < ar.length; i = i + 2) {
+    //     resp.profile[ar[i]] = []
+    //     var items = ar[i+1].split('-')
+    //     for (var j = 0; j < items.length; j++) {
+    //       resp.profile[ar[i]].push(items[j])
+    //     }
+    //   }
+    // }
     self.emit('boot', resp)
   }
   xhr.onerror = function () {
@@ -3286,9 +3210,9 @@ var inNodeJS = typeof window === 'undefined'
 var its = require('its')
 var debug, Worker, fs, Blob, Threads
 if (inNodeJS) {
+  // TODO test if Threads could be used to avoid writing files in the directory src/workers
   fs = require('fs')
   debug = require('debug')('factory')
-  // TODO test if Threads could be used to avoid writing files in the directory src/workers
   Threads = require('webworker-threads')
   Worker = Threads.Worker
 } else {
@@ -3310,22 +3234,23 @@ if (inNodeJS) {
 * @param opts Object with one [logger]{@link module:src/utils#LoggerForWebWorker} and with one reference
 * to a [GossipUtil]{@link module:src/utils#GossipUtil} object.
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function GossipFactory (gossipUtil, id, coordi, userImpls) {
-  if (!(this instanceof GossipFactory)) return new GossipFactory(gossipUtil, id, coordi, userImpls)
+function GossipFactory (gossipUtil, coordi, userImpls, profile) {
+  if (!(this instanceof GossipFactory)) return new GossipFactory(gossipUtil, coordi, userImpls, profile)
   this.gossipUtil = gossipUtil
-  this._id = id
   this._coordinator = coordi
+  this._userImpls = userImpls
+  this._profile = profile
   this.inventory = {}
   this._algosDB = {}
   this._clsCodeWebworkerComp = {}
-  this._userImpls = userImpls
   this._workerLibs = {}
   if (inNodeJS) this._origin = __filename.split('services/GossipFactory.js')[0]
   else this._origin = window.location.href.split('peerjs-gossip')[0] + 'peerjs-gossip/src/'
   debug('Origin: ' + this._origin)
   this._webWorkerCls = [ 
     'utils/GossipUtil.js', 'superObjs/GossipProtocol.js',
-    'superObjs/ViewSelector.js', 'controllers/GossipMediator.js'
+    'superObjs/ViewSelector.js', 'controllers/GossipMediator.js',
+    'utils/Profile.js'
   ]
   var algosImpl = this.gossipUtil._algorithmsDb
   for (var i = 0; i < algosImpl.length; i++) this._webWorkerCls.push(algosImpl[i])
@@ -3381,13 +3306,12 @@ GossipFactory.prototype._createWorkerLibs = function () {
     this[loadOp](workerLib)
   }
 }
-GossipFactory.prototype.createProtocols = function (gossipObj, profile, statsOpts) {
+GossipFactory.prototype.createProtocols = function (gossipObj, statsOpts) {
   this._createWorkerLibs()
   var algOpts
   var algosIds = Object.keys(gossipObj)
   for (var i = 0; i < algosIds.length; i++) {
     algOpts = gossipObj[ algosIds[i] ]
-    algOpts.data = profile
     this._coordinator._maxNumOfCon += algOpts.viewSize
     if (statsOpts.activated) {
       this._coordinator.actCycHistory[ algosIds[i] ] = {}
@@ -3413,7 +3337,7 @@ GossipFactory.prototype._createProtocol = function (algoId, algOpts, statsOpts) 
     if (typeof cls === 'undefined') throw new Error('Algorithm: ' + algOpts.class + ' is not in WebGC')
     this.gossipUtil.extendProperties(algOpts, cls.defaultOpts)
     this.checkProperties(algOpts)
-    this.gossipUtil.extendProperties(algOpts, {'algoId': algoId, peerId: this._id})
+    this.gossipUtil.extendProperties(algOpts, {'algoId': algoId, peerId: this._coordinator._id})
     var opts = {
       activated: statsOpts.activated,
       feedbackPeriod: statsOpts.feedbackPeriod,
@@ -3423,7 +3347,7 @@ GossipFactory.prototype._createProtocol = function (algoId, algOpts, statsOpts) 
       var fP
       var code = this._buildWorkerHeader(algoId, algOpts.class, opts.activated, algOpts)
       if (inNodeJS) {
-        fP = this._origin + 'workers/' + algoId + '_' + this._id + '.js'
+        fP = this._origin + 'workers/' + algoId + '_' + this._coordinator._id + '.js'
         fs.writeFileSync(fP, code)
         if (!fs.existsSync(fP)) throw new Error('While creating worker file')
       } else {
@@ -3445,7 +3369,6 @@ GossipFactory.prototype._createProtocol = function (algoId, algOpts, statsOpts) 
 * the minimal value.
 * @param opts Object with the attributes of one gossip protocol*/
 GossipFactory.prototype.checkProperties = function (opts) {
-  its.defined(opts.data)
   its.number(opts.viewSize)
   its.range(opts.viewSize > 1)
   its.number(opts.fanout)
@@ -3478,7 +3401,9 @@ GossipFactory.prototype._buildWorkerHeader = function (algoId, algoClass, statsA
   }
   code += "debug('Worker initialization BEGINS')\n"
   code += 'var gossipUtil = new GossipUtil(debug)\n'
-  code += 'var algo = new ' + algoClass + '(algOpts, debug, gossipUtil, isLogActivated)\n'
+  code += 'var payload = ' + JSON.stringify(this._profile) + '\n'
+  code += 'var profile = new Profile(payload)\n'
+  code += 'var algo = new ' + algoClass + '(algOpts, debug, gossipUtil, isLogActivated, profile)\n'
   code += 'var mediator = new GossipMediator(algo, this, debug)\n'
   code += 'algo.setMediator(mediator)\n'
   code += 'mediator.listen()\n'
@@ -3711,11 +3636,11 @@ Socket.prototype.close = function () {
 },{"_process":36,"buffer":29,"debug":2,"events":33,"inherits":6,"websocket":15}],27:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/lib/_empty.js","/../../../../../../../../usr/local/lib/node_modules/browserify/lib")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/lib/_empty.js","/../../../../../../usr/local/lib/node_modules/browserify/lib")
 },{"_process":36,"buffer":29}],28:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/browser-resolve/empty.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/browser-resolve")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/browser-resolve/empty.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/browser-resolve")
 },{"_process":36,"buffer":29}],29:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /*!
@@ -5156,7 +5081,7 @@ function decodeUtf8Char (str) {
   }
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/index.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer")
 },{"_process":36,"base64-js":30,"buffer":29,"ieee754":31,"is-array":32}],30:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -5284,7 +5209,7 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib/b64.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib/b64.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib")
 },{"_process":36,"buffer":29}],31:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
@@ -5372,7 +5297,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/ieee754/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/ieee754")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/ieee754/index.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/ieee754")
 },{"_process":36,"buffer":29}],32:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
@@ -5409,7 +5334,7 @@ module.exports = isArray || function (val) {
   return !! val && '[object Array]' == str.call(val);
 };
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/is-array/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/is-array")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/is-array/index.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/is-array")
 },{"_process":36,"buffer":29}],33:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright Joyent, Inc. and other Node contributors.
@@ -5714,7 +5639,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/events/events.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/events")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/events/events.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/events")
 },{"_process":36,"buffer":29}],34:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 if (typeof Object.create === 'function') {
@@ -5741,14 +5666,14 @@ if (typeof Object.create === 'function') {
   }
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/inherits/inherits_browser.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/inherits")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/inherits/inherits_browser.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/inherits")
 },{"_process":36,"buffer":29}],35:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/isarray/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/isarray")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/isarray/index.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/isarray")
 },{"_process":36,"buffer":29}],36:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // shim for using process in browser
@@ -5842,12 +5767,12 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/process/browser.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/process")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/process/browser.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/process")
 },{"_process":36,"buffer":29}],37:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = require("./lib/_stream_duplex.js")
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/duplex.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/duplex.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
 },{"./lib/_stream_duplex.js":38,"_process":36,"buffer":29}],38:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // a duplex stream is just a stream that is both readable and writable.
@@ -5933,7 +5858,7 @@ function forEach (xs, f) {
   }
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_duplex.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_duplex.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
 },{"./_stream_readable":40,"./_stream_writable":42,"_process":36,"buffer":29,"core-util-is":43,"inherits":34,"process-nextick-args":44}],39:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // a passthrough stream.
@@ -5964,7 +5889,7 @@ PassThrough.prototype._transform = function(chunk, encoding, cb) {
   cb(null, chunk);
 };
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_passthrough.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_passthrough.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
 },{"./_stream_transform":41,"_process":36,"buffer":29,"core-util-is":43,"inherits":34}],40:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
@@ -6927,7 +6852,7 @@ function indexOf (xs, x) {
   return -1;
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_readable.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_readable.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
 },{"./_stream_duplex":38,"_process":36,"buffer":29,"core-util-is":43,"events":33,"inherits":34,"isarray":35,"process-nextick-args":44,"string_decoder/":51,"util":28}],41:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // a transform stream is a readable/writable stream where you do
@@ -7128,7 +7053,7 @@ function done(stream, er) {
   return stream.push(null);
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_transform.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_transform.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
 },{"./_stream_duplex":38,"_process":36,"buffer":29,"core-util-is":43,"inherits":34}],42:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // A bit simpler than readable streams.
@@ -7652,7 +7577,7 @@ function endWritable(stream, state, cb) {
   state.ended = true;
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_writable.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_writable.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
 },{"./_stream_duplex":38,"_process":36,"buffer":29,"core-util-is":43,"events":33,"inherits":34,"process-nextick-args":44,"util-deprecate":45}],43:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright Joyent, Inc. and other Node contributors.
@@ -7762,7 +7687,7 @@ exports.isBuffer = isBuffer;
 function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/core-util-is/lib/util.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/core-util-is/lib")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/core-util-is/lib/util.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/core-util-is/lib")
 },{"_process":36,"buffer":29}],44:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
@@ -7779,7 +7704,7 @@ function nextTick(fn) {
   });
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/process-nextick-args/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/process-nextick-args")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/process-nextick-args/index.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/process-nextick-args")
 },{"_process":36,"buffer":29}],45:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
@@ -7845,12 +7770,12 @@ function config (name) {
   return String(val).toLowerCase() === 'true';
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/util-deprecate/browser.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/util-deprecate")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/util-deprecate/browser.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/util-deprecate")
 },{"_process":36,"buffer":29}],46:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = require("./lib/_stream_passthrough.js")
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/passthrough.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/passthrough.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
 },{"./lib/_stream_passthrough.js":39,"_process":36,"buffer":29}],47:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var Stream = (function (){
@@ -7866,17 +7791,17 @@ exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/readable.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/readable.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
 },{"./lib/_stream_duplex.js":38,"./lib/_stream_passthrough.js":39,"./lib/_stream_readable.js":40,"./lib/_stream_transform.js":41,"./lib/_stream_writable.js":42,"_process":36,"buffer":29}],48:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = require("./lib/_stream_transform.js")
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/transform.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/transform.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
 },{"./lib/_stream_transform.js":41,"_process":36,"buffer":29}],49:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = require("./lib/_stream_writable.js")
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/writable.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/writable.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
 },{"./lib/_stream_writable.js":42,"_process":36,"buffer":29}],50:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright Joyent, Inc. and other Node contributors.
@@ -8007,7 +7932,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/stream-browserify/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/stream-browserify")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/stream-browserify/index.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/stream-browserify")
 },{"_process":36,"buffer":29,"events":33,"inherits":34,"readable-stream/duplex.js":37,"readable-stream/passthrough.js":46,"readable-stream/readable.js":47,"readable-stream/transform.js":48,"readable-stream/writable.js":49}],51:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright Joyent, Inc. and other Node contributors.
@@ -8232,5 +8157,5 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/string_decoder/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/string_decoder")
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../usr/local/lib/node_modules/browserify/node_modules/string_decoder/index.js","/../../../../../../usr/local/lib/node_modules/browserify/node_modules/string_decoder")
 },{"_process":36,"buffer":29}]},{},[1]);

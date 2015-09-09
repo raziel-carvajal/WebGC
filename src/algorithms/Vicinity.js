@@ -27,7 +27,7 @@ function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
   this.isLogActivated = isLogActivated
   GossipProtocol.call(this, algOpts, debug, gossipUtil)
   this.selectionPolicy = algOpts.selectionPolicy
-  this.selector = new ViewSelector(profile, debug, algOpts.similarityFunction)
+  this.selector = new ViewSelector(this.profile.getPayload(), debug, algOpts.similarityFunction)
   this.dependencies = algOpts.dependencies
   debug('Vicinity.init')
 }
@@ -104,7 +104,7 @@ Vicinity.prototype.selectItemsToSend = function (thread) {
       itmsNum = 0
     break
   }
-  var newItem = thread === 'active' ? this.gossipUtil.newItem(0, this.profile) : null
+  var newItem = thread === 'active' ? this.gossipUtil.newItem(0, this.profile.getPayload()) : null
   switch (this.selectionPolicy) {
     case 'random':
       subDict = this.gossipUtil.getRandomSubDict(itmsNum, clone)
@@ -201,8 +201,7 @@ Vicinity.prototype.selectItemsToKeep = function (msg) {
 Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
   var keys = Object.keys(msg.result)
   var result = {}
-  var i
-  var itm
+  var i, itm
   for (i = 0; i < keys.length; i++) {
     itm = msg.result[ keys[i] ]
     result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data)
@@ -235,7 +234,7 @@ Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
 * for more details.*/
 Vicinity.prototype.increaseAge = function () {
   var keys = Object.keys(this.view)
-  for (var i = 0; i < keys.length; i++) { this.view[ keys[i] ].age++ }
+  for (var i = 0; i < keys.length; i++) this.view[ keys[i] ].age++
 }
 
 /**
@@ -247,15 +246,12 @@ Vicinity.prototype.increaseAge = function () {
 * @param n Number of the required peer IDs.
 * @returns Array Array of n peer IDs. */
 Vicinity.prototype.getSimilarPeerIds = function (n) {
-  if (n <= 0) { return [] }
+  if (n <= 0) return []
   var iDs = Object.keys(this.view)
-  if (n >= iDs.length) {
-    return iDs
-  } else {
+  if (n >= iDs.length) return iDs
+  else {
     var result = []
-    for (var i = 0; i < n; i++) {
-      result.push(iDs[i])
-    }
+    for (var i = 0; i < n; i++) result.push(iDs[i])
     return result
   }
 }

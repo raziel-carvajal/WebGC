@@ -160,7 +160,10 @@ GossipMediator.prototype.listen = function () {
           if (items.indexOf(msg.items[i],0) !== -1 ) delete self.algo.view[msg.items[i]]
         self.algo.viewSize = msg.newSize
         debug('Current view: ' + Object.keys(self.algo.view))
-        break;
+        break
+      case 'updateProfile':
+        self.algo.profile.setPayload(msg.profile)
+        break
       default:
         self.log.warn('header: ' + msg.header + ' is unknown')
         break

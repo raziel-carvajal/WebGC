@@ -27,23 +27,14 @@ inherits(Bootstrap, EventEmitter)
 * of [GossipProtocol]{@link module:src/superObjs#GossipProtocol}).
 * @param coordi Reference to the [Coordinator]{@link module:src/controllers#Coordinator}
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com>*/
-function Bootstrap (peerId, host, port, profile) {
-  if (!(this instanceof Bootstrap)) return new Bootstrap(peerId, host, port, profile)
+function Bootstrap (peerId, host, port) {
+  if (!(this instanceof Bootstrap)) return new Bootstrap(peerId, host, port)
   its.string(peerId)
   its.string(host)
   its.number(port)
   EventEmitter.call(this)
   this._id = peerId
   this._serverOpts = {'host': host, 'port': port}
-  this._profileTxt = ''
-  var keys = Object.keys(profile)
-  var j
-  for (var i = 0; i < keys.length; i++) {
-    this._profileTxt += keys[i] + '_'
-    for(j = 0; j < profile[keys[i]].length - 1; j++) this._profileTxt += profile[keys[i]][j] + '-'
-    this._profileTxt += profile[keys[i]][j]
-  }
-  debug('ProfileTxt: ' + this._profileTxt)
   this._reconnectionTime = 3000
   this._tries = 0
   this._url = 'http://' + host + ':' + port + '/peerjs'
@@ -56,7 +47,7 @@ function Bootstrap (peerId, host, port, profile) {
 Bootstrap.prototype.getPeerToBootstrap = function () {
   debug('Connection success with signaling server, getting first peer to bootstrap')
   var xhr = new XMLHttpRequest()
-  var url = this._url + '/' + this._id + '/' + this._profileTxt + '/peerToBoot'
+  var url = this._url + '/' + this._id + '/peerToBoot'
   xhr.open('GET', url, true)
   var self = this
   xhr.onreadystatechange = function () {
@@ -70,20 +61,21 @@ Bootstrap.prototype.getPeerToBootstrap = function () {
     // when the peer to bootstrap isn't defined, it means that the local
     // peer is the first peer to contact the server which means that eventually
     // the local peer will be contacted by another peer
-    if (resp.peer !== 'undefined') {
-      its.string(resp.peer)
-      its.string(resp.profile)
-      var ar = resp.profile.split('_')
-      debug(JSON.stringify(ar))
-      resp.profile = {}
-      for (var i = 0; i < ar.length; i = i + 2) {
-        resp.profile[ar[i]] = []
-        var items = ar[i+1].split('-')
-        for (var j = 0; j < items.length; j++) {
-          resp.profile[ar[i]].push(items[j])
-        }
-      }
-    }
+    if (resp.peer !== 'undefined') its.string(resp.peer)
+    // if (resp.peer !== 'undefined') {
+    //   its.string(resp.peer)
+    //   its.string(resp.profile)
+    //   var ar = resp.profile.split('_')
+    //   debug(JSON.stringify(ar))
+    //   resp.profile = {}
+    //   for (var i = 0; i < ar.length; i = i + 2) {
+    //     resp.profile[ar[i]] = []
+    //     var items = ar[i+1].split('-')
+    //     for (var j = 0; j < items.length; j++) {
+    //       resp.profile[ar[i]].push(items[j])
+    //     }
+    //   }
+    // }
     self.emit('boot', resp)
   }
   xhr.onerror = function () {
