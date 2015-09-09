@@ -822,7 +822,7 @@ module.exports = GossipUtil
 function GossipUtil (debug) {
   if (!(this instanceof GossipUtil)) return GossipUtil(debug)
   this.debug = debug
-  this.electionLimit = 1
+  this.electionLimit = 2
   this.alreadyChosen = []
   this._loopOfElection = 0
   this._algorithmsDb = ['algorithms/Vicinity.js', 'algorithms/Cyclon.js']
@@ -886,6 +886,7 @@ GossipUtil.prototype.getOldestKey = function (dictio) {
   }
   for (i = 0; i < keys.length; i++) items.push({ k: keys[i], v: dictio[ keys[i] ].age })
   items.sort().reverse()
+  // // return items[0].k
   for (i = 0; i < items.length; i++) {
     // items[i].v IN this.alreadyChosen ?
     if (this.alreadyChosen.indexOf(items[i].k, 0) === -1) {

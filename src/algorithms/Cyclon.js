@@ -124,6 +124,8 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
       i++
     } while (i < rcvKeys.length && Object.keys(this.view).length < this.viewSize)
   } else {
+    // debug('CURRENT VIEW: ' + JSON.stringify(this.view))
+    // debug('RECEIVED: ' + JSON.stringify(msg.payload))
     var newCache = {}
     if (rcvKeys.indexOf(this.peerId, 0) !== -1) {
       delete msg.payload[this.peerId]
@@ -145,6 +147,7 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
       newCache[ currentKeys[i] ] = this.view[ currentKeys[i] ]
       i += 1
     }
+    this.view = {}
     this.view = newCache
     // Logging information of view update
     var viewUpdOffset = new Date() - msg.receptionTime

@@ -42,7 +42,7 @@ var configurationObj = {
       class: 'Cyclon',
       viewSize: 8,
       fanout: 4,
-      gossipPeriod: 6000,
+      gossipPeriod: 8000,
       propagationPolicy: { push: true, pull: true }
     }
     // vicinity1: {

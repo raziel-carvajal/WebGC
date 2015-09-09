@@ -12,7 +12,7 @@ module.exports = GossipUtil
 function GossipUtil (debug) {
   if (!(this instanceof GossipUtil)) return GossipUtil(debug)
   this.debug = debug
-  this.electionLimit = 1
+  this.electionLimit = 2
   this.alreadyChosen = []
   this._loopOfElection = 0
   this._algorithmsDb = ['algorithms/Vicinity.js', 'algorithms/Cyclon.js']
@@ -35,10 +35,10 @@ GossipUtil.prototype.newItem = function (age, data) { return { age: age, data: d
 * @param src Original object
 * @returns Object Object with a subset of items from the source*/
 GossipUtil.prototype.getRandomSubDict = function (n, src) {
-  if (n <= 0 || Object.keys(src).length === 0) return {}
-  if (n >= Object.keys(src).length) {
-    return src
-  } else {
+  var keys = Object.keys(src)
+  if (n <= 0 || keys.length === 0) return {}
+  if (n >= keys.length) return src
+  else {
     var keys = Object.keys(src)
     var tmpDict = {}
     var result = {}
@@ -67,23 +67,24 @@ GossipUtil.prototype.getOldestKey = function (dictio) {
     this.debug('Empty dictionary')
     return null
   }
-  var i
+  // var i
   var items = []
-  this._loopOfElection++
-  if (this._loopOfElection === this.electionLimit) {
-    this.alreadyChosen = []
-    this._loopOfElection = 0
-  }
-  for (i = 0; i < keys.length; i++) items.push({ k: keys[i], v: dictio[ keys[i] ].age })
+  //this._loopOfElection++
+  //if (this._loopOfElection === this.electionLimit) {
+  //  this.alreadyChosen = []
+  //  this._loopOfElection = 0
+  //}
+  for (var i = 0; i < keys.length; i++) items.push({ k: keys[i], v: dictio[ keys[i] ].age })
   items.sort().reverse()
-  for (i = 0; i < items.length; i++) {
-    // items[i].v IN this.alreadyChosen ?
-    if (this.alreadyChosen.indexOf(items[i].k, 0) === -1) {
-      this.alreadyChosen.push(items[i].k)
-      return items[i].k
-    }
-  }
-  return null
+  return items[0].k
+  //for (i = 0; i < items.length; i++) {
+  //  // items[i].v IN this.alreadyChosen ?
+  //  if (this.alreadyChosen.indexOf(items[i].k, 0) === -1) {
+  //    this.alreadyChosen.push(items[i].k)
+  //    return items[i].k
+  //  }
+  //}
+  //return null
 }
 /**
 * @memberof GossipUtil
