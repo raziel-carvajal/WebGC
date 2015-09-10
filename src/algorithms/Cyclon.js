@@ -77,6 +77,7 @@ Cyclon.prototype.initialize = function (keys) {
 * for more details.*/
 Cyclon.prototype.selectItemsToSend = function () {
   var dstPeer = this.selectPeer()
+  this.debug('OLDEST PEER: ' + dstPeer)
   var clone = JSON.parse(JSON.stringify(this.view))
   delete clone[dstPeer]
   var subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)

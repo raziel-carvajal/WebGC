@@ -130,16 +130,16 @@ GossipMediator.prototype.listen = function () {
       case 'gossipPushRec':
         keys = Object.keys(self.algo.view)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + self.algo.view[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
         self.debug('CURRENT VIEW: ' + arr)                                                               
         keys = Object.keys(msg.payload)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + msg.payload[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
         self.debug('PUSH REC PAYLOAD: ' + arr)
         self.algo.selectItemsToKeep(msg)
         keys = Object.keys(self.algo.view)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + ',--age: ' + self.algo.view[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
         self.debug('VIEW AFTER PUSH REC: ' + arr)
         var payload = self.algo.getFanoutPeers(msg.emitter)
         var answ = {
@@ -155,16 +155,16 @@ GossipMediator.prototype.listen = function () {
       case 'gossipPullRec':
         keys = Object.keys(self.algo.view)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + self.algo.view[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
         self.debug('CURRENT VIEW: ' + arr)                                                               
         keys = Object.keys(msg.payload)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + msg.payload[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
         self.debug('PULL REC PAYLOAD: ' + arr)
         if (self.algo.propagationPolicy.pull) self.algo.selectItemsToKeep(msg)
         keys = Object.keys(self.algo.view)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + self.algo.view[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
         self.debug('VIEW AFTER PULL REC: ' + arr)
         break
       case 'getDep':

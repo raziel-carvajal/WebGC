@@ -66,7 +66,7 @@ GossipUtil.prototype.getOldestKey = function (dictio) {
   if (keys.length === 0) return null
   var items = []
   for (var i = 0; i < keys.length; i++) items.push({ k: keys[i], v: dictio[ keys[i] ].age })
-  items.sort().reverse()
+  items.sort(function(a, b) { return (a.v - b.v) }).reverse()
   return items[0].k
 }
 /**
