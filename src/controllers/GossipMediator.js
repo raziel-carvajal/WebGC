@@ -75,16 +75,19 @@ GossipMediator.prototype.sentActiveCycleStats = function () {
 * @description The periodic execution of one gossip cycle is performed in this method, normally what
 * the protocol does is to chose items from its local view for being exchanged with other peer.*/
 GossipMediator.prototype._doActiveThread = function () {
-  this.lastActCycTime = new Date()
-  var log = { loop: this.algo.loop, algoId: this.algo.algoId, view: JSON.stringify(this.algo.view) }
-  this.postInMainThread({ header: 'logInConsole', log: JSON.stringify(log) })
   // first try for measuring stats (not a good idea)
   // self.sentActiveCycleStats()
   // performing periodic gossip selection (no changes in view are done)
-  this.algo.selectItemsToSend('active')
-  this.debug(this.algo.algoId + ': End of loop ' + this.algo.loop)
-  this.algo.loop++
-  this.algo.increaseAge()
+  this.algo.loop++           
+  this.algo.increaseAge()    
+  if (this.algo.propagationPolicy.push) this.algo.selectItemsToSend('active')
+  this.lastActCycTime = new Date()
+  var log = {
+    loop: this.algo.loop,
+    algoId: this.algo.algoId,
+    view: JSON.stringify(this.algo.view)
+  }
+  this.postInMainThread({ header: 'logInConsole', log: JSON.stringify(log) })
 }
 
 /**
@@ -128,8 +131,21 @@ GossipMediator.prototype.listen = function () {
         self.debug(self.algo.algoId + ': gossipLoop msg received')
         self._doActiveThread()
         break
-      case 'incomingMsg':
+      case 'gossipPushRec':
         self.algo.selectItemsToKeep(msg)
+        var payload = self.algo.getFanoutPeers(msg.emitter)
+        var answ = {
+          service: 'GOSSIP-PULL',
+          header: 'outgoingMsg',
+          emitter: self.algo.peerId,
+          receiver: msg.emitter,
+          'payload': payload,
+          algoId: self.algo.algoId
+        }
+        self.worker.postMessage(answ)
+        break
+      case 'gossipPullRec':
+        if (self.algo.propagationPolicy.pull) self.algo.selectItemsToKeep(msg)
         break
       case 'getDep':
         var obj = self.algo[msg.depAtt]

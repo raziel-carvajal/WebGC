@@ -63,28 +63,11 @@ GossipUtil.prototype.getRandomSubDict = function (n, src) {
 * @returns String Key of the item with the oldest age*/
 GossipUtil.prototype.getOldestKey = function (dictio) {
   var keys = Object.keys(dictio)
-  if (keys.length === 0) {
-    this.debug('Empty dictionary')
-    return null
-  }
-  // var i
+  if (keys.length === 0) return null
   var items = []
-  //this._loopOfElection++
-  //if (this._loopOfElection === this.electionLimit) {
-  //  this.alreadyChosen = []
-  //  this._loopOfElection = 0
-  //}
   for (var i = 0; i < keys.length; i++) items.push({ k: keys[i], v: dictio[ keys[i] ].age })
   items.sort().reverse()
   return items[0].k
-  //for (i = 0; i < items.length; i++) {
-  //  // items[i].v IN this.alreadyChosen ?
-  //  if (this.alreadyChosen.indexOf(items[i].k, 0) === -1) {
-  //    this.alreadyChosen.push(items[i].k)
-  //    return items[i].k
-  //  }
-  //}
-  //return null
 }
 /**
 * @memberof GossipUtil
@@ -95,9 +78,8 @@ GossipUtil.prototype.getOldestKey = function (dictio) {
 GossipUtil.prototype.getRandomKey = function (dict) {
   var keys = Object.keys(dict)
   var key
-  if (keys.length === 0) {
-    this.debug('No way to return a key from an empty dictionary')
-  } else {
+  if (keys.length === 0) this.debug('Empty dictionary, key to return: null')
+  else {
     var rNum = keys.length === 1 ? 0 : Math.floor(Math.random() * keys.length)
     key = keys[rNum]
   }
@@ -110,9 +92,8 @@ GossipUtil.prototype.getRandomKey = function (dict) {
 * @param n Number of elements to remove
 * @param dic Source object*/
 GossipUtil.prototype.removeRandomly = function (n, dic) {
-  if (n === 0) {
-    return
-  } else {
+  if (n === 0) return
+  else {
     var tmpDic = {}
     var tmpAr, i, key
     var keys = Object.keys(dic)

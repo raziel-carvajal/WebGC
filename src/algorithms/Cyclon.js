@@ -75,27 +75,15 @@ Cyclon.prototype.initialize = function (keys) {
 * @method selectItemsToSend
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
-Cyclon.prototype.selectItemsToSend = function (thread) {
+Cyclon.prototype.selectItemsToSend = function () {
   var dstPeer = this.selectPeer()
-  var subDict = {}
   var clone = JSON.parse(JSON.stringify(this.view))
-  switch (thread) {
-    case 'active':
-      delete clone[dstPeer]
-      subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
-      debug('Current profile: ' + this.profile.getPayload())
-      subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile.getPayload())
-      break
-    case 'passive':
-      subDict = this.gossipUtil.getRandomSubDict(this.fanout, this.clone)
-      break
-    default:
-      this.debug('Unknown selection policy')
-      break
-  }
+  delete clone[dstPeer]
+  var subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
+  subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile.getPayload())
   if (dstPeer) {
     var msg = {
-      service: 'GOSSIP',
+      service: 'GOSSIP-PUSH',
       header: 'outgoingMsg',
       emitter: this.peerId,
       receiver: dstPeer,
@@ -106,7 +94,13 @@ Cyclon.prototype.selectItemsToSend = function (thread) {
   }
   this.gossipMediator.sentActiveCycleStats()
 }
-
+Cyclon.prototype.getFanoutPeers = function (emitter) {
+  var clone = JSON.parse(JSON.stringify(this.view))
+  delete clone[emitter]
+  var subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
+  subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile.getPayload())
+  return subDict
+}
 /**
 * @memberof Cyclon
 * @method selectItemsToKeep
@@ -115,23 +109,19 @@ Cyclon.prototype.selectItemsToSend = function (thread) {
 Cyclon.prototype.selectItemsToKeep = function (msg) {
   var rcvKeys = Object.keys(msg.payload)
   if (rcvKeys.length === 0) return
-  var i
+  var i = 0
   var currentKeys = Object.keys(this.view)
   if (currentKeys.length === 0) {
-    i = 0
     do {
       this.view[ rcvKeys[i] ] = msg.payload[ rcvKeys[i] ]
       i++
     } while (i < rcvKeys.length && Object.keys(this.view).length < this.viewSize)
   } else {
-    // debug('CURRENT VIEW: ' + JSON.stringify(this.view))
-    // debug('RECEIVED: ' + JSON.stringify(msg.payload))
     var newCache = {}
     if (rcvKeys.indexOf(this.peerId, 0) !== -1) {
       delete msg.payload[this.peerId]
       rcvKeys = Object.keys(msg.payload)
     }
-    i = 0
     do {
       if (currentKeys.indexOf(rcvKeys[i], 0) === -1) newCache[ rcvKeys[i] ] = msg.payload[ rcvKeys[i] ]
       else {
@@ -147,25 +137,24 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
       newCache[ currentKeys[i] ] = this.view[ currentKeys[i] ]
       i += 1
     }
-    this.view = {}
     this.view = newCache
     // Logging information of view update
-    var viewUpdOffset = new Date() - msg.receptionTime
-    var msgToSend = {
-      service: 'GOSSIP',
-      trace: {
-        algoId: this.algoId,
-        loop: this.loop,
-        view: JSON.stringify(this.view),
-        'viewUpdOffset': viewUpdOffset
-      }
-    }
-    if (!this.isLogActivated) {
-      this.gossipMediator.viewUpdsLogCounter++
-      msgToSend.header = 'viewUpdsLog'
-      msgToSend.counter = this.gossipMediator.viewUpdsLogCounter
-      this.gossipMediator.postInMainThread(msgToSend)
-    }
+    // var viewUpdOffset = new Date() - msg.receptionTime
+    // var msgToSend = {
+    //   service: 'GOSSIP',
+    //   trace: {
+    //     algoId: this.algoId,
+    //     loop: this.loop,
+    //     view: JSON.stringify(this.view),
+    //     'viewUpdOffset': viewUpdOffset
+    //   }
+    // }
+    // if (!this.isLogActivated) {
+    //   this.gossipMediator.viewUpdsLogCounter++
+    //   msgToSend.header = 'viewUpdsLog'
+    //   msgToSend.counter = this.gossipMediator.viewUpdsLogCounter
+    //   this.gossipMediator.postInMainThread(msgToSend)
+    // }
   }
 }
 

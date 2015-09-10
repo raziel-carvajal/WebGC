@@ -352,15 +352,25 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
         }
       }
       break
-    case 'GOSSIP':
+    case 'GOSSIP-PUSH':
       this._updRoutingTable(Object.keys(data.payload), emitter)
       var worker = this.workers[data.algoId]
       var msg = {
-        header: 'incomingMsg',
+        header: 'gossipPushRec',
         payload: data.payload,
-        receptionTime: new Date()
+        receptionTime: new Date(),
+        'emitter': emitter
       }
       worker.postMessage(msg)
+      break
+    case 'GOSSIP-PULL':
+      var wo = this.workers[data.algoId]
+      var ms = {
+        header: 'gossipPullRec',
+        payload: data.payload,
+        'emitter': emitter
+      }
+      wo.postMessage(ms)
       break
     case 'LEAVE':
       this._connectionManager.deleteConnection(emitter)
