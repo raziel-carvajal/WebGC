@@ -25,8 +25,7 @@
 #===============================================================================
 peers=$1
 exeTime=$2
-profilesNum=$3
-serverDir=$4
+serverDir=$3
 origin=`pwd`
 rm -fr ./logs
 mkdir logs
@@ -42,7 +41,7 @@ cd $origin
 declare -a peerPids
 echo "Launching peers"
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
-  DEBUG=* node launchCoordi.js peer_$COUNTER $profilesNum &>logs/peer_$COUNTER".log" &
+  DEBUG=* node launchCoordi.js peer_$COUNTER &>logs/peer_$COUNTER".log" &
   peerPids[$COUNTER]=$!
   echo -e "\tPeer wit PID: "${peerPids[$COUNTER]}" was launched"
   sleep 3

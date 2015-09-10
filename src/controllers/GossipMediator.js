@@ -1,7 +1,6 @@
 /**
 * @module src/controllers*/
 module.exports = GossipMediator
-
 /**
 * @class GossipMediator
 * @description This class acts as a mediator between the [Coordinator]{@link module:src/controllers#Coordinator}
@@ -48,7 +47,6 @@ GossipMediator.prototype.setDependencies = function (algoDependencies) {
     this.dependencies[dep.algoId] = { property: dep.algoAttribute, isExternal: external }
   }
 }
-
 /**
 * @memberof GossipMediator
 * @method sentActiveCycleStats
@@ -68,7 +66,6 @@ GossipMediator.prototype.sentActiveCycleStats = function () {
   this.lastActCycTime = now
   this.postInMainThread(msg)
 }
-
 /**
 * @memberof GossipMediator
 * @method _doActiveThread
@@ -89,7 +86,6 @@ GossipMediator.prototype._doActiveThread = function () {
   }
   this.postInMainThread({ header: 'logInConsole', log: JSON.stringify(log) })
 }
-
 /**
 * @memberof GossipMediator
 * @method applyDependency
@@ -112,7 +108,6 @@ GossipMediator.prototype.applyDependency = function (msg) {
     }
   } else this.debug('dependency: ' + msg.depId + ' is not recognized')
 }
-
 /**
 * @memberof GossipMediator
 * @method listen
@@ -121,6 +116,7 @@ GossipMediator.prototype.applyDependency = function (msg) {
 GossipMediator.prototype.listen = function () {
   var self = this
   this.worker.addEventListener('message', function (e) {
+    var keys, arr, i
     var msg = e.data
     switch (msg.header) {
       case 'firstView':
@@ -132,7 +128,19 @@ GossipMediator.prototype.listen = function () {
         self._doActiveThread()
         break
       case 'gossipPushRec':
+        keys = Object.keys(self.algo.view)
+        arr = []
+        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + self.algo.view[keys[i]].age)
+        self.debug('CURRENT VIEW: ' + arr)                                                               
+        keys = Object.keys(msg.payload)
+        arr = []
+        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + msg.payload[keys[i]].age)
+        self.debug('PUSH REC PAYLOAD: ' + arr)
         self.algo.selectItemsToKeep(msg)
+        keys = Object.keys(self.algo.view)
+        arr = []
+        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + ',--age: ' + self.algo.view[keys[i]].age)
+        self.debug('VIEW AFTER PUSH REC: ' + arr)
         var payload = self.algo.getFanoutPeers(msg.emitter)
         var answ = {
           service: 'GOSSIP-PULL',
@@ -145,7 +153,19 @@ GossipMediator.prototype.listen = function () {
         self.worker.postMessage(answ)
         break
       case 'gossipPullRec':
+        keys = Object.keys(self.algo.view)
+        arr = []
+        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + self.algo.view[keys[i]].age)
+        self.debug('CURRENT VIEW: ' + arr)                                                               
+        keys = Object.keys(msg.payload)
+        arr = []
+        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + msg.payload[keys[i]].age)
+        self.debug('PULL REC PAYLOAD: ' + arr)
         if (self.algo.propagationPolicy.pull) self.algo.selectItemsToKeep(msg)
+        keys = Object.keys(self.algo.view)
+        arr = []
+        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + self.algo.view[keys[i]].age)
+        self.debug('VIEW AFTER PULL REC: ' + arr)
         break
       case 'getDep':
         var obj = self.algo[msg.depAtt]
@@ -186,7 +206,6 @@ GossipMediator.prototype.listen = function () {
     }
   }, false)
 }
-
 /**
 * @memberof GossipMediator
 * @method postInMainThread
