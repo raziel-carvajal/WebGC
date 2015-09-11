@@ -12,3 +12,4 @@ examples/*/*.log
 examples/withNodejs/logs
 examples/inBrowser/output/
 examples/inBrowser/peer*
+src/workers/*.js
