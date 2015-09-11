@@ -1,12 +1,10 @@
 /**
 * @module src/algorithms*/
 module.exports = Cyclon
-
 var inherits = require('inherits')
 var GossipProtocol = require('../superObjs/GossipProtocol')
 var ViewSelector = require('../superObjs/ViewSelector')
 inherits(Cyclon, GossipProtocol)
-
 /**
 * @class Cyclon
 * @extends GossipProtocol See [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
@@ -40,21 +38,18 @@ Cyclon.defaultOpts = {
   periodTimeOut: 10000,
   propagationPolicy: { push: true, pull: true }
 }
-
 /**
 * @memberof Cyclon
 * @method selectPeer
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
 Cyclon.prototype.selectPeer = function () { return this.gossipUtil.getOldestKey(this.view) }
-
 /**
 * @memberof Cyclon
 * @method setMediator
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
 Cyclon.prototype.setMediator = function (mediator) { this.gossipMediator = mediator }
-
 /**
 * @memberof Cyclon
 * @method initialize
@@ -69,38 +64,30 @@ Cyclon.prototype.initialize = function (keys) {
     }
   }
 }
-
 /**
 * @memberof Cyclon
 * @method selectItemsToSend
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
-Cyclon.prototype.selectItemsToSend = function () {
-  var dstPeer = this.selectPeer()
-  this.debug('OLDEST PEER: ' + dstPeer)
+Cyclon.prototype.selectItemsToSend = function (receiver, gossMsgType) {
+  var dstPeer = receiver || this.selectPeer()
+  if (!dstPeer) return
+  if (receiver) debug(this.algoId + ': SelectItemsToSend, receiver is ' + receiver)
+  else debug(this.algoId + ': SelectItemsToSend, receiver is ' + dstPeer + ' (oldest peer in view)')
   var clone = JSON.parse(JSON.stringify(this.view))
   delete clone[dstPeer]
   var subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
   subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile.getPayload())
-  if (dstPeer) {
-    var msg = {
-      service: 'GOSSIP-PUSH',
-      header: 'outgoingMsg',
-      emitter: this.peerId,
-      receiver: dstPeer,
-      payload: subDict,
-      algoId: this.algoId
-    }
-    this.gossipMediator.postInMainThread(msg)
+  var msg = {
+    service: gossMsgType,
+    header: 'outgoingMsg',
+    emitter: this.peerId,
+    receiver: dstPeer,
+    payload: subDict,
+    algoId: this.algoId
   }
-  this.gossipMediator.sentActiveCycleStats()
-}
-Cyclon.prototype.getFanoutPeers = function (emitter) {
-  var clone = JSON.parse(JSON.stringify(this.view))
-  delete clone[emitter]
-  var subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
-  subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile.getPayload())
-  return subDict
+  this.gossipMediator.postInMainThread(msg)
+  // this.gossipMediator.sentActiveCycleStats()
 }
 /**
 * @memberof Cyclon
@@ -158,7 +145,6 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
     // }
   }
 }
-
 /**
 * @memberof Cyclon
 * @method increaseAge

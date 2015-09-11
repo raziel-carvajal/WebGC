@@ -267,7 +267,10 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
         break
     }
   }, false)
-  worker.addEventListener('error', function (e) {debug('In Worker:' + e.message + ', lineno:' + e.lineno)}, false)
+  worker.addEventListener('error', function (e) {
+    debug('In Worker:' + e.message + ', lineno:' + e.lineno)
+    debug(JSON.stringify(e))
+  }, false)
 }
 /**
 * @memberof Coordinator

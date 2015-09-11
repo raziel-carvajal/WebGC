@@ -192,7 +192,7 @@ GossipFactory.prototype._buildWorkerHeader = function (algoId, algoClass, statsA
   }
   code += 'var algOpts = ' + JSON.stringify(algOpts) + '\n'
   for (i = 0; i < keysWithFunc.length; i++) {
-    code += "algOpts['" + keysWithFunc[i] + "'] = eval(" + algOpts[ keysWithFunc[i]] + ')\n'
+    code += "algOpts['" + keysWithFunc[i] + "'] = " + algOpts[ keysWithFunc[i]] + '\n'
   }
   code += "debug('Worker initialization BEGINS')\n"
   code += 'var gossipUtil = new GossipUtil(debug)\n'

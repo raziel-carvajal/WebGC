@@ -114,8 +114,8 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   cat "main.js" | sed "s/#userProfile/undefined/;s/#userId/peer$COUNTER/;" >$mainFile
   browserify --insert-globals -i webworker-threads -i xhr2 -r '../../src/algorithms/Cyclon.js' -r '../../src/algorithms/Vicinity.js' -r '../../src/utils/GossipUtil.js' -r '../../src/superObjs/GossipProtocol.js' -r '../../src/superObjs/ViewSelector.js' -r '../../src/controllers/GossipMediator.js' -r '../../src/utils/Profile.js' $mainFile -o $bundleFile
   cat "index.html" | sed "s/#bundle/$bundleFile/;" >$htmlFile
-  "$chromeCommand" $chromeStr$testDir/"peer$COUNTER" $htmlFile >/dev/null &
-  # firefox $htmlFile >/dev/null &
+  # "$chromeCommand" $chromeStr$testDir/"peer$COUNTER" $htmlFile >/dev/null &
+  firefox $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
   echo "Chrome PID: "${chromePids[$COUNTER]}
 done

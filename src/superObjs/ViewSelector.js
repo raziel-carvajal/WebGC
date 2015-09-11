@@ -1,7 +1,6 @@
 /**
 *@module src/superObjs*/
 module.exports = ViewSelector
-
 /**
 * @class ViewSelector
 * @description Ranks items in a gossip view according to a similarity function, this function
@@ -15,35 +14,7 @@ function ViewSelector (profile, debug, simFunc) {
   this.profile = profile
   this.debug = debug
   this.simFunc = simFunc
-  this.noImMsg = 'It is required to provide an implementation for this method'
 }
-/**
-* @memberof ViewSelector
-* @method checkBaseCase
-* @description The view selection takes the N most similar items from the local peer's view of
-* length V. To speed up the peer selection, this method returns the peer's view if N is negative
-* or N > V
-* @param n N most similar peers to take from the peer's view
-* @param view Peer's view
-* @param newItem This item contains the ID of the local peer, the local peer's profile and its age
-* initialize to zero
-* @param keys Properties of the object that represents the local peer's view
-* @return Object Returns null if the base case does not happens or the local peer's view otherwise*/
-ViewSelector.prototype.checkBaseCase = function (n, view, newItem, keys) {
-  if (newItem !== null) {
-    view[newItem.k] = newItem.v
-  }
-  if (n <= 0 || keys.length === 0) {
-    this.debug('Base case SimFun. View is empty')
-    return view
-  }
-  if (keys.length < n) {
-    this.debug('Base case SimFun. view size: ' + keys.length + ', n: ' + n)
-    return view
-  }
-  return null
-}
-
 /**
 * @memberof ViewSelector
 * @method getClosestNeighbours
@@ -53,18 +24,14 @@ ViewSelector.prototype.checkBaseCase = function (n, view, newItem, keys) {
 * @param newItem This item contains the ID of the local peer, the local peer's profile and its age
 * initialize to zero
 * @returns Object Subset of the local peer's view with the n most similar peers*/
-ViewSelector.prototype.getClosestNeighbours = function (n, view, newItem) {
+ViewSelector.prototype.getClosestNeighbours = function (n, view) {
   var keys = Object.keys(view)
-  var result = this.checkBaseCase(n, view, newItem, keys)
-  if (result === null) {
-    result = this.getNsimilarPeers(view, n, keys)
-    if (newItem !== null) {
-      result[newItem.k] = newItem.v
-    }
+  if (n <= 0 || keys.length === 0 || keys.length < n) {
+    this.debug('Base case in SimFun')
+    return view
   }
-  return result
+  return this.getNsimilarPeers(view, n, keys)
 }
-
 /**
 * @memberof ViewSelector
 * @method getNsimilarPeers
@@ -82,8 +49,7 @@ ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
       v: this.simFunc(this.profile, view[ keys[i] ].data)
     })
   }
-  values.sort(function (a, b) { return a.v - b.v })
-  values.reverse()
+  values.sort(function (a, b) { return a.v - b.v }).reverse()
   var result = {}
   var itm
   i = 0
