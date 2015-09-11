@@ -79,6 +79,7 @@ Cyclon.prototype.initialize = function (keys) {
 * for more details.*/
 Cyclon.prototype.selectItemsToSend = function () {
   var dstPeer = this.selectPeer()
+  this.debug('Oldest peer: ' + dstPeer + ', for algorithm: ' + this.algoId)
   var clone = JSON.parse(JSON.stringify(this.view))
   delete clone[dstPeer]
   var subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
@@ -200,7 +201,7 @@ inherits(Vicinity, GossipProtocol)
 function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
   if (!(this instanceof Vicinity)) return Vicinity(algOpts, debug, gossipUtil, isLogActivated, profile)
   this.isLogActivated = isLogActivated
-  GossipProtocol.call(this, algOpts, debug, gossipUtil)
+  GossipProtocol.call(this, algOpts, debug, gossipUtil, profile)
   this.selectionPolicy = algOpts.selectionPolicy
   this.selector = new ViewSelector(this.profile.getPayload(), debug, algOpts.similarityFunction)
   this.dependencies = algOpts.dependencies
@@ -217,7 +218,7 @@ Vicinity.defaultOpts = {
   viewSize: 10,
   fanout: 5,
   periodTimeOut: 10000,
-  propagationPolicy: {push: true, pull: true},
+  propagationPolicy: { push: true, pull: true },
   selectionPolicy: 'biased' // random OR biased OR agr-biased
 }
 
@@ -247,7 +248,7 @@ Vicinity.prototype.initialize = function (keys) {
   if (keys.length > 0) {
     var i = 0
     while (i < this.viewSize && i < keys.length) {
-      this.view[keys[i]] = this.gossipUtil.newItem(0, undefined)
+      this.view[keys[i]] = this.gossipUtil.newItem(0, 'undefined')
       i++
     }
   }
@@ -263,22 +264,13 @@ Vicinity.prototype.initialize = function (keys) {
 * GossipProtocol.view and iii) if selection='agr-biased' the most similar GossipProtocol.fanout
 * items are chosen from the views Vicinity.rpsView and GossipProtocol.view ;see method
 * GossipProtocol.selectItemsToSend() for more information.*/
-Vicinity.prototype.selectItemsToSend = function (thread) {
+Vicinity.prototype.selectItemsToSend = function () {
   var dstPeer = this.selectPeer()
+  this.debug('Oldest peer: ' + dstPeer + ', for algorithm: ' + this.algoId)
   var clone = JSON.parse(JSON.stringify(this.view))
-  var itmsNum, msg, subDict
-  switch (thread) {
-    case 'active':
-      delete clone[dstPeer]
-      itmsNum = this.fanout - 1
-    break
-    case 'passive':
-      itmsNum = this.fanout
-    break
-    default:
-      itmsNum = 0
-    break
-  }
+  delete clone[dstPeer]     
+  itmsNum = this.fanout - 1 
+  
   var newItem = thread === 'active' ? this.gossipUtil.newItem(0, this.profile.getPayload()) : null
   switch (this.selectionPolicy) {
     case 'random':
@@ -566,16 +558,16 @@ GossipMediator.prototype.listen = function () {
       case 'gossipPushRec':
         keys = Object.keys(self.algo.view)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + self.algo.view[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
         self.debug('CURRENT VIEW: ' + arr)                                                               
         keys = Object.keys(msg.payload)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + msg.payload[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
         self.debug('PUSH REC PAYLOAD: ' + arr)
         self.algo.selectItemsToKeep(msg)
         keys = Object.keys(self.algo.view)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + ',--age: ' + self.algo.view[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
         self.debug('VIEW AFTER PUSH REC: ' + arr)
         var payload = self.algo.getFanoutPeers(msg.emitter)
         var answ = {
@@ -591,16 +583,16 @@ GossipMediator.prototype.listen = function () {
       case 'gossipPullRec':
         keys = Object.keys(self.algo.view)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + self.algo.view[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
         self.debug('CURRENT VIEW: ' + arr)                                                               
         keys = Object.keys(msg.payload)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + msg.payload[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
         self.debug('PULL REC PAYLOAD: ' + arr)
         if (self.algo.propagationPolicy.pull) self.algo.selectItemsToKeep(msg)
         keys = Object.keys(self.algo.view)
         arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' id: ' + keys[i] + '--age: ' + self.algo.view[keys[i]].age)
+        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
         self.debug('VIEW AFTER PULL REC: ' + arr)
         break
       case 'getDep':
@@ -903,7 +895,7 @@ GossipUtil.prototype.getOldestKey = function (dictio) {
   if (keys.length === 0) return null
   var items = []
   for (var i = 0; i < keys.length; i++) items.push({ k: keys[i], v: dictio[ keys[i] ].age })
-  items.sort().reverse()
+  items.sort(function(a, b) { return (a.v - b.v) }).reverse()
   return items[0].k
 }
 /**
