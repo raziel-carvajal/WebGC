@@ -1,6 +1,12 @@
 <!DOCTYPE html PUBLIC>
 <html lang="en">
   <body>
-    <script type="text/javascript" src="#bundle"></script>
+    <script type="text/javascript" src="bundle.js"></script>
+    <script>
+      var peerId = '#userId'
+      var profile = #userProfile
+      var coordinator = new Coordinator(confObj, peerId, profile)
+      coordinator.bootstrap()
+    </script>
   </body>
 </html>

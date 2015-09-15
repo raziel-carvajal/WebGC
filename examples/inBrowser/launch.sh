@@ -75,26 +75,38 @@ if [ `uname` = "Linux" ] ; then
     chromeCommand="google-chrome"
   else
     echo "Chrome must be installed or wasn't found it"
-    exit 0
+    exit 1
   fi
 else
   if [ -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome ]  ; then
     chromeCommand="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
   else
     echo "Chrome must be installed or wasn't found it"
-    exit 0
+    exit 1
   fi
 fi
-chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --allow-file-access-from-files --user-data-dir="
+chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --disable-popup-blocking --enable-logging --log-level=0 --allow-file-access-from-files"
 }    # ----------  end of function isChromeInstalled  ----------
-isChromeInstalled
 peers=$1
 exeTime=$2
 serverDir=$3
 profilesNum=$4
+browser=$5
 testDir="output"
 origin=`pwd`
 simLim=4
+if [ $browser = "firefox" ] ; then
+  chromeCommand="firefox"
+  chromeStr=""
+else
+  isChromeInstalled
+fi
+if [ -f "bundle.js" ] ; then
+  echo "Javascript bundle exists"
+else
+  echo "Compile the bundle.js file with browserify"
+  exit 1
+fi
 rm -fr $testDir peer_*
 mkdir $testDir
 cd $serverDir
@@ -102,22 +114,18 @@ cd examples
 echo "Launching Singaling Service..."
 DEBUG=* node launch.js 9990 &> signalingServer.log &
 nodePid=$!
-echo "Launching instances of Chrome (one of them represents one peer)..."
+sleep 2
+echo -e "\tDONE"
+echo "Opening browser windows (one of them represents one peer)..."
 declare -a chromePids
 cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
-  mkdir $testDir/"peer$COUNTER"
-  mainFile="peer$COUNTER"".js"
-  bundleFile="peer$COUNTER""_bundle.js"
-  htmlFile="peer$COUNTER"".html"
   generateProfile
-  cat "main.js" | sed "s/#userProfile/undefined/;s/#userId/peer$COUNTER/;" >$mainFile
-  browserify --insert-globals -i webworker-threads -i xhr2 -r '../../src/algorithms/Cyclon.js' -r '../../src/algorithms/Vicinity.js' -r '../../src/utils/GossipUtil.js' -r '../../src/superObjs/GossipProtocol.js' -r '../../src/superObjs/ViewSelector.js' -r '../../src/controllers/GossipMediator.js' -r '../../src/utils/Profile.js' $mainFile -o $bundleFile
-  cat "index.html" | sed "s/#bundle/$bundleFile/;" >$htmlFile
-  "$chromeCommand" $chromeStr$testDir/"peer$COUNTER" $htmlFile >/dev/null &
-  #firefox $htmlFile >/dev/null &
+  htmlFile=peer$COUNTER".html"
+  cat "index.html" | sed "s/#userProfile/undefined/;s/#userId/peer$COUNTER/;" >$htmlFile
+  "$chromeCommand" $chromeStr $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
-  echo "Chrome PID: "${chromePids[$COUNTER]}
+  echo "Browser PID: "${chromePids[$COUNTER]}
 done
 echo -e "\tDONE"
 echo "Waiting till the time of the experiment expires..."
@@ -127,7 +135,7 @@ echo -e "\tDONE"
 echo -e "Stoping singnaling service"
 kill -9 $nodePid
 echo -e "\tDONE"
-echo "killing chrome instances..."
+echo "closing browser windows..."
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   kill -9 ${chromePids[$COUNTER]}
 done
