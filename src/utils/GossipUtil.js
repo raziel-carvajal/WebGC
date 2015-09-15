@@ -116,12 +116,15 @@ GossipUtil.prototype.removeRandomly = function (n, dic) {
 GossipUtil.prototype.mergeViews = function (v1, v2) {
   var keysV1 = Object.keys(v1)
   var keysV2 = Object.keys(v2)
-  var i
+  var i, props, j
   var result = {}
   for (i = 0; i < keysV1.length; i++) result[ keysV1[i] ] = v1[ keysV1[i] ]
   for (i = 0; i < keysV2.length; i++) {
     if (Object.keys(result).indexOf(keysV2[i], 0) !== -1) {
-      if (v2[ keysV2[i] ].age < result[ keysV2[i] ].age) result[ keysV2[i] ].age = v2[ keysV2[i] ].age
+      if (v2[ keysV2[i] ].age < result[ keysV2[i] ].age) {
+        props = Object.keys(v2[ keysV2[i] ])
+        for (j = 0; j < props.length; j++) v2[ keysV2[i] ][ props[j] ] = result[ keysV2[i] ][ props[j] ]
+      }
     } else {
       result[ keysV2[i] ] = v2[ keysV2[i] ]
     }

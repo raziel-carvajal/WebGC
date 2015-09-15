@@ -112,12 +112,14 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
       delete msg.payload[this.peerId]
       rcvKeys = Object.keys(msg.payload)
     }
+    var props, j
     do {
       if (currentKeys.indexOf(rcvKeys[i], 0) === -1) newCache[ rcvKeys[i] ] = msg.payload[ rcvKeys[i] ]
       else {
         if (msg.payload[ rcvKeys[i] ].age < this.view[ rcvKeys[i] ].age) {
-          this.view[ rcvKeys[i] ].age = msg.payload[ rcvKeys[i] ].age
-          this.view[ rcvKeys[i] ].data = msg.payload[ rcvKeys[i] ].data
+          props = Object.keys(msg.payload[ rcvKeys[i] ])
+          for (j = 0; j < props.length; j++) 
+            this.view[ rcvKeys[i] ][ props[j] ] = msg.payload[ rcvKeys[i] ][ props[j] ]
         }
       }
       i++
@@ -158,7 +160,7 @@ Cyclon.prototype.increaseAge = function () {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/algorithms/Cyclon.js","/../../src/algorithms")
-},{"../superObjs/GossipProtocol":"/../../src/superObjs/GossipProtocol.js","../superObjs/ViewSelector":"/../../src/superObjs/ViewSelector.js","_process":37,"buffer":30,"inherits":7}],"/../../src/algorithms/Vicinity.js":[function(require,module,exports){
+},{"../superObjs/GossipProtocol":"/../../src/superObjs/GossipProtocol.js","../superObjs/ViewSelector":"/../../src/superObjs/ViewSelector.js","_process":36,"buffer":29,"inherits":6}],"/../../src/algorithms/Vicinity.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
 * @module src/algorithms */
@@ -399,7 +401,7 @@ Vicinity.prototype.increaseAge = function () {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/algorithms/Vicinity.js","/../../src/algorithms")
-},{"../superObjs/GossipProtocol":"/../../src/superObjs/GossipProtocol.js","../superObjs/ViewSelector":"/../../src/superObjs/ViewSelector.js","_process":37,"buffer":30,"inherits":7}],"/../../src/controllers/GossipMediator.js":[function(require,module,exports){
+},{"../superObjs/GossipProtocol":"/../../src/superObjs/GossipProtocol.js","../superObjs/ViewSelector":"/../../src/superObjs/ViewSelector.js","_process":36,"buffer":29,"inherits":6}],"/../../src/controllers/GossipMediator.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
 * @module src/controllers*/
@@ -611,7 +613,7 @@ GossipMediator.prototype.listen = function () {
 GossipMediator.prototype.postInMainThread = function (msg) { this.worker.postMessage(msg) }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/controllers/GossipMediator.js","/../../src/controllers")
-},{"_process":37,"buffer":30}],"/../../src/superObjs/GossipProtocol.js":[function(require,module,exports){
+},{"_process":36,"buffer":29}],"/../../src/superObjs/GossipProtocol.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
 * @module src/superObjs*/
@@ -691,7 +693,7 @@ GossipProtocol.prototype.selectItemsToKeep = function (thisId, rcvCache) { throw
 GossipProtocol.prototype.getPlotInfo = function (peerId) { throw new Error(this.nonImpMsg) }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/superObjs/GossipProtocol.js","/../../src/superObjs")
-},{"_process":37,"buffer":30}],"/../../src/superObjs/ViewSelector.js":[function(require,module,exports){
+},{"_process":36,"buffer":29}],"/../../src/superObjs/ViewSelector.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
 *@module src/superObjs*/
@@ -759,7 +761,7 @@ ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/superObjs/ViewSelector.js","/../../src/superObjs")
-},{"_process":37,"buffer":30}],"/../../src/utils/GossipUtil.js":[function(require,module,exports){
+},{"_process":36,"buffer":29}],"/../../src/utils/GossipUtil.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
 *@module src/utils*/
@@ -879,12 +881,15 @@ GossipUtil.prototype.removeRandomly = function (n, dic) {
 GossipUtil.prototype.mergeViews = function (v1, v2) {
   var keysV1 = Object.keys(v1)
   var keysV2 = Object.keys(v2)
-  var i
+  var i, props, j
   var result = {}
   for (i = 0; i < keysV1.length; i++) result[ keysV1[i] ] = v1[ keysV1[i] ]
   for (i = 0; i < keysV2.length; i++) {
     if (Object.keys(result).indexOf(keysV2[i], 0) !== -1) {
-      if (v2[ keysV2[i] ].age < result[ keysV2[i] ].age) result[ keysV2[i] ].age = v2[ keysV2[i] ].age
+      if (v2[ keysV2[i] ].age < result[ keysV2[i] ].age) {
+        props = Object.keys(v2[ keysV2[i] ])
+        for (j = 0; j < props.length; j++) v2[ keysV2[i] ][ props[j] ] = result[ keysV2[i] ][ props[j] ]
+      }
     } else {
       result[ keysV2[i] ] = v2[ keysV2[i] ]
     }
@@ -905,7 +910,7 @@ GossipUtil.prototype.extendProperties = function (dst, src) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/utils/GossipUtil.js","/../../src/utils")
-},{"_process":37,"buffer":30}],"/../../src/utils/Profile.js":[function(require,module,exports){
+},{"_process":36,"buffer":29}],"/../../src/utils/Profile.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = Profile
 var debug = typeof window === 'undefined' ? require('debug')('profile') : require('debug').log
@@ -923,39 +928,12 @@ Profile.prototype.setPayload = function (newPayload) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/utils/Profile.js","/../../src/utils")
-},{"_process":37,"buffer":30,"debug":3}],1:[function(require,module,exports){
+},{"_process":36,"buffer":29,"debug":2}],1:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var configurationObj = {
-  signalingService: {
-    host: 'localhost',
-    port: 9990
-  },
-  gossipAlgos: {
-    cyclon1: {
-      class: 'Cyclon',
-      viewSize: 8,
-      fanout: 4,
-      gossipPeriod: 8000,
-      propagationPolicy: { push: true, pull: true }
-    }
-  },
-  userImplementations: [],
-  statsOpts: {
-    activated: false,
-    feedbackPeriod: 20000
-  },
-  usingSs: true
-}
-module.exports = configurationObj
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/confObj.js","/")
-},{"_process":37,"buffer":30}],2:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-window.confObj = require('./confObj.js')
-window.Coordinator = require('../../src/controllers/Coordinator.js')
+window.Coordinator = require('../../src/controllers/Coordinator')
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/main.js","/")
-},{"../../src/controllers/Coordinator.js":21,"./confObj.js":1,"_process":37,"buffer":30}],3:[function(require,module,exports){
+},{"../../src/controllers/Coordinator":20,"_process":36,"buffer":29}],2:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
 /**
@@ -1127,7 +1105,7 @@ function localstorage(){
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/debug/browser.js","/../../node_modules/debug")
-},{"./debug":4,"_process":37,"buffer":30}],4:[function(require,module,exports){
+},{"./debug":3,"_process":36,"buffer":29}],3:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
 /**
@@ -1328,7 +1306,7 @@ function coerce(val) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/debug/debug.js","/../../node_modules/debug")
-},{"_process":37,"buffer":30,"ms":5}],5:[function(require,module,exports){
+},{"_process":36,"buffer":29,"ms":4}],4:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Helpers.
@@ -1457,7 +1435,7 @@ function plural(ms, n, name) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/debug/node_modules/ms/index.js","/../../node_modules/debug/node_modules/ms")
-},{"_process":37,"buffer":30}],6:[function(require,module,exports){
+},{"_process":36,"buffer":29}],5:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var hat = module.exports = function (bits, base) {
     if (!base) base = 16;
@@ -1523,7 +1501,7 @@ hat.rack = function (bits, base, expandBy) {
 };
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/hat/index.js","/../../node_modules/hat")
-},{"_process":37,"buffer":30}],7:[function(require,module,exports){
+},{"_process":36,"buffer":29}],6:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
@@ -1550,11 +1528,11 @@ if (typeof Object.create === 'function') {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/inherits/inherits_browser.js","/../../node_modules/inherits")
-},{"_process":37,"buffer":30}],8:[function(require,module,exports){
+},{"_process":36,"buffer":29}],7:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = require('./lib/its.js');
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/its/index.js","/../../node_modules/its")
-},{"./lib/its.js":9,"_process":37,"buffer":30}],9:[function(require,module,exports){
+},{"./lib/its.js":8,"_process":36,"buffer":29}],8:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Helpers
 var slice = Array.prototype.slice;
@@ -1747,7 +1725,7 @@ its.range = function(expression, message){
 	return expression;
 };
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/its/lib/its.js","/../../node_modules/its/lib")
-},{"_process":37,"buffer":30}],10:[function(require,module,exports){
+},{"_process":36,"buffer":29}],9:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /* global Blob */
 
@@ -2276,7 +2254,7 @@ Peer.prototype._debug = function () {
 function noop () {}
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/simple-peer/index.js","/../../node_modules/simple-peer")
-},{"_process":37,"buffer":30,"debug":3,"get-browser-rtc":11,"hat":6,"inherits":7,"is-typedarray":12,"once":14,"stream":51,"typedarray-to-buffer":15}],11:[function(require,module,exports){
+},{"_process":36,"buffer":29,"debug":2,"get-browser-rtc":10,"hat":5,"inherits":6,"is-typedarray":11,"once":13,"stream":50,"typedarray-to-buffer":14}],10:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // originally pulled out of simple-peer
 
@@ -2295,7 +2273,7 @@ module.exports = function getBrowserRTC () {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/simple-peer/node_modules/get-browser-rtc/index.js","/../../node_modules/simple-peer/node_modules/get-browser-rtc")
-},{"_process":37,"buffer":30}],12:[function(require,module,exports){
+},{"_process":36,"buffer":29}],11:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports      = isTypedArray
 isTypedArray.strict = isStrictTypedArray
@@ -2340,7 +2318,7 @@ function isLooseTypedArray(arr) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/simple-peer/node_modules/is-typedarray/index.js","/../../node_modules/simple-peer/node_modules/is-typedarray")
-},{"_process":37,"buffer":30}],13:[function(require,module,exports){
+},{"_process":36,"buffer":29}],12:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Returns a wrapper function that returns a wrapped callback
 // The wrapper function should do some stuff, and return a
@@ -2377,7 +2355,7 @@ function wrappy (fn, cb) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/simple-peer/node_modules/once/node_modules/wrappy/wrappy.js","/../../node_modules/simple-peer/node_modules/once/node_modules/wrappy")
-},{"_process":37,"buffer":30}],14:[function(require,module,exports){
+},{"_process":36,"buffer":29}],13:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var wrappy = require('wrappy')
 module.exports = wrappy(once)
@@ -2402,7 +2380,7 @@ function once (fn) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/simple-peer/node_modules/once/once.js","/../../node_modules/simple-peer/node_modules/once")
-},{"_process":37,"buffer":30,"wrappy":13}],15:[function(require,module,exports){
+},{"_process":36,"buffer":29,"wrappy":12}],14:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Convert a typed array to a Buffer without a copy
@@ -2437,7 +2415,7 @@ module.exports = function (arr) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/simple-peer/node_modules/typedarray-to-buffer/index.js","/../../node_modules/simple-peer/node_modules/typedarray-to-buffer")
-},{"_process":37,"buffer":30,"is-typedarray":12}],16:[function(require,module,exports){
+},{"_process":36,"buffer":29,"is-typedarray":11}],15:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var _global = (function() { return this; })();
 var nativeWebSocket = _global.WebSocket || _global.MozWebSocket;
@@ -2476,12 +2454,12 @@ module.exports = {
 };
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/websocket/lib/browser.js","/../../node_modules/websocket/lib")
-},{"./version":17,"_process":37,"buffer":30}],17:[function(require,module,exports){
+},{"./version":16,"_process":36,"buffer":29}],16:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = require('../package.json').version;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/websocket/lib/version.js","/../../node_modules/websocket/lib")
-},{"../package.json":18,"_process":37,"buffer":30}],18:[function(require,module,exports){
+},{"../package.json":17,"_process":36,"buffer":29}],17:[function(require,module,exports){
 module.exports={
   "name": "websocket",
   "description": "Websocket Client & Server Library implementing the WebSocket protocol as specified in RFC 6455.",
@@ -2555,7 +2533,7 @@ module.exports={
   "_from": "websocket@~1.0.19"
 }
 
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var RTCIceCandidate       = window.mozRTCIceCandidate       || window.webkitRTCIceCandidate       || window.RTCIceCandidate;
 var RTCPeerConnection     = window.mozRTCPeerConnection     || window.webkitRTCPeerConnection     || window.RTCPeerConnection;
@@ -2566,7 +2544,7 @@ exports.RTCPeerConnection     = RTCPeerConnection;
 exports.RTCSessionDescription = RTCSessionDescription;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/wrtc/lib/browser.js","/../../node_modules/wrtc/lib")
-},{"_process":37,"buffer":30}],20:[function(require,module,exports){
+},{"_process":36,"buffer":29}],19:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = ConnectionManager
 var debug = typeof window === 'undefined' ? require('debug')('connnection_manager') : require('debug').log
@@ -2612,7 +2590,7 @@ ConnectionManager.prototype.deleteConnection = function (id) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/controllers/ConnectionManager.js","/../../src/controllers")
-},{"../services/Connection":23,"_process":37,"buffer":30,"debug":3}],21:[function(require,module,exports){
+},{"../services/Connection":22,"_process":36,"buffer":29,"debug":2}],20:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
 * @module src/controllers*/
@@ -3025,7 +3003,7 @@ Coordinator.prototype.updateProfile = function (newProfile) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/controllers/Coordinator.js","/../../src/controllers")
-},{"../controllers/ConnectionManager":20,"../services/Bootstrap":22,"../services/GossipFactory":24,"../utils/GossipUtil":"/../../src/utils/GossipUtil.js","../utils/GossipWrapper":25,"../utils/PeerjsProtocol":26,"_process":37,"buffer":30,"debug":3,"hat":6,"its":8}],22:[function(require,module,exports){
+},{"../controllers/ConnectionManager":19,"../services/Bootstrap":21,"../services/GossipFactory":23,"../utils/GossipUtil":"/../../src/utils/GossipUtil.js","../utils/GossipWrapper":24,"../utils/PeerjsProtocol":25,"_process":36,"buffer":29,"debug":2,"hat":5,"its":7}],21:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
 * @module src/services*/
@@ -3121,7 +3099,7 @@ Bootstrap.prototype.getPeerToBootstrap = function () {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/services/Bootstrap.js","/../../src/services")
-},{"_process":37,"buffer":30,"debug":3,"events":34,"inherits":7,"its":8,"xhr2":28}],23:[function(require,module,exports){
+},{"_process":36,"buffer":29,"debug":2,"events":33,"inherits":6,"its":7,"xhr2":27}],22:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = Connection
 var inherits = require('inherits')
@@ -3186,7 +3164,7 @@ Connection.prototype.close = function () {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/services/Connection.js","/../../src/services")
-},{"_process":37,"buffer":30,"debug":3,"events":34,"inherits":7,"simple-peer":10,"wrtc":19}],24:[function(require,module,exports){
+},{"_process":36,"buffer":29,"debug":2,"events":33,"inherits":6,"simple-peer":9,"wrtc":18}],23:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
 * @module src/services*/
@@ -3411,7 +3389,7 @@ GossipFactory.prototype.searchFunctions = function (obj) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/services/GossipFactory.js","/../../src/services")
-},{"_process":37,"buffer":30,"debug":3,"fs":28,"its":8,"webworker-threads":28}],25:[function(require,module,exports){
+},{"_process":36,"buffer":29,"debug":2,"fs":27,"its":7,"webworker-threads":27}],24:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = GossipWrapper
 var its = require('its')
@@ -3474,7 +3452,7 @@ GossipWrapper.prototype.sendToNeighbours = function(payload) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/utils/GossipWrapper.js","/../../src/utils")
-},{"_process":37,"buffer":30,"debug":3,"its":8}],26:[function(require,module,exports){
+},{"_process":36,"buffer":29,"debug":2,"its":7}],25:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = PeerJSProtocol
 var debug
@@ -3552,7 +3530,7 @@ PeerJSProtocol.prototype.sendSDP = function (sdp, receiver) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/utils/PeerjsProtocol.js","/../../src/utils")
-},{"./Socket":27,"_process":37,"buffer":30,"debug":3,"events":34,"inherits":7}],27:[function(require,module,exports){
+},{"./Socket":26,"_process":36,"buffer":29,"debug":2,"events":33,"inherits":6}],26:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = Socket
 var debug
@@ -3618,15 +3596,15 @@ Socket.prototype.close = function () {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/utils/Socket.js","/../../src/utils")
-},{"_process":37,"buffer":30,"debug":3,"events":34,"inherits":7,"websocket":16}],28:[function(require,module,exports){
+},{"_process":36,"buffer":29,"debug":2,"events":33,"inherits":6,"websocket":15}],27:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/lib/_empty.js","/../../../../../../../../usr/local/lib/node_modules/browserify/lib")
-},{"_process":37,"buffer":30}],29:[function(require,module,exports){
+},{"_process":36,"buffer":29}],28:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/browser-resolve/empty.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/browser-resolve")
-},{"_process":37,"buffer":30}],30:[function(require,module,exports){
+},{"_process":36,"buffer":29}],29:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /*!
  * The buffer module from node.js, for the browser.
@@ -5067,7 +5045,7 @@ function decodeUtf8Char (str) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer")
-},{"_process":37,"base64-js":31,"buffer":30,"ieee754":32,"is-array":33}],31:[function(require,module,exports){
+},{"_process":36,"base64-js":30,"buffer":29,"ieee754":31,"is-array":32}],30:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
@@ -5195,7 +5173,7 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib/b64.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib")
-},{"_process":37,"buffer":30}],32:[function(require,module,exports){
+},{"_process":36,"buffer":29}],31:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
@@ -5283,7 +5261,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/ieee754/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/ieee754")
-},{"_process":37,"buffer":30}],33:[function(require,module,exports){
+},{"_process":36,"buffer":29}],32:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
 /**
@@ -5320,7 +5298,7 @@ module.exports = isArray || function (val) {
 };
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/is-array/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/node_modules/is-array")
-},{"_process":37,"buffer":30}],34:[function(require,module,exports){
+},{"_process":36,"buffer":29}],33:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -5625,7 +5603,7 @@ function isUndefined(arg) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/events/events.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/events")
-},{"_process":37,"buffer":30}],35:[function(require,module,exports){
+},{"_process":36,"buffer":29}],34:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
@@ -5652,14 +5630,14 @@ if (typeof Object.create === 'function') {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/inherits/inherits_browser.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/inherits")
-},{"_process":37,"buffer":30}],36:[function(require,module,exports){
+},{"_process":36,"buffer":29}],35:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/isarray/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/isarray")
-},{"_process":37,"buffer":30}],37:[function(require,module,exports){
+},{"_process":36,"buffer":29}],36:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // shim for using process in browser
 
@@ -5753,12 +5731,12 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/process/browser.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/process")
-},{"_process":37,"buffer":30}],38:[function(require,module,exports){
+},{"_process":36,"buffer":29}],37:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = require("./lib/_stream_duplex.js")
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/duplex.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
-},{"./lib/_stream_duplex.js":39,"_process":37,"buffer":30}],39:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":38,"_process":36,"buffer":29}],38:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // a duplex stream is just a stream that is both readable and writable.
 // Since JS doesn't have multiple prototypal inheritance, this class
@@ -5844,7 +5822,7 @@ function forEach (xs, f) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_duplex.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
-},{"./_stream_readable":41,"./_stream_writable":43,"_process":37,"buffer":30,"core-util-is":44,"inherits":35,"process-nextick-args":45}],40:[function(require,module,exports){
+},{"./_stream_readable":40,"./_stream_writable":42,"_process":36,"buffer":29,"core-util-is":43,"inherits":34,"process-nextick-args":44}],39:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
@@ -5875,7 +5853,7 @@ PassThrough.prototype._transform = function(chunk, encoding, cb) {
 };
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_passthrough.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
-},{"./_stream_transform":42,"_process":37,"buffer":30,"core-util-is":44,"inherits":35}],41:[function(require,module,exports){
+},{"./_stream_transform":41,"_process":36,"buffer":29,"core-util-is":43,"inherits":34}],40:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 
@@ -6838,7 +6816,7 @@ function indexOf (xs, x) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_readable.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
-},{"./_stream_duplex":39,"_process":37,"buffer":30,"core-util-is":44,"events":34,"inherits":35,"isarray":36,"process-nextick-args":45,"string_decoder/":52,"util":29}],42:[function(require,module,exports){
+},{"./_stream_duplex":38,"_process":36,"buffer":29,"core-util-is":43,"events":33,"inherits":34,"isarray":35,"process-nextick-args":44,"string_decoder/":51,"util":28}],41:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // a transform stream is a readable/writable stream where you do
 // something with the data.  Sometimes it's called a "filter",
@@ -7039,7 +7017,7 @@ function done(stream, er) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_transform.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
-},{"./_stream_duplex":39,"_process":37,"buffer":30,"core-util-is":44,"inherits":35}],43:[function(require,module,exports){
+},{"./_stream_duplex":38,"_process":36,"buffer":29,"core-util-is":43,"inherits":34}],42:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // A bit simpler than readable streams.
 // Implement an async ._write(chunk, cb), and it'll handle all
@@ -7563,7 +7541,7 @@ function endWritable(stream, state, cb) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib/_stream_writable.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/lib")
-},{"./_stream_duplex":39,"_process":37,"buffer":30,"core-util-is":44,"events":34,"inherits":35,"process-nextick-args":45,"util-deprecate":46}],44:[function(require,module,exports){
+},{"./_stream_duplex":38,"_process":36,"buffer":29,"core-util-is":43,"events":33,"inherits":34,"process-nextick-args":44,"util-deprecate":45}],43:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -7673,7 +7651,7 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/core-util-is/lib/util.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/core-util-is/lib")
-},{"_process":37,"buffer":30}],45:[function(require,module,exports){
+},{"_process":36,"buffer":29}],44:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 module.exports = nextTick;
@@ -7690,7 +7668,7 @@ function nextTick(fn) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/process-nextick-args/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/process-nextick-args")
-},{"_process":37,"buffer":30}],46:[function(require,module,exports){
+},{"_process":36,"buffer":29}],45:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
 /**
@@ -7756,12 +7734,12 @@ function config (name) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/util-deprecate/browser.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/node_modules/util-deprecate")
-},{"_process":37,"buffer":30}],47:[function(require,module,exports){
+},{"_process":36,"buffer":29}],46:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = require("./lib/_stream_passthrough.js")
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/passthrough.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
-},{"./lib/_stream_passthrough.js":40,"_process":37,"buffer":30}],48:[function(require,module,exports){
+},{"./lib/_stream_passthrough.js":39,"_process":36,"buffer":29}],47:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var Stream = (function (){
   try {
@@ -7777,17 +7755,17 @@ exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/readable.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
-},{"./lib/_stream_duplex.js":39,"./lib/_stream_passthrough.js":40,"./lib/_stream_readable.js":41,"./lib/_stream_transform.js":42,"./lib/_stream_writable.js":43,"_process":37,"buffer":30}],49:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":38,"./lib/_stream_passthrough.js":39,"./lib/_stream_readable.js":40,"./lib/_stream_transform.js":41,"./lib/_stream_writable.js":42,"_process":36,"buffer":29}],48:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = require("./lib/_stream_transform.js")
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/transform.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
-},{"./lib/_stream_transform.js":42,"_process":37,"buffer":30}],50:[function(require,module,exports){
+},{"./lib/_stream_transform.js":41,"_process":36,"buffer":29}],49:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = require("./lib/_stream_writable.js")
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream/writable.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/readable-stream")
-},{"./lib/_stream_writable.js":43,"_process":37,"buffer":30}],51:[function(require,module,exports){
+},{"./lib/_stream_writable.js":42,"_process":36,"buffer":29}],50:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -7918,7 +7896,7 @@ Stream.prototype.pipe = function(dest, options) {
 };
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/stream-browserify/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/stream-browserify")
-},{"_process":37,"buffer":30,"events":34,"inherits":35,"readable-stream/duplex.js":38,"readable-stream/passthrough.js":47,"readable-stream/readable.js":48,"readable-stream/transform.js":49,"readable-stream/writable.js":50}],52:[function(require,module,exports){
+},{"_process":36,"buffer":29,"events":33,"inherits":34,"readable-stream/duplex.js":37,"readable-stream/passthrough.js":46,"readable-stream/readable.js":47,"readable-stream/transform.js":48,"readable-stream/writable.js":49}],51:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -8143,4 +8121,4 @@ function base64DetectIncompleteChar(buffer) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/string_decoder/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/string_decoder")
-},{"_process":37,"buffer":30}]},{},[2]);
+},{"_process":36,"buffer":29}]},{},[1]);

@@ -125,6 +125,7 @@ for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   cat "index.html" | sed "s/#userProfile/undefined/;s/#userId/peer$COUNTER/;" >$htmlFile
   "$chromeCommand" $chromeStr $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
+  sleep 1
   echo "Browser PID: "${chromePids[$COUNTER]}
 done
 echo -e "\tDONE"

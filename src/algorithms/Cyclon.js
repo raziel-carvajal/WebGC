@@ -110,12 +110,14 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
       delete msg.payload[this.peerId]
       rcvKeys = Object.keys(msg.payload)
     }
+    var props, j
     do {
       if (currentKeys.indexOf(rcvKeys[i], 0) === -1) newCache[ rcvKeys[i] ] = msg.payload[ rcvKeys[i] ]
       else {
         if (msg.payload[ rcvKeys[i] ].age < this.view[ rcvKeys[i] ].age) {
-          this.view[ rcvKeys[i] ].age = msg.payload[ rcvKeys[i] ].age
-          this.view[ rcvKeys[i] ].data = msg.payload[ rcvKeys[i] ].data
+          props = Object.keys(msg.payload[ rcvKeys[i] ])
+          for (j = 0; j < props.length; j++) 
+            this.view[ rcvKeys[i] ][ props[j] ] = msg.payload[ rcvKeys[i] ][ props[j] ]
         }
       }
       i++
