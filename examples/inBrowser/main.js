@@ -1,4 +1,4 @@
-var confObj = require('confObj.js')
+var confObj = require('./confObj.js')
 var Coordinator = require('../../src/controllers/Coordinator.js')
 var peerId = '#userId'
 var profile = #userProfile
