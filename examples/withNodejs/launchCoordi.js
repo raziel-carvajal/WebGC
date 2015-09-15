@@ -1,5 +1,5 @@
 var fs = require('fs')
 var Coordinator = require('../../src/controllers/Coordinator')
-var confObj = require('../../src/confObjs/twoSimFunc')
+var confObj = require('./confObj')
 var coordi = new Coordinator(confObj, process.argv[2], undefined)
 coordi.bootstrap()
