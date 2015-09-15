@@ -3,12 +3,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 /**
 * @module src/algorithms*/
 module.exports = Cyclon
-
 var inherits = require('inherits')
 var GossipProtocol = require('../superObjs/GossipProtocol')
 var ViewSelector = require('../superObjs/ViewSelector')
 inherits(Cyclon, GossipProtocol)
-
 /**
 * @class Cyclon
 * @extends GossipProtocol See [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
@@ -42,21 +40,18 @@ Cyclon.defaultOpts = {
   periodTimeOut: 10000,
   propagationPolicy: { push: true, pull: true }
 }
-
 /**
 * @memberof Cyclon
 * @method selectPeer
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
 Cyclon.prototype.selectPeer = function () { return this.gossipUtil.getOldestKey(this.view) }
-
 /**
 * @memberof Cyclon
 * @method setMediator
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
 Cyclon.prototype.setMediator = function (mediator) { this.gossipMediator = mediator }
-
 /**
 * @memberof Cyclon
 * @method initialize
@@ -71,38 +66,30 @@ Cyclon.prototype.initialize = function (keys) {
     }
   }
 }
-
 /**
 * @memberof Cyclon
 * @method selectItemsToSend
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
-Cyclon.prototype.selectItemsToSend = function () {
-  var dstPeer = this.selectPeer()
-  this.debug('Oldest peer: ' + dstPeer + ', for algorithm: ' + this.algoId)
+Cyclon.prototype.selectItemsToSend = function (receiver, gossMsgType) {
+  var dstPeer = receiver || this.selectPeer()
+  if (!dstPeer) return
+  if (receiver) debug(this.algoId + ': SelectItemsToSend, receiver is ' + receiver)
+  else debug(this.algoId + ': SelectItemsToSend, receiver is ' + dstPeer + ' (oldest peer in view)')
   var clone = JSON.parse(JSON.stringify(this.view))
   delete clone[dstPeer]
   var subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
   subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile.getPayload())
-  if (dstPeer) {
-    var msg = {
-      service: 'GOSSIP-PUSH',
-      header: 'outgoingMsg',
-      emitter: this.peerId,
-      receiver: dstPeer,
-      payload: subDict,
-      algoId: this.algoId
-    }
-    this.gossipMediator.postInMainThread(msg)
+  var msg = {
+    service: gossMsgType,
+    header: 'outgoingMsg',
+    emitter: this.peerId,
+    receiver: dstPeer,
+    payload: subDict,
+    algoId: this.algoId
   }
-  this.gossipMediator.sentActiveCycleStats()
-}
-Cyclon.prototype.getFanoutPeers = function (emitter) {
-  var clone = JSON.parse(JSON.stringify(this.view))
-  delete clone[emitter]
-  var subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
-  subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile.getPayload())
-  return subDict
+  this.gossipMediator.postInMainThread(msg)
+  // this.gossipMediator.sentActiveCycleStats()
 }
 /**
 * @memberof Cyclon
@@ -160,7 +147,6 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
     // }
   }
 }
-
 /**
 * @memberof Cyclon
 * @method increaseAge
@@ -176,14 +162,11 @@ Cyclon.prototype.increaseAge = function () {
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
 * @module src/algorithms */
-
 module.exports = Vicinity
-
 var inherits = require('inherits')
 var GossipProtocol = require('../superObjs/GossipProtocol')
 var ViewSelector = require('../superObjs/ViewSelector')
 inherits(Vicinity, GossipProtocol)
-
 /**
 * @class Vicinity
 * @extends GossipProtocol See [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
@@ -221,14 +204,12 @@ Vicinity.defaultOpts = {
   propagationPolicy: { push: true, pull: true },
   selectionPolicy: 'biased' // random OR biased OR agr-biased
 }
-
 /**
 * @memberof Vicinity
 * @method selectPeer
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
 Vicinity.prototype.selectPeer = function () { return this.gossipUtil.getOldestKey(this.view) }
-
 /**
 * @memberof Vicinity
 * @method setMediator
@@ -238,7 +219,6 @@ Vicinity.prototype.setMediator = function (mediator) {
   mediator.setDependencies(this.dependencies)
   this.gossipMediator = mediator
 }
-
 /**
 * @memberof Vicinity
 * @method initialize
@@ -253,7 +233,6 @@ Vicinity.prototype.initialize = function (keys) {
     }
   }
 }
-
 /**
 * @memberof Vicinity
 * @method selectItemsToSend
@@ -264,35 +243,54 @@ Vicinity.prototype.initialize = function (keys) {
 * GossipProtocol.view and iii) if selection='agr-biased' the most similar GossipProtocol.fanout
 * items are chosen from the views Vicinity.rpsView and GossipProtocol.view ;see method
 * GossipProtocol.selectItemsToSend() for more information.*/
-Vicinity.prototype.selectItemsToSend = function () {
-  var dstPeer = this.selectPeer()
-  this.debug('Oldest peer: ' + dstPeer + ', for algorithm: ' + this.algoId)
+Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
+  var dstPeer = receiver || this.selectPeer()
+  if (!dstPeer) return
+  if (receiver) debug(this.algoId + ': SelectItemsToSend, receiver is ' + receiver)
+  else debug(this.algoId + ': SelectItemsToSend, receiver is ' + dstPeer + ' (oldest peer in view)')
   var clone = JSON.parse(JSON.stringify(this.view))
-  delete clone[dstPeer]     
-  itmsNum = this.fanout - 1 
-  
-  var newItem = thread === 'active' ? this.gossipUtil.newItem(0, this.profile.getPayload()) : null
+  delete clone[dstPeer]
+  var subDict, msg
   switch (this.selectionPolicy) {
     case 'random':
-      subDict = this.gossipUtil.getRandomSubDict(itmsNum, clone)
-      if (newItem !== null) { subDict[this.peerId] = newItem }
-      msg = { service: 'GOSSIP', header: 'outgoingMsg', emitter: this.peerId,
-        receiver: dstPeer, payload: subDict, algoId: this.algoId }
+      subDict = this.gossipUtil.getRandomSubDict(this.fanout - 1, clone)
+      subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile.getPayload())
+      msg = {
+        service: gossMsgType,
+        header: 'outgoingMsg',
+        emitter: this.peerId,
+        receiver: dstPeer,
+        payload: subDict,
+        algoId: this.algoId
+      }
       this.gossipMediator.postInMainThread(msg)
-      this.gossipMediator.sentActiveCycleStats()
+      // this.gossipMediator.sentActiveCycleStats()
       break
     case 'biased':
-      subDict = this.selector.getClosestNeighbours(itmsNum, clone, {k: this.peerId, v: newItem})
-      if (newItem !== null) { subDict[this.peerId] = newItem }
-      msg = { service: 'GOSSIP', header: 'outgoingMsg', emitter: this.peerId,
-        receiver: dstPeer, payload: subDict, algoId: this.algoId }
+      subDict = this.selector.getClosestNeighbours(this.fanout - 1, clone)
+      subDict[this.peerId] = this.gossipUtil.newItem(0, this.profile.getPayload())
+      msg = {
+        service: gossMsgType,
+        header: 'outgoingMsg',
+        emitter: this.peerId,
+        receiver: dstPeer,
+        payload: subDict,
+        algoId: this.algoId
+      }
       this.gossipMediator.postInMainThread(msg)
-      this.gossipMediator.sentActiveCycleStats()
+      // this.gossipMediator.sentActiveCycleStats()
       break
     case 'agr-biased':
-      msg = { header: 'getDep', cluView: clone, n: itmsNum,
-        'newItem': newItem, receiver: dstPeer, emitter: this.algoId,
-        callback: 'doAgrBiasedSelection' }
+      msg = {
+        header: 'getDep',
+        cluView: clone,
+        n: itmsNum,
+        'newItem': newItem,
+        receiver: dstPeer,
+        emitter: this.algoId,
+        callback: 'doAgrBiasedSelection',
+        gossMsg: gossMsgType
+      }
       for (var i = 0; i < this.dependencies.length; i++) {
         msg.depId = this.dependencies[i].algoId
         msg.depAtt = this.dependencies[i].algoAttribute
@@ -304,7 +302,6 @@ Vicinity.prototype.selectItemsToSend = function () {
       break
   }
 }
-
 /**
 * @memberof Vicinity
 * @method doAgrBiasedSelection
@@ -323,9 +320,9 @@ Vicinity.prototype.doAgrBiasedSelection = function (msg) {
     result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data)
   }
   var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result)
-  var similarNeig = this.selector.getClosestNeighbours(msg.n, mergedViews, {k: this.peerId, v: msg.newItem})
+  var similarNeig = this.selector.getClosestNeighbours(msg.n, mergedViews)
   var payload = {
-    service: 'GOSSIP',
+    service: msg.gossMsg,
     header: 'outgoingMsg',
     emitter: this.peerId,
     receiver: msg.receiver,
@@ -333,9 +330,8 @@ Vicinity.prototype.doAgrBiasedSelection = function (msg) {
     algoId: this.algoId
   }
   this.gossipMediator.postInMainThread(payload)
-  this.gossipMediator.sentActiveCycleStats()
+  // this.gossipMediator.sentActiveCycleStats()
 }
-
 /**
 * @memberof Vicinity
 * @method selectItemsToKeep
@@ -356,7 +352,6 @@ Vicinity.prototype.selectItemsToKeep = function (msg) {
     this.gossipMediator.applyDependency(msg1)
   }
 }
-
 /**
 * @memberof Vicinity
 * @method doItemsToKeepWithDep
@@ -375,25 +370,24 @@ Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
   }
   var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result)
   if (Object.keys(mergedViews).indexOf(this.peerId, 0) !== -1) delete mergedViews[this.peerId]
-  this.view = this.selector.getClosestNeighbours(this.viewSize, mergedViews, null)
-  var viewUpdOffset = new Date() - msg.receptionTime
-  var msgToSend = {
-    service: 'GOSSIP',
-    trace: {
-      algoId: this.algoId,
-      loop: this.loop,
-      view: JSON.stringify(this.view),
-      'viewUpdOffset': viewUpdOffset
-    }
-  }
-  if (!this.isLogActivated) {
-    this.gossipMediator.viewUpdsLogCounter++
-    msgToSend.header = 'viewUpdsLog'
-    msgToSend.counter = this.gossipMediator.viewUpdsLogCounter
-    this.gossipMediator.postInMainThread(msgToSend)
-  }
+  this.view = this.selector.getClosestNeighbours(this.viewSize, mergedViews)
+  //var viewUpdOffset = new Date() - msg.receptionTime
+  //var msgToSend = {
+  //  service: 'GOSSIP',
+  //  trace: {
+  //    algoId: this.algoId,
+  //    loop: this.loop,
+  //    view: JSON.stringify(this.view),
+  //    'viewUpdOffset': viewUpdOffset
+  //  }
+  //}
+  //if (!this.isLogActivated) {
+  //  this.gossipMediator.viewUpdsLogCounter++
+  //  msgToSend.header = 'viewUpdsLog'
+  //  msgToSend.counter = this.gossipMediator.viewUpdsLogCounter
+  //  this.gossipMediator.postInMainThread(msgToSend)
+  //}
 }
-
 /**
 * @memberof Vicinity
 * @method increaseAge
@@ -402,25 +396,6 @@ Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
 Vicinity.prototype.increaseAge = function () {
   var keys = Object.keys(this.view)
   for (var i = 0; i < keys.length; i++) this.view[ keys[i] ].age++
-}
-
-/**
-* @memberof Vicinity
-* @deprecated
-* @method getSimilarPeerIds
-* @description This method gives n peer identifiers from GossipProtocol.view
-* These peers have the higher degree of similarity with the local peer.
-* @param n Number of the required peer IDs.
-* @returns Array Array of n peer IDs. */
-Vicinity.prototype.getSimilarPeerIds = function (n) {
-  if (n <= 0) return []
-  var iDs = Object.keys(this.view)
-  if (n >= iDs.length) return iDs
-  else {
-    var result = []
-    for (var i = 0; i < n; i++) result.push(iDs[i])
-    return result
-  }
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/algorithms/Vicinity.js","/../../src/algorithms")
@@ -505,13 +480,14 @@ GossipMediator.prototype._doActiveThread = function () {
   // performing periodic gossip selection (no changes in view are done)
   this.algo.loop++           
   this.algo.increaseAge()    
-  if (this.algo.propagationPolicy.push) this.algo.selectItemsToSend('active')
+  if (this.algo.propagationPolicy.push) this.algo.selectItemsToSend(undefined, 'GOSSIP-PUSH')
   this.lastActCycTime = new Date()
   var log = {
     loop: this.algo.loop,
     algoId: this.algo.algoId,
     view: JSON.stringify(this.algo.view)
   }
+  debug('posting log')
   this.postInMainThread({ header: 'logInConsole', log: JSON.stringify(log) })
 }
 /**
@@ -559,32 +535,24 @@ GossipMediator.prototype.listen = function () {
         keys = Object.keys(self.algo.view)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        self.debug('CURRENT VIEW: ' + arr)                                                               
+        self.debug(self.algo.algoId + ': CURRENT VIEW ' + arr) 
         keys = Object.keys(msg.payload)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
         self.debug('PUSH REC PAYLOAD: ' + arr)
+        // SELECT
         self.algo.selectItemsToKeep(msg)
         keys = Object.keys(self.algo.view)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        self.debug('VIEW AFTER PUSH REC: ' + arr)
-        var payload = self.algo.getFanoutPeers(msg.emitter)
-        var answ = {
-          service: 'GOSSIP-PULL',
-          header: 'outgoingMsg',
-          emitter: self.algo.peerId,
-          receiver: msg.emitter,
-          'payload': payload,
-          algoId: self.algo.algoId
-        }
-        self.worker.postMessage(answ)
+        self.debug(self.algo.algoId + ': VIEW AFTER PUSH REC ' + arr)
+        self.algo.selectItemsToSend(msg.emitter, 'GOSSIP-PULL') 
         break
       case 'gossipPullRec':
         keys = Object.keys(self.algo.view)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        self.debug('CURRENT VIEW: ' + arr)                                                               
+        self.debug(self.algo.algoId + ': CURRENT VIEW ' + arr)
         keys = Object.keys(msg.payload)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
@@ -593,7 +561,7 @@ GossipMediator.prototype.listen = function () {
         keys = Object.keys(self.algo.view)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        self.debug('VIEW AFTER PULL REC: ' + arr)
+        self.debug(self.algo.algoId + ': VIEW AFTER PULL REC ' + arr)
         break
       case 'getDep':
         var obj = self.algo[msg.depAtt]
@@ -728,7 +696,6 @@ GossipProtocol.prototype.getPlotInfo = function (peerId) { throw new Error(this.
 /**
 *@module src/superObjs*/
 module.exports = ViewSelector
-
 /**
 * @class ViewSelector
 * @description Ranks items in a gossip view according to a similarity function, this function
@@ -742,35 +709,7 @@ function ViewSelector (profile, debug, simFunc) {
   this.profile = profile
   this.debug = debug
   this.simFunc = simFunc
-  this.noImMsg = 'It is required to provide an implementation for this method'
 }
-/**
-* @memberof ViewSelector
-* @method checkBaseCase
-* @description The view selection takes the N most similar items from the local peer's view of
-* length V. To speed up the peer selection, this method returns the peer's view if N is negative
-* or N > V
-* @param n N most similar peers to take from the peer's view
-* @param view Peer's view
-* @param newItem This item contains the ID of the local peer, the local peer's profile and its age
-* initialize to zero
-* @param keys Properties of the object that represents the local peer's view
-* @return Object Returns null if the base case does not happens or the local peer's view otherwise*/
-ViewSelector.prototype.checkBaseCase = function (n, view, newItem, keys) {
-  if (newItem !== null) {
-    view[newItem.k] = newItem.v
-  }
-  if (n <= 0 || keys.length === 0) {
-    this.debug('Base case SimFun. View is empty')
-    return view
-  }
-  if (keys.length < n) {
-    this.debug('Base case SimFun. view size: ' + keys.length + ', n: ' + n)
-    return view
-  }
-  return null
-}
-
 /**
 * @memberof ViewSelector
 * @method getClosestNeighbours
@@ -780,18 +719,14 @@ ViewSelector.prototype.checkBaseCase = function (n, view, newItem, keys) {
 * @param newItem This item contains the ID of the local peer, the local peer's profile and its age
 * initialize to zero
 * @returns Object Subset of the local peer's view with the n most similar peers*/
-ViewSelector.prototype.getClosestNeighbours = function (n, view, newItem) {
+ViewSelector.prototype.getClosestNeighbours = function (n, view) {
   var keys = Object.keys(view)
-  var result = this.checkBaseCase(n, view, newItem, keys)
-  if (result === null) {
-    result = this.getNsimilarPeers(view, n, keys)
-    if (newItem !== null) {
-      result[newItem.k] = newItem.v
-    }
+  if (n <= 0 || keys.length === 0 || keys.length < n) {
+    this.debug('Base case in SimFun')
+    return view
   }
-  return result
+  return this.getNsimilarPeers(view, n, keys)
 }
-
 /**
 * @memberof ViewSelector
 * @method getNsimilarPeers
@@ -809,8 +744,7 @@ ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
       v: this.simFunc(this.profile, view[ keys[i] ].data)
     })
   }
-  values.sort(function (a, b) { return a.v - b.v })
-  values.reverse()
+  values.sort(function (a, b) { return a.v - b.v }).reverse()
   var result = {}
   var itm
   i = 0
@@ -2595,7 +2529,11 @@ module.exports={
     "url": "https://github.com/theturtle32/WebSocket-Node/issues"
   },
   "_id": "websocket@1.0.21",
-  "_from": "websocket@~1.0.19"
+  "dist": {
+    "shasum": "bbe4330499651edfaa1fe4bfa8bf8f68b7fb252e"
+  },
+  "_from": "websocket@~1.0.19",
+  "_resolved": "https://registry.npmjs.org/websocket/-/websocket-1.0.21.tgz"
 }
 
 },{}],18:[function(require,module,exports){
@@ -2926,7 +2864,10 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
         break
     }
   }, false)
-  worker.addEventListener('error', function (e) {debug('In Worker:' + e.message + ', lineno:' + e.lineno)}, false)
+  worker.addEventListener('error', function (e) {
+    debug('In Worker:' + e.message + ', lineno:' + e.lineno)
+    debug(JSON.stringify(e))
+  }, false)
 }
 /**
 * @memberof Coordinator
@@ -3422,7 +3363,7 @@ GossipFactory.prototype._buildWorkerHeader = function (algoId, algoClass, statsA
   }
   code += 'var algOpts = ' + JSON.stringify(algOpts) + '\n'
   for (i = 0; i < keysWithFunc.length; i++) {
-    code += "algOpts['" + keysWithFunc[i] + "'] = eval(" + algOpts[ keysWithFunc[i]] + ')\n'
+    code += "algOpts['" + keysWithFunc[i] + "'] = " + algOpts[ keysWithFunc[i]] + '\n'
   }
   code += "debug('Worker initialization BEGINS')\n"
   code += 'var gossipUtil = new GossipUtil(debug)\n'
@@ -3694,31 +3635,35 @@ var rootParent = {}
  * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
  * Opera 11.6+, iOS 4.2+.
  *
+ * Due to various browser bugs, sometimes the Object implementation will be used even
+ * when the browser supports typed arrays.
+ *
  * Note:
  *
- * - Implementation must support adding new properties to `Uint8Array` instances.
- *   Firefox 4-29 lacked support, fixed in Firefox 30+.
- *   See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
+ *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
+ *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
  *
- *  - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
+ *   - Safari 5-7 lacks support for changing the `Object.prototype.constructor` property
+ *     on objects.
  *
- *  - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
- *    incorrect length in some situations.
+ *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
  *
- * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they will
- * get the Object implementation, which is slower but will work correctly.
+ *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
+ *     incorrect length in some situations.
+
+ * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
+ * get the Object implementation, which is slower but behaves correctly.
  */
 Buffer.TYPED_ARRAY_SUPPORT = (function () {
-  function Foo () {}
+  function Bar () {}
   try {
-    var buf = new ArrayBuffer(0)
-    var arr = new Uint8Array(buf)
+    var arr = new Uint8Array(1)
     arr.foo = function () { return 42 }
-    arr.constructor = Foo
+    arr.constructor = Bar
     return arr.foo() === 42 && // typed array instances can be augmented
-        arr.constructor === Foo && // constructor can be set
+        arr.constructor === Bar && // constructor can be set
         typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
-        new Uint8Array(1).subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
+        arr.subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
   } catch (e) {
     return false
   }
@@ -3796,8 +3741,13 @@ function fromObject (that, object) {
     throw new TypeError('must start with number, buffer, array or string')
   }
 
-  if (typeof ArrayBuffer !== 'undefined' && object.buffer instanceof ArrayBuffer) {
-    return fromTypedArray(that, object)
+  if (typeof ArrayBuffer !== 'undefined') {
+    if (object.buffer instanceof ArrayBuffer) {
+      return fromTypedArray(that, object)
+    }
+    if (object instanceof ArrayBuffer) {
+      return fromArrayBuffer(that, object)
+    }
   }
 
   if (object.length) return fromArrayLike(that, object)
@@ -3830,6 +3780,18 @@ function fromTypedArray (that, array) {
   // of the old Buffer constructor.
   for (var i = 0; i < length; i += 1) {
     that[i] = array[i] & 255
+  }
+  return that
+}
+
+function fromArrayBuffer (that, array) {
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Return an augmented `Uint8Array` instance, for best performance
+    array.byteLength
+    that = Buffer._augment(new Uint8Array(array))
+  } else {
+    // Fallback: Return an object instance of the Buffer class
+    that = fromTypedArray(that, new Uint8Array(array))
   }
   return that
 }
@@ -3951,8 +3913,6 @@ Buffer.concat = function concat (list, length) {
 
   if (list.length === 0) {
     return new Buffer(0)
-  } else if (list.length === 1) {
-    return list[0]
   }
 
   var i
@@ -4127,13 +4087,13 @@ Buffer.prototype.indexOf = function indexOf (val, byteOffset) {
   throw new TypeError('val must be string, number or Buffer')
 }
 
-// `get` will be removed in Node 0.13+
+// `get` is deprecated
 Buffer.prototype.get = function get (offset) {
   console.log('.get() is deprecated. Access using array indexes instead.')
   return this.readUInt8(offset)
 }
 
-// `set` will be removed in Node 0.13+
+// `set` is deprecated
 Buffer.prototype.set = function set (v, offset) {
   console.log('.set() is deprecated. Access using array indexes instead.')
   return this.writeUInt8(v, offset)
@@ -4274,20 +4234,99 @@ function base64Slice (buf, start, end) {
 }
 
 function utf8Slice (buf, start, end) {
-  var res = ''
-  var tmp = ''
   end = Math.min(buf.length, end)
+  var res = []
 
-  for (var i = start; i < end; i++) {
-    if (buf[i] <= 0x7F) {
-      res += decodeUtf8Char(tmp) + String.fromCharCode(buf[i])
-      tmp = ''
-    } else {
-      tmp += '%' + buf[i].toString(16)
+  var i = start
+  while (i < end) {
+    var firstByte = buf[i]
+    var codePoint = null
+    var bytesPerSequence = (firstByte > 0xEF) ? 4
+      : (firstByte > 0xDF) ? 3
+      : (firstByte > 0xBF) ? 2
+      : 1
+
+    if (i + bytesPerSequence <= end) {
+      var secondByte, thirdByte, fourthByte, tempCodePoint
+
+      switch (bytesPerSequence) {
+        case 1:
+          if (firstByte < 0x80) {
+            codePoint = firstByte
+          }
+          break
+        case 2:
+          secondByte = buf[i + 1]
+          if ((secondByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F)
+            if (tempCodePoint > 0x7F) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 3:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F)
+            if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 4:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          fourthByte = buf[i + 3]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F)
+            if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
+              codePoint = tempCodePoint
+            }
+          }
+      }
     }
+
+    if (codePoint === null) {
+      // we did not generate a valid codePoint so insert a
+      // replacement char (U+FFFD) and advance only 1 byte
+      codePoint = 0xFFFD
+      bytesPerSequence = 1
+    } else if (codePoint > 0xFFFF) {
+      // encode to utf16 (surrogate pair dance)
+      codePoint -= 0x10000
+      res.push(codePoint >>> 10 & 0x3FF | 0xD800)
+      codePoint = 0xDC00 | codePoint & 0x3FF
+    }
+
+    res.push(codePoint)
+    i += bytesPerSequence
   }
 
-  return res + decodeUtf8Char(tmp)
+  return decodeCodePointsArray(res)
+}
+
+// Based on http://stackoverflow.com/a/22747272/680742, the browser with
+// the lowest limit is Chrome, with 0x10000 args.
+// We go 1 magnitude less, for safety
+var MAX_ARGUMENTS_LENGTH = 0x1000
+
+function decodeCodePointsArray (codePoints) {
+  var len = codePoints.length
+  if (len <= MAX_ARGUMENTS_LENGTH) {
+    return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
+  }
+
+  // Decode in chunks to avoid "call stack size exceeded".
+  var res = ''
+  var i = 0
+  while (i < len) {
+    res += String.fromCharCode.apply(
+      String,
+      codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH)
+    )
+  }
+  return res
 }
 
 function asciiSlice (buf, start, end) {
@@ -4822,9 +4861,16 @@ Buffer.prototype.copy = function copy (target, targetStart, start, end) {
   }
 
   var len = end - start
+  var i
 
-  if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
-    for (var i = 0; i < len; i++) {
+  if (this === target && start < targetStart && targetStart < end) {
+    // descending copy from end
+    for (i = len - 1; i >= 0; i--) {
+      target[i + targetStart] = this[i + start]
+    }
+  } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
+    // ascending copy from start
+    for (i = 0; i < len; i++) {
       target[i + targetStart] = this[i + start]
     }
   } else {
@@ -4900,7 +4946,7 @@ Buffer._augment = function _augment (arr) {
   // save reference to original Uint8Array set method before overwriting
   arr._set = arr.set
 
-  // deprecated, will be removed in node 0.13+
+  // deprecated
   arr.get = BP.get
   arr.set = BP.set
 
@@ -4956,7 +5002,7 @@ Buffer._augment = function _augment (arr) {
   return arr
 }
 
-var INVALID_BASE64_RE = /[^+\/0-9A-z\-]/g
+var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
 
 function base64clean (str) {
   // Node strips out invalid characters like \n and \t from the string, base64-js does not
@@ -4986,28 +5032,15 @@ function utf8ToBytes (string, units) {
   var length = string.length
   var leadSurrogate = null
   var bytes = []
-  var i = 0
 
-  for (; i < length; i++) {
+  for (var i = 0; i < length; i++) {
     codePoint = string.charCodeAt(i)
 
     // is surrogate component
     if (codePoint > 0xD7FF && codePoint < 0xE000) {
       // last char was a lead
-      if (leadSurrogate) {
-        // 2 leads in a row
-        if (codePoint < 0xDC00) {
-          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
-          leadSurrogate = codePoint
-          continue
-        } else {
-          // valid surrogate pair
-          codePoint = leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00 | 0x10000
-          leadSurrogate = null
-        }
-      } else {
+      if (!leadSurrogate) {
         // no lead yet
-
         if (codePoint > 0xDBFF) {
           // unexpected trail
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
@@ -5016,17 +5049,29 @@ function utf8ToBytes (string, units) {
           // unpaired lead
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
           continue
-        } else {
-          // valid lead
-          leadSurrogate = codePoint
-          continue
         }
+
+        // valid lead
+        leadSurrogate = codePoint
+
+        continue
       }
+
+      // 2 leads in a row
+      if (codePoint < 0xDC00) {
+        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+        leadSurrogate = codePoint
+        continue
+      }
+
+      // valid surrogate pair
+      codePoint = leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00 | 0x10000
     } else if (leadSurrogate) {
       // valid bmp char, but last char was a lead
       if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
-      leadSurrogate = null
     }
+
+    leadSurrogate = null
 
     // encode utf8
     if (codePoint < 0x80) {
@@ -5045,7 +5090,7 @@ function utf8ToBytes (string, units) {
         codePoint >> 0x6 & 0x3F | 0x80,
         codePoint & 0x3F | 0x80
       )
-    } else if (codePoint < 0x200000) {
+    } else if (codePoint < 0x110000) {
       if ((units -= 4) < 0) break
       bytes.push(
         codePoint >> 0x12 | 0xF0,
@@ -5096,14 +5141,6 @@ function blitBuffer (src, dst, offset, length) {
     dst[i + offset] = src[i]
   }
   return i
-}
-
-function decodeUtf8Char (str) {
-  try {
-    return decodeURIComponent(str)
-  } catch (err) {
-    return String.fromCharCode(0xFFFD) // UTF 8 invalid char
-  }
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer")
@@ -5733,7 +5770,9 @@ function drainQueue() {
         currentQueue = queue;
         queue = [];
         while (++queueIndex < len) {
-            currentQueue[queueIndex].run();
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
         }
         queueIndex = -1;
         len = queue.length;
@@ -5785,7 +5824,6 @@ process.binding = function (name) {
     throw new Error('process.binding is not supported');
 };
 
-// TODO(shtylman)
 process.cwd = function () { return '/' };
 process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
@@ -7721,7 +7759,7 @@ module.exports = nextTick;
 function nextTick(fn) {
   var args = new Array(arguments.length - 1);
   var i = 0;
-  while (i < arguments.length) {
+  while (i < args.length) {
     args[i++] = arguments[i];
   }
   process.nextTick(function afterTick() {
