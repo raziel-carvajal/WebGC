@@ -1,7 +1,6 @@
 /**
 * @module src/confObjs
 * @alias module:src/confObjs.configurationObj*/
-
 /**
 * @const configurationObj
 * @description This object serves as the input that any application with WebGC needs. Basically,
@@ -55,33 +54,34 @@ var configurationObj = {
       // implementation of the cosine similarity
       // it is considered that: a.length = b.length
       similarityFunction: function (a, b) {
+        function stringToNumber (s) {
+          var num = 0
+          for (var i = 0; i < s.length; i++) num += s.charCodeAt(i)
+          return num
+        }
+        var maxLength = Math.max(a.length, b.length)
         var a1 = []
         var b1 = []
-        var i
-        var tmpA
-        var tmpB
-        var sumA = 0
-        var sumB = 0
-        for (i = 0; i < a.length; i++) {
-          tmpA = a[i] !== 'undefined' ? 1 : 0
-          tmpB = b[i] !== 'undefined' ? 1 : 0
-          a1.push(tmpA)
-          b1.push(tmpB)
-          sumA += tmpA
-          sumB += tmpB
+        var sumAsqr = 0
+        var sumBsqr = 0
+        var sumProd = 0
+        for (var i = 0; i < maxLength; i++) {
+          if (i < a.length && i < b.length) {
+            a1[i] = stringToNumber(a[i])
+            b1[i] = stringToNumber(b[i])
+          } else if (i < a.length){
+            a1[i] = stringToNumber(a[i])
+            b1[i] = 1
+          } else {
+            a1[i] = 1
+            b1[i] = stringToNumber(b[i])
+          }
+          sumAsqr += a1[i] * a1[i]
+          sumBsqr += b1[i] * b1[i]
+          sumProd += a1[i] * b1[i]
         }
-        if (sumA === 0) { for (i = 0; i < a.length; i++) { a1[i] = 1 } }
-        if (sumB === 0) { for (i = 0; i < a.length; i++) { b1[i] = 1 } }
-        var prSum = 0
-        var aSqrtSum = 0
-        var bSqrtSum = 0
-        for (i = 0; i < a1.length; i++) {
-          prSum += a1[i] * b1[i]
-          aSqrtSum += a1[i] * a1[i]
-          bSqrtSum += b1[i] * b1[i]
-        }
-        var r = prSum / (Math.sqrt(aSqrtSum) * Math.sqrt(bSqrtSum))
-        return r
+        if (sumAsqr === 0 || sumBsqr === 0) return sumProd
+        return sumProd / (Math.sqrt(sumAsqr) * Math.sqrt(sumBsqr))
       },
       dependencies: [
         { algoId: 'cyclon1', algoAttribute: 'view' }
@@ -95,5 +95,4 @@ var configurationObj = {
   },
   usingSs: true
 }
-
 module.exports = configurationObj
