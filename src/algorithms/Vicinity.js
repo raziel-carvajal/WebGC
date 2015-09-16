@@ -24,7 +24,7 @@ function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
   this.isLogActivated = isLogActivated
   GossipProtocol.call(this, algOpts, debug, gossipUtil, profile)
   this.selectionPolicy = algOpts.selectionPolicy
-  this.selector = new ViewSelector(this.profile.getPayload(), debug, algOpts.similarityFunction)
+  this.selector = new ViewSelector(profile, debug, algOpts.similarityFunction)
   this.dependencies = algOpts.dependencies
   debug('Vicinity.init')
 }
@@ -102,7 +102,6 @@ Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
         algoId: this.algoId
       }
       this.gossipMediator.postInMainThread(msg)
-      // this.gossipMediator.sentActiveCycleStats()
       break
     case 'biased':
       subDict = this.selector.getClosestNeighbours(this.fanout - 1, clone)
@@ -116,7 +115,6 @@ Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
         algoId: this.algoId
       }
       this.gossipMediator.postInMainThread(msg)
-      // this.gossipMediator.sentActiveCycleStats()
       break
     case 'agr-biased':
       msg = {
@@ -176,10 +174,7 @@ Vicinity.prototype.doAgrBiasedSelection = function (msg) {
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
 Vicinity.prototype.selectItemsToKeep = function (msg) {
-  this.debug('CURRENT VIEW: ' + JSON.stringify(this.view))
-  this.debug('PAYLOAD: ' + JSON.stringify(msg.payload))
   var mergedViews = this.gossipUtil.mergeViews(this.view, msg.payload)
-  this.debug('MERGED: ' + JSON.stringify(mergedViews))
   var msg1 = {
     header: 'getDep',
     cluView: mergedViews,
@@ -212,22 +207,6 @@ Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
   var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result)
   if (Object.keys(mergedViews).indexOf(this.peerId, 0) !== -1) delete mergedViews[this.peerId]
   this.view = this.selector.getClosestNeighbours(this.viewSize, mergedViews)
-  //var viewUpdOffset = new Date() - msg.receptionTime
-  //var msgToSend = {
-  //  service: 'GOSSIP',
-  //  trace: {
-  //    algoId: this.algoId,
-  //    loop: this.loop,
-  //    view: JSON.stringify(this.view),
-  //    'viewUpdOffset': viewUpdOffset
-  //  }
-  //}
-  //if (!this.isLogActivated) {
-  //  this.gossipMediator.viewUpdsLogCounter++
-  //  msgToSend.header = 'viewUpdsLog'
-  //  msgToSend.counter = this.gossipMediator.viewUpdsLogCounter
-  //  this.gossipMediator.postInMainThread(msgToSend)
-  //}
 }
 /**
 * @memberof Vicinity

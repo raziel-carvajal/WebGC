@@ -73,10 +73,8 @@ GossipUtil.prototype.getOldestKey = function (dictio) {
     var sameAgeItms = {}
     var age = items[0].v
     sameAgeItms[items[0].k] = age
-    for (i = 1; i < items.length; i++) if (age === items[i].v) sameAgeItms[ items[i].k ] = items[i].v
-    this.debug('Same items: ' + JSON.stringify(sameAgeItms))
+    for (i = 1; i < items.length; i++) if (age === items[i].v) sameAgeItms[ items[i].k ] = age
     var randObj = this.getRandomSubDict(1, sameAgeItms)
-    this.debug('Random item chosen: ' + JSON.stringify(randObj))
     return Object.keys(randObj)[0]
   }
 }

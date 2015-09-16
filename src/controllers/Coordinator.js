@@ -244,23 +244,25 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
         if (worker !== 'undefined') {
           msg.header = 'applyDep'
           worker.postMessage(msg)
-        } else { debug('there is not a worker for algorithm: ' + msg.emitter) }
+        } else debug('there is not a worker for algorithm: ' + msg.emitter)
         break
       case 'drawGraph':
         if (typeof self.plotterObj !== 'undefined') {
           self.plotterObj.buildGraph(msg.algoId, msg.graph, msg.view)
-        } else { debug(msg) }
+        } else debug(msg)
         break
       case 'actCycLog':
-        if (self.actCycHistory) {
+        if (self.actCycHistory)
           self.actCycHistory[msg.algoId][msg.counter] = { algoId: msg.algoId, loop: msg.loop, offset: msg.offset }
-        }
         break
       case 'viewUpdsLog':
         if (self.statsOpts.activated) self.vieUpdHistory[msg.trace.algoId][msg.counter] = msg.trace
         break
       case 'logInConsole':
-        debug('WebGClog &&' + msg.log + '&&')
+        debug('VIEW: ' + msg.log)
+        break
+      case 'neigs':
+        debug('Neighbourhood of thread ' + msg.algoId + ': ' + msg.view)
         break
       default:
         debug('message: ' + msg.header + ' is not recoginized')

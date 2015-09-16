@@ -121,44 +121,17 @@ GossipMediator.prototype.listen = function () {
     var msg = e.data
     switch (msg.header) {
       case 'firstView':
-        self.debug(self.algo.algoId + ': First view size ' + msg.view.length)
         self.algo.initialize(msg.view)
         break
       case 'gossipLoop':
-        self.debug(self.algo.algoId + ': gossipLoop msg received')
         self._doActiveThread()
         break
       case 'gossipPushRec':
-        keys = Object.keys(self.algo.view)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        //self.debug(self.algo.algoId + ': CURRENT VIEW ' + arr) 
-        keys = Object.keys(msg.payload)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
-        //self.debug('PUSH REC PAYLOAD: ' + arr)
-        // SELECT
         self.algo.selectItemsToKeep(msg)
-        keys = Object.keys(self.algo.view)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        //self.debug(self.algo.algoId + ': VIEW AFTER PUSH REC ' + arr)
         self.algo.selectItemsToSend(msg.emitter, 'GOSSIP-PULL') 
         break
       case 'gossipPullRec':
-        keys = Object.keys(self.algo.view)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        //self.debug(self.algo.algoId + ': CURRENT VIEW ' + arr)
-        keys = Object.keys(msg.payload)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
-        //self.debug('PULL REC PAYLOAD: ' + arr)
         if (self.algo.propagationPolicy.pull) self.algo.selectItemsToKeep(msg)
-        keys = Object.keys(self.algo.view)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        //self.debug(self.algo.algoId + ': VIEW AFTER PULL REC ' + arr)
         break
       case 'getDep':
         var obj = self.algo[msg.depAtt]
@@ -184,14 +157,15 @@ GossipMediator.prototype.listen = function () {
         break
       case 'deleteViewItems':
         var items = Object.keys(self.algo.view)
-        debug('DeleteViewItems was called, items to remove: ' + msg.items)
         for (var i = 0; i < msg.items.length; i++)
           if (items.indexOf(msg.items[i],0) !== -1 ) delete self.algo.view[msg.items[i]]
         self.algo.viewSize = msg.newSize
-        debug('Current view: ' + Object.keys(self.algo.view))
         break
       case 'updateProfile':
         self.algo.profile.setPayload(msg.profile)
+        break
+      case 'getNeighbourhood':
+        self.worker.postMessage({header: 'neigs', view: Object.keys(self.algo.view), algoId: self.algo.algoId})
         break
       default:
         self.log.warn('header: ' + msg.header + ' is unknown')

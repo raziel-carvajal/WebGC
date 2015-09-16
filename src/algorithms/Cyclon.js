@@ -87,7 +87,6 @@ Cyclon.prototype.selectItemsToSend = function (receiver, gossMsgType) {
     algoId: this.algoId
   }
   this.gossipMediator.postInMainThread(msg)
-  // this.gossipMediator.sentActiveCycleStats()
 }
 /**
 * @memberof Cyclon
@@ -128,23 +127,6 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
       i += 1
     }
     this.view = newCache
-    // Logging information of view update
-    // var viewUpdOffset = new Date() - msg.receptionTime
-    // var msgToSend = {
-    //   service: 'GOSSIP',
-    //   trace: {
-    //     algoId: this.algoId,
-    //     loop: this.loop,
-    //     view: JSON.stringify(this.view),
-    //     'viewUpdOffset': viewUpdOffset
-    //   }
-    // }
-    // if (!this.isLogActivated) {
-    //   this.gossipMediator.viewUpdsLogCounter++
-    //   msgToSend.header = 'viewUpdsLog'
-    //   msgToSend.counter = this.gossipMediator.viewUpdsLogCounter
-    //   this.gossipMediator.postInMainThread(msgToSend)
-    // }
   }
 }
 /**

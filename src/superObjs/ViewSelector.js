@@ -25,6 +25,7 @@ function ViewSelector (profile, debug, simFunc) {
 * initialize to zero
 * @returns Object Subset of the local peer's view with the n most similar peers*/
 ViewSelector.prototype.getClosestNeighbours = function (n, view) {
+  this.debug('SELECTOR PROFILE: ' + this.profile.getPayload())
   var keys = Object.keys(view)
   if (n <= 0 || keys.length === 0 || keys.length < n) {
     this.debug('Base case in SimFun')
@@ -46,7 +47,7 @@ ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
   for (i = 0; i < keys.length; i++) {
     values.push({
       k: keys[i],
-      v: this.simFunc(this.profile, view[ keys[i] ].data)
+      v: this.simFunc(this.profile.getPayload(), view[ keys[i] ].data)
     })
   }
   values.sort(function (a, b) { return a.v - b.v }).reverse()

@@ -89,7 +89,6 @@ Cyclon.prototype.selectItemsToSend = function (receiver, gossMsgType) {
     algoId: this.algoId
   }
   this.gossipMediator.postInMainThread(msg)
-  // this.gossipMediator.sentActiveCycleStats()
 }
 /**
 * @memberof Cyclon
@@ -130,23 +129,6 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
       i += 1
     }
     this.view = newCache
-    // Logging information of view update
-    // var viewUpdOffset = new Date() - msg.receptionTime
-    // var msgToSend = {
-    //   service: 'GOSSIP',
-    //   trace: {
-    //     algoId: this.algoId,
-    //     loop: this.loop,
-    //     view: JSON.stringify(this.view),
-    //     'viewUpdOffset': viewUpdOffset
-    //   }
-    // }
-    // if (!this.isLogActivated) {
-    //   this.gossipMediator.viewUpdsLogCounter++
-    //   msgToSend.header = 'viewUpdsLog'
-    //   msgToSend.counter = this.gossipMediator.viewUpdsLogCounter
-    //   this.gossipMediator.postInMainThread(msgToSend)
-    // }
   }
 }
 /**
@@ -188,7 +170,7 @@ function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
   this.isLogActivated = isLogActivated
   GossipProtocol.call(this, algOpts, debug, gossipUtil, profile)
   this.selectionPolicy = algOpts.selectionPolicy
-  this.selector = new ViewSelector(this.profile.getPayload(), debug, algOpts.similarityFunction)
+  this.selector = new ViewSelector(profile, debug, algOpts.similarityFunction)
   this.dependencies = algOpts.dependencies
   debug('Vicinity.init')
 }
@@ -266,7 +248,6 @@ Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
         algoId: this.algoId
       }
       this.gossipMediator.postInMainThread(msg)
-      // this.gossipMediator.sentActiveCycleStats()
       break
     case 'biased':
       subDict = this.selector.getClosestNeighbours(this.fanout - 1, clone)
@@ -280,7 +261,6 @@ Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
         algoId: this.algoId
       }
       this.gossipMediator.postInMainThread(msg)
-      // this.gossipMediator.sentActiveCycleStats()
       break
     case 'agr-biased':
       msg = {
@@ -340,10 +320,7 @@ Vicinity.prototype.doAgrBiasedSelection = function (msg) {
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
 Vicinity.prototype.selectItemsToKeep = function (msg) {
-  this.debug('CURRENT VIEW: ' + JSON.stringify(this.view))
-  this.debug('PAYLOAD: ' + JSON.stringify(msg.payload))
   var mergedViews = this.gossipUtil.mergeViews(this.view, msg.payload)
-  this.debug('MERGED: ' + JSON.stringify(mergedViews))
   var msg1 = {
     header: 'getDep',
     cluView: mergedViews,
@@ -376,22 +353,6 @@ Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
   var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result)
   if (Object.keys(mergedViews).indexOf(this.peerId, 0) !== -1) delete mergedViews[this.peerId]
   this.view = this.selector.getClosestNeighbours(this.viewSize, mergedViews)
-  //var viewUpdOffset = new Date() - msg.receptionTime
-  //var msgToSend = {
-  //  service: 'GOSSIP',
-  //  trace: {
-  //    algoId: this.algoId,
-  //    loop: this.loop,
-  //    view: JSON.stringify(this.view),
-  //    'viewUpdOffset': viewUpdOffset
-  //  }
-  //}
-  //if (!this.isLogActivated) {
-  //  this.gossipMediator.viewUpdsLogCounter++
-  //  msgToSend.header = 'viewUpdsLog'
-  //  msgToSend.counter = this.gossipMediator.viewUpdsLogCounter
-  //  this.gossipMediator.postInMainThread(msgToSend)
-  //}
 }
 /**
 * @memberof Vicinity
@@ -529,44 +490,17 @@ GossipMediator.prototype.listen = function () {
     var msg = e.data
     switch (msg.header) {
       case 'firstView':
-        self.debug(self.algo.algoId + ': First view size ' + msg.view.length)
         self.algo.initialize(msg.view)
         break
       case 'gossipLoop':
-        self.debug(self.algo.algoId + ': gossipLoop msg received')
         self._doActiveThread()
         break
       case 'gossipPushRec':
-        keys = Object.keys(self.algo.view)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        //self.debug(self.algo.algoId + ': CURRENT VIEW ' + arr) 
-        keys = Object.keys(msg.payload)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
-        //self.debug('PUSH REC PAYLOAD: ' + arr)
-        // SELECT
         self.algo.selectItemsToKeep(msg)
-        keys = Object.keys(self.algo.view)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        //self.debug(self.algo.algoId + ': VIEW AFTER PUSH REC ' + arr)
         self.algo.selectItemsToSend(msg.emitter, 'GOSSIP-PULL') 
         break
       case 'gossipPullRec':
-        keys = Object.keys(self.algo.view)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        //self.debug(self.algo.algoId + ': CURRENT VIEW ' + arr)
-        keys = Object.keys(msg.payload)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
-        //self.debug('PULL REC PAYLOAD: ' + arr)
         if (self.algo.propagationPolicy.pull) self.algo.selectItemsToKeep(msg)
-        keys = Object.keys(self.algo.view)
-        arr = []
-        for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        //self.debug(self.algo.algoId + ': VIEW AFTER PULL REC ' + arr)
         break
       case 'getDep':
         var obj = self.algo[msg.depAtt]
@@ -592,14 +526,15 @@ GossipMediator.prototype.listen = function () {
         break
       case 'deleteViewItems':
         var items = Object.keys(self.algo.view)
-        debug('DeleteViewItems was called, items to remove: ' + msg.items)
         for (var i = 0; i < msg.items.length; i++)
           if (items.indexOf(msg.items[i],0) !== -1 ) delete self.algo.view[msg.items[i]]
         self.algo.viewSize = msg.newSize
-        debug('Current view: ' + Object.keys(self.algo.view))
         break
       case 'updateProfile':
         self.algo.profile.setPayload(msg.profile)
+        break
+      case 'getNeighbourhood':
+        self.worker.postMessage({header: 'neigs', view: Object.keys(self.algo.view), algoId: self.algo.algoId})
         break
       default:
         self.log.warn('header: ' + msg.header + ' is unknown')
@@ -725,6 +660,7 @@ function ViewSelector (profile, debug, simFunc) {
 * initialize to zero
 * @returns Object Subset of the local peer's view with the n most similar peers*/
 ViewSelector.prototype.getClosestNeighbours = function (n, view) {
+  this.debug('SELECTOR PROFILE: ' + this.profile.getPayload())
   var keys = Object.keys(view)
   if (n <= 0 || keys.length === 0 || keys.length < n) {
     this.debug('Base case in SimFun')
@@ -746,7 +682,7 @@ ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
   for (i = 0; i < keys.length; i++) {
     values.push({
       k: keys[i],
-      v: this.simFunc(this.profile, view[ keys[i] ].data)
+      v: this.simFunc(this.profile.getPayload(), view[ keys[i] ].data)
     })
   }
   values.sort(function (a, b) { return a.v - b.v }).reverse()
@@ -839,10 +775,8 @@ GossipUtil.prototype.getOldestKey = function (dictio) {
     var sameAgeItms = {}
     var age = items[0].v
     sameAgeItms[items[0].k] = age
-    for (i = 1; i < items.length; i++) if (age === items[i].v) sameAgeItms[ items[i].k ] = items[i].v
-    this.debug('Same items: ' + JSON.stringify(sameAgeItms))
+    for (i = 1; i < items.length; i++) if (age === items[i].v) sameAgeItms[ items[i].k ] = age
     var randObj = this.getRandomSubDict(1, sameAgeItms)
-    this.debug('Random item chosen: ' + JSON.stringify(randObj))
     return Object.keys(randObj)[0]
   }
 }
@@ -2848,23 +2782,25 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
         if (worker !== 'undefined') {
           msg.header = 'applyDep'
           worker.postMessage(msg)
-        } else { debug('there is not a worker for algorithm: ' + msg.emitter) }
+        } else debug('there is not a worker for algorithm: ' + msg.emitter)
         break
       case 'drawGraph':
         if (typeof self.plotterObj !== 'undefined') {
           self.plotterObj.buildGraph(msg.algoId, msg.graph, msg.view)
-        } else { debug(msg) }
+        } else debug(msg)
         break
       case 'actCycLog':
-        if (self.actCycHistory) {
+        if (self.actCycHistory)
           self.actCycHistory[msg.algoId][msg.counter] = { algoId: msg.algoId, loop: msg.loop, offset: msg.offset }
-        }
         break
       case 'viewUpdsLog':
         if (self.statsOpts.activated) self.vieUpdHistory[msg.trace.algoId][msg.counter] = msg.trace
         break
       case 'logInConsole':
-        debug('WebGClog &&' + msg.log + '&&')
+        debug('VIEW: ' + msg.log)
+        break
+      case 'neigs':
+        debug('Neighbourhood of thread ' + msg.algoId + ': ' + msg.view)
         break
       default:
         debug('message: ' + msg.header + ' is not recoginized')
@@ -3427,12 +3363,13 @@ GossipWrapper.prototype.setNeighbourhoodSize = function (n) {
     }
   }
   debug('Next connections will be removed: ' + toRemove)
-  this._coordi.workers[algoId].postMessage({ header: 'deleteViewItems', items: toRemove, newSize: n })
+  this._coordi.workers[this._algoId].postMessage({ header: 'deleteViewItems', items: toRemove, newSize: n })
   this._coordi._connectionManager._maxNumOfCon = n
   debug('New neighbourhood size: ' + n)
 }
 GossipWrapper.prototype.getNeighbourhood = function () {
-  return this._coordi._connectionManager.getConnections()
+  this._coordi.workers[this._algoId].postMessage({header: 'getNeighbourhood'})
+  debug('Get neighbourhood request was sent to thread: ' + this._algoId)
 }
 GossipWrapper.prototype.sendTo = function (neighbour, payload) {
   if (payload === undefined || payload === '') {

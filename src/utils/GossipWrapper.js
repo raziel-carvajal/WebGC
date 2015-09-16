@@ -24,12 +24,13 @@ GossipWrapper.prototype.setNeighbourhoodSize = function (n) {
     }
   }
   debug('Next connections will be removed: ' + toRemove)
-  this._coordi.workers[algoId].postMessage({ header: 'deleteViewItems', items: toRemove, newSize: n })
+  this._coordi.workers[this._algoId].postMessage({ header: 'deleteViewItems', items: toRemove, newSize: n })
   this._coordi._connectionManager._maxNumOfCon = n
   debug('New neighbourhood size: ' + n)
 }
 GossipWrapper.prototype.getNeighbourhood = function () {
-  return this._coordi._connectionManager.getConnections()
+  this._coordi.workers[this._algoId].postMessage({header: 'getNeighbourhood'})
+  debug('Get neighbourhood request was sent to thread: ' + this._algoId)
 }
 GossipWrapper.prototype.sendTo = function (neighbour, payload) {
   if (payload === undefined || payload === '') {
