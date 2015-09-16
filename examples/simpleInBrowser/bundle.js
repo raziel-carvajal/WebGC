@@ -340,7 +340,10 @@ Vicinity.prototype.doAgrBiasedSelection = function (msg) {
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
 Vicinity.prototype.selectItemsToKeep = function (msg) {
+  this.debug('CURRENT VIEW: ' + JSON.stringify(this.view))
+  this.debug('PAYLOAD: ' + JSON.stringify(msg.payload))
   var mergedViews = this.gossipUtil.mergeViews(this.view, msg.payload)
+  this.debug('MERGED: ' + JSON.stringify(mergedViews))
   var msg1 = {
     header: 'getDep',
     cluView: mergedViews,
@@ -537,33 +540,33 @@ GossipMediator.prototype.listen = function () {
         keys = Object.keys(self.algo.view)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        self.debug(self.algo.algoId + ': CURRENT VIEW ' + arr) 
+        //self.debug(self.algo.algoId + ': CURRENT VIEW ' + arr) 
         keys = Object.keys(msg.payload)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push('  [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
-        self.debug('PUSH REC PAYLOAD: ' + arr)
+        //self.debug('PUSH REC PAYLOAD: ' + arr)
         // SELECT
         self.algo.selectItemsToKeep(msg)
         keys = Object.keys(self.algo.view)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        self.debug(self.algo.algoId + ': VIEW AFTER PUSH REC ' + arr)
+        //self.debug(self.algo.algoId + ': VIEW AFTER PUSH REC ' + arr)
         self.algo.selectItemsToSend(msg.emitter, 'GOSSIP-PULL') 
         break
       case 'gossipPullRec':
         keys = Object.keys(self.algo.view)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        self.debug(self.algo.algoId + ': CURRENT VIEW ' + arr)
+        //self.debug(self.algo.algoId + ': CURRENT VIEW ' + arr)
         keys = Object.keys(msg.payload)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + msg.payload[keys[i]].age + ']')
-        self.debug('PULL REC PAYLOAD: ' + arr)
+        //self.debug('PULL REC PAYLOAD: ' + arr)
         if (self.algo.propagationPolicy.pull) self.algo.selectItemsToKeep(msg)
         keys = Object.keys(self.algo.view)
         arr = []
         for (i = 0; i < keys.length; i++) arr.push(' [' + keys[i] + ', ' + self.algo.view[keys[i]].age + ']')
-        self.debug(self.algo.algoId + ': VIEW AFTER PULL REC ' + arr)
+        //self.debug(self.algo.algoId + ': VIEW AFTER PULL REC ' + arr)
         break
       case 'getDep':
         var obj = self.algo[msg.depAtt]
@@ -897,11 +900,9 @@ GossipUtil.prototype.mergeViews = function (v1, v2) {
     if (Object.keys(result).indexOf(keysV2[i], 0) !== -1) {
       if (v2[ keysV2[i] ].age < result[ keysV2[i] ].age) {
         props = Object.keys(v2[ keysV2[i] ])
-        for (j = 0; j < props.length; j++) v2[ keysV2[i] ][ props[j] ] = result[ keysV2[i] ][ props[j] ]
+        for (j = 0; j < props.length; j++) result[ keysV2[i] ][ props[j] ] = v2[ keysV2[i] ][ props[j] ]
       }
-    } else {
-      result[ keysV2[i] ] = v2[ keysV2[i] ]
-    }
+    } else result[ keysV2[i] ] = v2[ keysV2[i] ]
   }
   return result
 }
@@ -932,7 +933,7 @@ function Profile (payload) {
 Profile.prototype.getPayload = function () { return this._payload }
 
 Profile.prototype.setPayload = function (newPayload) {
-  debug('Setting payload from: ' + JSON.stringify(this._payload) + ' to: ' + JSON.stringify(newPayload))
+  debug('SETTING PAYLOAD PROFILE FROM: ' + JSON.stringify(this._payload) + ' TO: ' + JSON.stringify(newPayload))
   this._payload = newPayload
 }
 

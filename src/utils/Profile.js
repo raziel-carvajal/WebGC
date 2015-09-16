@@ -9,6 +9,6 @@ function Profile (payload) {
 Profile.prototype.getPayload = function () { return this._payload }
 
 Profile.prototype.setPayload = function (newPayload) {
-  debug('Setting payload from: ' + JSON.stringify(this._payload) + ' to: ' + JSON.stringify(newPayload))
+  debug('SETTING PAYLOAD PROFILE FROM: ' + JSON.stringify(this._payload) + ' TO: ' + JSON.stringify(newPayload))
   this._payload = newPayload
 }

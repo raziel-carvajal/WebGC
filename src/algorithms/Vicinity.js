@@ -176,7 +176,10 @@ Vicinity.prototype.doAgrBiasedSelection = function (msg) {
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details.*/
 Vicinity.prototype.selectItemsToKeep = function (msg) {
+  this.debug('CURRENT VIEW: ' + JSON.stringify(this.view))
+  this.debug('PAYLOAD: ' + JSON.stringify(msg.payload))
   var mergedViews = this.gossipUtil.mergeViews(this.view, msg.payload)
+  this.debug('MERGED: ' + JSON.stringify(mergedViews))
   var msg1 = {
     header: 'getDep',
     cluView: mergedViews,

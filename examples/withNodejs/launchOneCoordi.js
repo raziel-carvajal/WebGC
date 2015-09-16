@@ -1,8 +1,9 @@
 var Coordinator = require('../../src/controllers/Coordinator')
 var confObj = require('./confObj')
-var coordi = new Coordinator(confObj, process.argv[2], process.argv[3])
-// var profile = process.argv[2]
+var peerId = process.argv[2]
+var peerNum = peerId.split('_')[1]
+var coordi = new Coordinator(confObj, peerId, ['undefined'])
 coordi.bootstrap()
-// setTimeout(function () {
-//   coordi.updateProfile(profile)
-// }, 7000)
+setTimeout(function () {
+  if (peerNum < 6) coordi.updateProfile(['uno','dos'])
+}, 30000)

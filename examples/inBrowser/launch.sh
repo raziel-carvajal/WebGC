@@ -90,8 +90,8 @@ chromeStr="--no-default-browser-check --no-first-run --disable-default-apps --di
 peers=$1
 exeTime=$2
 serverDir=$3
-profilesNum=$4
-browser=$5
+browser=$4
+#profilesNum=$5
 testDir="output"
 origin=`pwd`
 simLim=4
@@ -120,9 +120,9 @@ echo "Opening browser windows (one of them represents one peer)..."
 declare -a chromePids
 cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
-  generateProfile
+  #generateProfile
   htmlFile=peer$COUNTER".html"
-  cat "index.html" | sed "s/#userProfile/\['undefined'\]/;s/#userId/peer$COUNTER/;" >$htmlFile
+  cat "index.html" | sed "s/#userProfile/\['uno','dos'\]/;s/#userId/peer$COUNTER/;" >$htmlFile
   "$chromeCommand" $chromeStr $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
   sleep 1
