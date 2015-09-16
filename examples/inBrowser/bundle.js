@@ -739,7 +739,7 @@ ViewSelector.prototype.getClosestNeighbours = function (n, view) {
 * @returns Object Subset of the local peer's view with the n most similar peers*/
 ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
   var values = []
-  var i
+  var i, itm
   for (i = 0; i < keys.length; i++) {
     values.push({
       k: keys[i],
@@ -748,12 +748,10 @@ ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
   }
   values.sort(function (a, b) { return a.v - b.v }).reverse()
   var result = {}
-  var itm
   i = 0
   while (i < n && i < values.length) {
     itm = view[ values[i].k ]
-    itm.ev = values[i].v
-    itm.ev = itm.ev.toFixed(3)
+    itm.ev = values[i].v.toFixed(3)
     result[ values[i].k ] = itm
     i++
   }
@@ -830,9 +828,20 @@ GossipUtil.prototype.getOldestKey = function (dictio) {
   var keys = Object.keys(dictio)
   if (keys.length === 0) return null
   var items = []
-  for (var i = 0; i < keys.length; i++) items.push({ k: keys[i], v: dictio[ keys[i] ].age })
+  var i
+  for (i = 0; i < keys.length; i++) items.push({ k: keys[i], v: dictio[ keys[i] ].age })
   items.sort(function(a, b) { return (a.v - b.v) }).reverse()
-  return items[0].k
+  if (items.length === 1 || items[0].v !== items[1].v) return items[0].k
+  else {
+    var sameAgeItms = {}
+    var age = items[0].v
+    sameAgeItms[items[0].k] = age
+    for (i = 1; i < items.length; i++) if (age === items[i].v) sameAgeItms[ items[i].k ] = items[i].v
+    this.debug('Same items: ' + JSON.stringify(sameAgeItms))
+    var randObj = this.getRandomSubDict(1, sameAgeItms)
+    this.debug('Random item chosen: ' + JSON.stringify(randObj))
+    return Object.keys(randObj)[0]
+  }
 }
 /**
 * @memberof GossipUtil
