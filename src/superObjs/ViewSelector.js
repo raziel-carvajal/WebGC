@@ -42,7 +42,7 @@ ViewSelector.prototype.getClosestNeighbours = function (n, view) {
 * @returns Object Subset of the local peer's view with the n most similar peers*/
 ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
   var values = []
-  var i
+  var i, itm
   for (i = 0; i < keys.length; i++) {
     values.push({
       k: keys[i],
@@ -51,12 +51,10 @@ ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
   }
   values.sort(function (a, b) { return a.v - b.v }).reverse()
   var result = {}
-  var itm
   i = 0
   while (i < n && i < values.length) {
     itm = view[ values[i].k ]
-    itm.ev = values[i].v
-    itm.ev = itm.ev.toFixed(3)
+    itm.ev = values[i].v.toFixed(3)
     result[ values[i].k ] = itm
     i++
   }

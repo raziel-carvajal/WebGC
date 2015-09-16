@@ -930,10 +930,7 @@ Profile.prototype.setPayload = function (newPayload) {
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/utils/Profile.js","/../../src/utils")
 },{"_process":36,"buffer":29,"debug":2}],1:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// var confObj = require('./confObj.js')
 var Coordinator = require('../../src/controllers/Coordinator.js')
-//var coordi = new Coordinator(confObj, {profile: 'NoProfile'}, undefined)
-//coordi.bootstrap()
 window['Coordinator'] = Coordinator
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/main.js","/")
