@@ -15,6 +15,20 @@
           fanout: 3,
           gossipPeriod: 8000,
           propagationPolicy: { push: true, pull: true }
+        },
+        vicinity1: {
+          class: 'Vicinity',
+          viewSize: 5,
+          fanout: 3,
+          gossipPeriod: 8000,
+          propagationPolicy: { push: true, pull: true },
+          selectionPolicy: 'biased', // random OR biased OR agr-biased
+          similarityFunction: function (profil1, profil2) {
+            return Math.abs(profil1.x - profil2.x) + Math.abs(profil1.y - profil2.y)
+          },
+          dependencies: [
+            { algoId: 'cyclon1', algoAttribute: 'view' }
+          ]
         }
       },
       userImplementations: [],
@@ -24,7 +38,7 @@
       },
       usingSs: true
     }
-    var coordinator = new Coordinator(configurationObj, undefined, 'EMPTY')
+    var coordinator = new Coordinator(configurationObj, undefined, {x:0, y:0})
     coordinator.on('msgReception', function (emitter, data) {
       console.log('Message ' + data + ' received from peer: ' + emitter)
     })

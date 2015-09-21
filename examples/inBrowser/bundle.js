@@ -2542,12 +2542,15 @@ module.exports = Coordinator
 var debug = typeof window === 'undefined' ? require('debug')('coordinator') : require('debug').log
 var its = require('its')
 var hat = require('hat')
+var inherits = require('inherits')
+var EventEmitter = require('events').EventEmitter
 var GossipUtil = require('../utils/GossipUtil')
 var PeerJSProtocol = require('../utils/PeerjsProtocol')
 var GossipWrapper = require('../utils/GossipWrapper')
 var GossipFactory = require('../services/GossipFactory')
 var Bootstrap = require('../services/Bootstrap')
 var ConnectionManager = require('../controllers/ConnectionManager')
+inherits(Coordinator, EventEmitter)
 /**
 * @class Coordinator
 * @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
@@ -2577,6 +2580,7 @@ var ConnectionManager = require('../controllers/ConnectionManager')
 * @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
 function Coordinator (gossConfObj, id, profile) {
   if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, id, profile)
+  EventEmitter.call(this)
   if (!this._checkConfFile(gossConfObj)) return
   its.defined(gossConfObj.signalingService)
   its.defined(gossConfObj.gossipAlgos)
@@ -2923,7 +2927,7 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
       }
       break
     case 'APPLICATION':
-      debug('Message: ' + data.payload + ' received from: ' + data.emitter)
+      this.emit('msgReception', data.emitter, data.payload)
       break
     default:
       debug(data + ' is not recognized')
@@ -2949,7 +2953,7 @@ Coordinator.prototype.updateProfile = function (newProfile) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/controllers/Coordinator.js","/../../src/controllers")
-},{"../controllers/ConnectionManager":19,"../services/Bootstrap":21,"../services/GossipFactory":23,"../utils/GossipUtil":"/../../src/utils/GossipUtil.js","../utils/GossipWrapper":24,"../utils/PeerjsProtocol":25,"_process":36,"buffer":29,"debug":2,"hat":5,"its":7}],21:[function(require,module,exports){
+},{"../controllers/ConnectionManager":19,"../services/Bootstrap":21,"../services/GossipFactory":23,"../utils/GossipUtil":"/../../src/utils/GossipUtil.js","../utils/GossipWrapper":24,"../utils/PeerjsProtocol":25,"_process":36,"buffer":29,"debug":2,"events":33,"hat":5,"inherits":6,"its":7}],21:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
 * @module src/services*/
@@ -3352,10 +3356,9 @@ GossipWrapper.prototype.setNeighbourhoodSize = function (n) {
   its.range(n >= 1, 'Neighbourhood new size must be at least bigger then one')
   var fanout = this._coordi.gossipAlgos[this._algoId].fanout
   its.range(n > fanout, 'Neighbourhood new size must be bigger than ' + fanout +
-    ', which it is the fanout value of the algorithm ' + algoId)
+    ', which it is the fanout value of the algorithm ' + this._algoId)
   var connections = this._coordi._connectionManager.getConnections()
   var toRemove = []
-  debug('cons ' + connections)
   if (connections.length > n) {
     for (var i = 0; i < connections.length - n; i++) {
       toRemove.push(connections[i])

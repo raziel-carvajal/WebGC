@@ -13,10 +13,9 @@ GossipWrapper.prototype.setNeighbourhoodSize = function (n) {
   its.range(n >= 1, 'Neighbourhood new size must be at least bigger then one')
   var fanout = this._coordi.gossipAlgos[this._algoId].fanout
   its.range(n > fanout, 'Neighbourhood new size must be bigger than ' + fanout +
-    ', which it is the fanout value of the algorithm ' + algoId)
+    ', which it is the fanout value of the algorithm ' + this._algoId)
   var connections = this._coordi._connectionManager.getConnections()
   var toRemove = []
-  debug('cons ' + connections)
   if (connections.length > n) {
     for (var i = 0; i < connections.length - n; i++) {
       toRemove.push(connections[i])
