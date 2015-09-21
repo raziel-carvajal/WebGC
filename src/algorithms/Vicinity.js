@@ -1,5 +1,6 @@
 /**
-* @module src/algorithms */
+* @module src/algorithms 
+* @author Raziel Carvajal-Gomez raziel.carvajal@gmail.com */
 module.exports = Vicinity
 var inherits = require('inherits')
 var GossipProtocol = require('../superObjs/GossipProtocol')
@@ -9,16 +10,18 @@ inherits(Vicinity, GossipProtocol)
 * @class Vicinity
 * @extends GossipProtocol See [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * @description Implementation of the gossip-based protocol
-* [Vicinity]{@link http://www.few.vu.nl/~spyros/papers/Thesis-Voulgaris.pdf}. The local view is an
-* object where each of its keys identify a remote peer (peer ID); the value of each key points
-* to a vector with two entries, the first one is an integer (age of the vector) and the
-* second one is the data owned by the remote peer.
-* @param algOpts Object with the settings of the protocol (fanout, view size, etc.)
-* @param log Object to log the protocol's behavior
-* @param gossipUtil Gossip utilites, see [gossip utilities]{@link module:src/utils#GossipUtil}
-* @param isLogActivated Boolean to send or not statstics abot the protocol
-* @param profile local's peer profile
-* @author Raziel Carvajal-Gomez raziel.carvajal@gmail.com */
+* [Vicinity]{@link http://www.few.vu.nl/~spyros/papers/Thesis-Voulgaris.pdf} to form clusters
+* of peers with similar profiles. The similarity of peers is obtained through one function
+* that computes to which extent two peers' profiles are similar form each other. This similarity
+* function is set by the user in the configuration object, see 
+* [configurationObject]{@link module:../utils/ConfigurationObject.js}.
+* @param algOpts Settings of the protocol
+* @param debug Log the behavior of the protocol
+* @param gossipUtil Common functions used by the protocols, see
+* [GossilUtil]{@link module:src/utils#GossipUtil}
+* @param isLogActivated Boolean to decide weather to send or not statistics about the protocol to
+* the main thread
+* @param profile Local peer's profile*/
 function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
   if (!(this instanceof Vicinity)) return Vicinity(algOpts, debug, gossipUtil, isLogActivated, profile)
   this.isLogActivated = isLogActivated
@@ -31,7 +34,7 @@ function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
 /**
 * @memberof Vicinity
 * @const defaultOpts
-* @description Default values of the gossip attributes. During its instantiation (through the 
+* @description Default values for the gossip attributes. During its instantiation (through the 
 * [GossipFactory]{@link module:src/services/GossipFactory} object) if the user doesn't specify
 * any attribute, the algorithm will be initialized with the values in this object.
 * @default*/
@@ -46,14 +49,14 @@ Vicinity.defaultOpts = {
 /**
 * @memberof Vicinity
 * @method selectPeer
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description Select one peer ID from the view with the oldest age. For more details, look for
+* this method at the [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.*/
 Vicinity.prototype.selectPeer = function () { return this.gossipUtil.getOldestKey(this.view) }
 /**
 * @memberof Vicinity
 * @method setMediator
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description Sets an instance of the [GossipMediator]{@link module:src/controllers/GossipMediator} class
+* to comunicate the main thread with the gossip protocol.*/
 Vicinity.prototype.setMediator = function (mediator) {
   mediator.setDependencies(this.dependencies)
   this.gossipMediator = mediator
@@ -61,8 +64,8 @@ Vicinity.prototype.setMediator = function (mediator) {
 /**
 * @memberof Vicinity
 * @method initialize
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description For more details, look for this method at the 
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.*/
 Vicinity.prototype.initialize = function (keys) {
   if (keys.length > 0) {
     var i = 0
@@ -75,8 +78,8 @@ Vicinity.prototype.initialize = function (keys) {
 /**
 * @memberof Vicinity
 * @method selectItemsToSend
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details. Particularly, the selection of items is performed following one of the next
+* @description Look for this method at the [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
+* class for more details. Particularly, the selection of items is performed following one of the next
 * cases: i) if selection = random items from the peer's view are chosen in a randomly way,
 * ii) if selection = biased the most similar fanout items are chosen from the view and iii)
 * if selection = agr-biased the most similar fanout items are chosen from the views rpsView

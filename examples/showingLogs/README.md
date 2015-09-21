@@ -1,0 +1,1 @@
+#WebWorkers statistics

@@ -11,7 +11,7 @@ inherits(Cyclon, GossipProtocol)
 * @description Implementation of the gossip-based protocol
 * [Cyclon]{@link http://gossple2.irisa.fr/~akermarr/cyclon.jnsm.pdf}. The protocol feeds
 * the local peer with a random sample of the P2P overlay.
-* @param algOpts Object with the attrivutes of the protocol
+* @param algOpts Object with the settings of the protocol
 * @param debug [Logger]{@link module:src/utils#Logger} object register any error, warning or info
 * message
 * @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
