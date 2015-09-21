@@ -9,12 +9,10 @@ inherits(Cyclon, GossipProtocol)
 * @class Cyclon
 * @extends GossipProtocol See [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * @description Implementation of the gossip-based protocol
-* [Cyclon]{@link http://gossple2.irisa.fr/~akermarr/cyclon.jnsm.pdf}. The local view is an
-* object where each of its keys identify a remote peer (peer ID); the value of each key points
-* to a vector with two entries, the first one is an integer (age of the vector) and the
-* second one is the data owned by the remote peer.
-* @param algOpts Object with the settings of the protocol (fanout, view size, etc.)
-* @param log [Logger]{@link module:src/utils#Logger} object register any error, warning or info
+* [Cyclon]{@link http://gossple2.irisa.fr/~akermarr/cyclon.jnsm.pdf}. The protocol feeds
+* the local peer with a random sample of the P2P overlay.
+* @param algOpts Object with the attrivutes of the protocol
+* @param debug [Logger]{@link module:src/utils#Logger} object register any error, warning or info
 * message
 * @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
 * functions used by gossip protocols

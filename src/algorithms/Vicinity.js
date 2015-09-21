@@ -14,10 +14,10 @@ inherits(Vicinity, GossipProtocol)
 * to a vector with two entries, the first one is an integer (age of the vector) and the
 * second one is the data owned by the remote peer.
 * @param algOpts Object with the settings of the protocol (fanout, view size, etc.)
-* @param log [Logger]{@link module:src/utils#Logger} object register any error, warning or info
-* message
-* @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
-* functions used by gossip protocols
+* @param log Object to log the protocol's behavior
+* @param gossipUtil Gossip utilites, see [gossip utilities]{@link module:src/utils#GossipUtil}
+* @param isLogActivated Boolean to send or not statstics abot the protocol
+* @param profile local's peer profile
 * @author Raziel Carvajal-Gomez raziel.carvajal@gmail.com */
 function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
   if (!(this instanceof Vicinity)) return Vicinity(algOpts, debug, gossipUtil, isLogActivated, profile)
@@ -31,9 +31,10 @@ function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
 /**
 * @memberof Vicinity
 * @const defaultOpts
-* @description Default configuration of this protocol. During the instantiation of a Cyclon object
-* (via the Factory object) if the user doesn't specify any option this object is taken into account.
-* @default */
+* @description Default values of the gossip attributes. During its instantiation (through the 
+* [GossipFactory]{@link module:src/services/GossipFactory} object) if the user doesn't specify
+* any attribute, the algorithm will be initialized with the values in this object.
+* @default*/
 Vicinity.defaultOpts = {
   class: 'Vicinity',
   viewSize: 10,
@@ -76,11 +77,10 @@ Vicinity.prototype.initialize = function (keys) {
 * @method selectItemsToSend
 * @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * for more details. Particularly, the selection of items is performed following one of the next
-* cases: i) if selection='random' items from GossipProtocol.view are chosen in a randomly way,
-* ii) if selection='biased' the most similar GossipProtocol.fanout items are chosen from
-* GossipProtocol.view and iii) if selection='agr-biased' the most similar GossipProtocol.fanout
-* items are chosen from the views Vicinity.rpsView and GossipProtocol.view ;see method
-* GossipProtocol.selectItemsToSend() for more information.*/
+* cases: i) if selection = random items from the peer's view are chosen in a randomly way,
+* ii) if selection = biased the most similar fanout items are chosen from the view and iii)
+* if selection = agr-biased the most similar fanout items are chosen from the views rpsView
+* and peer's view.*/
 Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
   var dstPeer = receiver || this.selectPeer()
   if (!dstPeer) return
@@ -142,7 +142,7 @@ Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
 * @memberof Vicinity
 * @method doAgrBiasedSelection
 * @description When this selection is performed, items from the RPS layer are mixed with the
-* most similar ones (this items are obtained via the similarity function) in order to get
+* most similar ones (similar items are obtained via the similarity function) in order to get
 * the new view of Vicinity. Once the merged is finished, the result view is sent to the main
 * thread (javascript main tread) for being send to another peer.
 * @param msg This object contains a list of items from the RPS layer and the receiver of the
