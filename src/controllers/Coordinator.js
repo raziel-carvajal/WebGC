@@ -4,12 +4,15 @@ module.exports = Coordinator
 var debug = typeof window === 'undefined' ? require('debug')('coordinator') : require('debug').log
 var its = require('its')
 var hat = require('hat')
+var inherits = require('inherits')
+var EventEmitter = require('events').EventEmitter
 var GossipUtil = require('../utils/GossipUtil')
 var PeerJSProtocol = require('../utils/PeerjsProtocol')
 var GossipWrapper = require('../utils/GossipWrapper')
 var GossipFactory = require('../services/GossipFactory')
 var Bootstrap = require('../services/Bootstrap')
 var ConnectionManager = require('../controllers/ConnectionManager')
+inherits(Coordinator, EventEmitter)
 /**
 * @class Coordinator
 * @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
@@ -39,6 +42,7 @@ var ConnectionManager = require('../controllers/ConnectionManager')
 * @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
 function Coordinator (gossConfObj, id, profile) {
   if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, id, profile)
+  EventEmitter.call(this)
   if (!this._checkConfFile(gossConfObj)) return
   its.defined(gossConfObj.signalingService)
   its.defined(gossConfObj.gossipAlgos)
@@ -385,7 +389,7 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
       }
       break
     case 'APPLICATION':
-      debug('Message: ' + data.payload + ' received from: ' + data.emitter)
+      this.emit('msgReception', data.emitter, data.payload)
       break
     default:
       debug(data + ' is not recognized')
