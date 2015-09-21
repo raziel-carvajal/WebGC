@@ -55,7 +55,7 @@ Vicinity.prototype.selectPeer = function () { return this.gossipUtil.getOldestKe
 /**
 * @memberof Vicinity
 * @method setMediator
-* @description Sets an instance of the [GossipMediator]{@link module:src/controllers/GossipMediator} class
+* @description Sets an instance of the [GossipMediator]{@link module:src/controllers/GossipMediator} object
 * to comunicate the main thread with the gossip protocol.*/
 Vicinity.prototype.setMediator = function (mediator) {
   mediator.setDependencies(this.dependencies)
@@ -78,12 +78,11 @@ Vicinity.prototype.initialize = function (keys) {
 /**
 * @memberof Vicinity
 * @method selectItemsToSend
-* @description Look for this method at the [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* class for more details. Particularly, the selection of items is performed following one of the next
-* cases: i) if selection = random items from the peer's view are chosen in a randomly way,
-* ii) if selection = biased the most similar fanout items are chosen from the view and iii)
-* if selection = agr-biased the most similar fanout items are chosen from the views rpsView
-* and peer's view.*/
+* @description The selection of "this.viewSize" items is performed following one of the next
+* cases: i) if selection = random, items from the local peer's view are chosen in a randomly way,
+* ii) if selection = biased, the most similar items are chosen from the local peer's view and iii)
+* if selection = agr-biased, the most similar fanout items are chosen from the peer sampling view
+* merged with the most fanout items in the peer's view .*/
 Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
   var dstPeer = receiver || this.selectPeer()
   if (!dstPeer) return
