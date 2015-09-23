@@ -37,7 +37,7 @@ function Bootstrap (peerId, host, port) {
   this._serverOpts = {'host': host, 'port': port}
   this._reconnectionTime = 3000
   this._tries = 0
-  this._url = 'http://' + host + ':' + port + '/peerjs'
+  this._url = 'http://' + host + ':' + port + '/webgc'
 }
 /**
 * @memberof Bootstrap

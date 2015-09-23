@@ -1,0 +1,12 @@
+{
+  "name": "ChatApp",
+  "version": "0.0.0",
+  "authors": [
+    "raziel <raziel.carvajal-gomez@inria.fr>"
+  ],
+  "description": "Chat application with WebGC running two gossip algorithms",
+  "dependencies": {
+    "cytoscape": "2.2.9",
+    "jquery": "~2.1.4"
+  }
+}

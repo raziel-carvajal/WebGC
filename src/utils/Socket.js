@@ -8,7 +8,7 @@ else debug = require('debug').log
 var OPTS = {
   urlPrefix: 'ws://',
   randomToken: function () { return Math.random().toString(36).substr(2) },
-  key: 'peerjs'
+  key: 'webgc'
 }
 inherits(Socket, EventEmitter)
 

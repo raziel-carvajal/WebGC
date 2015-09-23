@@ -34,8 +34,8 @@ cd examples
 rm -f signlaing.log
 echo "Launching signaling service"
 DEBUG=* node launch.js 9990 &>signlaing.log &
-sleep 5
 sigServPid=$!
+sleep 5
 echo -e "\tDONE. Signaling service at process: "$sigServPid
 cd $origin
 declare -a peerPids

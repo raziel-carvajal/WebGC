@@ -64,4 +64,3 @@ var configurationObj = {
   },
   usingSs: true
 }
-module.exports = configurationObj
