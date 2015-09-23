@@ -4,9 +4,7 @@ body,html {
   font-family: Arial;
   background-color: #eee;
   color: #444;
-  font-size: 15px;
-  line-height: 18px;
-  text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+  line-height: 15px;
 }
 .connection {
   float: left;
@@ -25,10 +23,15 @@ body,html {
   border-color: #FF7500;
 }
 h1 {
-  font-size: 15px;
-  padding: 5px 10px;
-  margin: 0 -10px 0 -10px;
-  border-bottom: 1px solid #ccc;
+  font-size: 25px;
+  padding: 20px 10px;
+  margin: 0 10px 0 10px;
+  font-weight: 300;
+}
+h2 {
+  font-size: 20px;
+  padding: 10px 30px;
+  margin: 0 10px 0 10px;
   font-weight: 300;
 }
 .active h1 strong {
@@ -86,7 +89,6 @@ a {
 #actions {
   padding: 10px;
 }
-
 button, input {
   font-size: 15px;
   font-family: Arial;
@@ -104,8 +106,6 @@ input:focus {
   cursor: pointer;
   background-color: #ddd;
   border: 1px solid #ccc;
-
-
 }
 form {
   display: inline-block;
@@ -114,7 +114,6 @@ form {
   background-color: #FF7500;
   border-color: #c15c06;
 }
-
 .important {
   font-size: 15px;
   color: #F2C777;

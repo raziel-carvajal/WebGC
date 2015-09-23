@@ -1,2 +1,1 @@
-var Coordinator = require('../../src/controllers/Coordinator.js')
-window['Coordinator'] = Coordinator
+window.Coordinator = require('../../src/controllers/Coordinator.js')

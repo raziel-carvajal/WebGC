@@ -1,9 +1,6 @@
-/**
-* @module src/services*/
-module.exports = Plotter
+(function (exports){
 var cytoscape = exports.cytoscape
 var $ = exports.$
-
 /**
 * @class Plotter
 * @description Plots an overlay representation of gossip algorithms, this class uses the
@@ -20,7 +17,6 @@ function Plotter (plotterId, extraCons, appDepFn) {
   this.extraCons = extraCons
   this.appDepFn = appDepFn
 }
-
 /**
 * @memberof Plotter
 * @method getShape
@@ -38,7 +34,6 @@ Plotter.prototype.getShape = function (i) {
     return 'rectangle'
   }
 }
-
 /**
 * @memberof Plotter
 * @method getColor
@@ -56,7 +51,6 @@ Plotter.prototype.getColor = function (i) {
     return '#F5A45D'
   }
 }
-
 /**
 * @memberof Plotter
 * @method getGraphFormat
@@ -96,7 +90,6 @@ Plotter.prototype.getGraphFormat = function (emitter, peers, view) {
   }
   return {'nodes': nodes, 'edges': edges}
 }
-
 /**
 * @memberof Plotter
 * @method buildGraph
@@ -154,7 +147,6 @@ Plotter.prototype.buildGraph = function (algoId, nodes, view) {
     this.appDepFn(view)
   }
 }
-
 /**
 * @memberof Plotter
 * @method resetGraph
@@ -205,3 +197,5 @@ Plotter.prototype.resetGraph = function (algoId) {
     $('#' + algoId).append('<h1><strong>' + overlayName + '</strong></h1>')
   }
 }
+exports.Plotter = Plotter
+})(this)

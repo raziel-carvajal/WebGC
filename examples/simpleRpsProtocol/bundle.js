@@ -1,7 +1,8 @@
 require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"/../../src/algorithms/Cyclon.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
-* @module src/algorithms*/
+* @module src/algorithms
+* @author Raziel Carvajal [raziel.carvajal-gomez@inria.fr] */
 module.exports = Cyclon
 var inherits = require('inherits')
 var GossipProtocol = require('../superObjs/GossipProtocol')
@@ -11,16 +12,15 @@ inherits(Cyclon, GossipProtocol)
 * @class Cyclon
 * @extends GossipProtocol See [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * @description Implementation of the gossip-based protocol
-* [Cyclon]{@link http://gossple2.irisa.fr/~akermarr/cyclon.jnsm.pdf}. The local view is an
-* object where each of its keys identify a remote peer (peer ID); the value of each key points
-* to a vector with two entries, the first one is an integer (age of the vector) and the
-* second one is the data owned by the remote peer.
-* @param algOpts Object with the settings of the protocol (fanout, view size, etc.)
-* @param log [Logger]{@link module:src/utils#Logger} object register any error, warning or info
-* message
-* @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
-* functions used by gossip protocols
-* @author Raziel Carvajal [raziel.carvajal-gomez@inria.fr] */
+* [Cyclon]{@link http://gossple2.irisa.fr/~akermarr/cyclon.jnsm.pdf}. The protocol feeds
+* the local peer with a random sample of peers from the P2P overlay.
+* @param algOpts Settings of the protocol
+* @param debug Log the behavior of the protocol
+* @param gossipUtil Common functions used by the protocols, see
+* [GossilUtil]{@link module:src/utils#GossipUtil}
+* @param isLogActivated Boolean to decide weather to send or not statistics about the protocol to
+* the main thread
+* @param profile Local peer's profile*/
 function Cyclon (algOpts, debug, gossipUtil, isLogActivated, profile) {
   if (!(this instanceof Cyclon)) return Cyclon(algOpts, debug, gossipUtil, isLogActivated, profile)
   this.isLogActivated = isLogActivated
@@ -30,8 +30,9 @@ function Cyclon (algOpts, debug, gossipUtil, isLogActivated, profile) {
 /**
 * @memberof Cyclon
 * @const defaultOpts
-* @description Default configuration of this protocol. During the instantiation of a Cyclon object
-* (via the Factory object) if the user doesn't specify any option this object is taken into account.
+* @description Default values for the gossip attributes. During its instantiation, via the 
+* [GossipFactory]{@link module:src/services/GossipFactory} object, if the user doesn't specify
+* any attribute the algorithm will be initialized with the values in this object.
 * @default */
 Cyclon.defaultOpts = {
   class: 'Cyclon',
@@ -43,20 +44,20 @@ Cyclon.defaultOpts = {
 /**
 * @memberof Cyclon
 * @method selectPeer
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description For more details, look for this method at the 
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.*/
 Cyclon.prototype.selectPeer = function () { return this.gossipUtil.getOldestKey(this.view) }
 /**
 * @memberof Cyclon
 * @method setMediator
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description Sets an instance of the [GossipMediator]{@link module:src/controllers/GossipMediator}
+* object to comunicate the main thread with the gossip protocol.*/
 Cyclon.prototype.setMediator = function (mediator) { this.gossipMediator = mediator }
 /**
 * @memberof Cyclon
 * @method initialize
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description For more details, look for this method at the
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.*/
 Cyclon.prototype.initialize = function (keys) {
   if (keys.length > 0) {
     var i = 0
@@ -69,8 +70,13 @@ Cyclon.prototype.initialize = function (keys) {
 /**
 * @memberof Cyclon
 * @method selectItemsToSend
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description "This.fanout" items are chosen in a randomly way from the local peer's view.
+* For more details, look for this method at the
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.
+* @param receiver The selection of items will be sent to this peer
+* @param gossMsgType Strting to define the type of gossip exchange, there are two possible values:
+* i) GOSSIP-PUSH means to send items to an external peer or ii) GOSSIP-PULL to keep items from an
+* external peer.*/
 Cyclon.prototype.selectItemsToSend = function (receiver, gossMsgType) {
   var dstPeer = receiver || this.selectPeer()
   if (!dstPeer) return
@@ -93,8 +99,9 @@ Cyclon.prototype.selectItemsToSend = function (receiver, gossMsgType) {
 /**
 * @memberof Cyclon
 * @method selectItemsToKeep
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description For more details, look for this method at the
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.
+* @param msg Items from an external peer.*/
 Cyclon.prototype.selectItemsToKeep = function (msg) {
   var rcvKeys = Object.keys(msg.payload)
   if (rcvKeys.length === 0) return
@@ -134,8 +141,8 @@ Cyclon.prototype.selectItemsToKeep = function (msg) {
 /**
 * @memberof Cyclon
 * @method increaseAge
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description For more details, look for this method at the
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.*/
 Cyclon.prototype.increaseAge = function () {
   var keys = Object.keys(this.view)
   for (var i = 0; i < keys.length; i++) this.view[keys[i]].age++
@@ -145,7 +152,8 @@ Cyclon.prototype.increaseAge = function () {
 },{"../superObjs/GossipProtocol":"/../../src/superObjs/GossipProtocol.js","../superObjs/ViewSelector":"/../../src/superObjs/ViewSelector.js","_process":36,"buffer":29,"inherits":6}],"/../../src/algorithms/Vicinity.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
-* @module src/algorithms */
+* @module src/algorithms 
+* @author Raziel Carvajal-Gomez raziel.carvajal@gmail.com */
 module.exports = Vicinity
 var inherits = require('inherits')
 var GossipProtocol = require('../superObjs/GossipProtocol')
@@ -155,16 +163,18 @@ inherits(Vicinity, GossipProtocol)
 * @class Vicinity
 * @extends GossipProtocol See [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
 * @description Implementation of the gossip-based protocol
-* [Vicinity]{@link http://www.few.vu.nl/~spyros/papers/Thesis-Voulgaris.pdf}. The local view is an
-* object where each of its keys identify a remote peer (peer ID); the value of each key points
-* to a vector with two entries, the first one is an integer (age of the vector) and the
-* second one is the data owned by the remote peer.
-* @param algOpts Object with the settings of the protocol (fanout, view size, etc.)
-* @param log [Logger]{@link module:src/utils#Logger} object register any error, warning or info
-* message
-* @param gossipUtil [GossipUtil]{@link module:src/utils#GossipUtil} object that contains common
-* functions used by gossip protocols
-* @author Raziel Carvajal-Gomez raziel.carvajal@gmail.com */
+* [Vicinity]{@link http://www.few.vu.nl/~spyros/papers/Thesis-Voulgaris.pdf} to form clusters
+* of peers with similar profiles. The similarity of peers is obtained through one function
+* that computes to which extent two peers' profiles are similar form each other. This similarity
+* function is set by the user in the configuration object, see 
+* [configurationObject]{@link module:../utils/ConfigurationObject.js}.
+* @param algOpts Settings of the protocol
+* @param debug Log the behavior of the protocol
+* @param gossipUtil Common functions used by the protocols, see
+* [GossilUtil]{@link module:src/utils#GossipUtil}
+* @param isLogActivated Boolean to decide weather to send or not statistics about the protocol to
+* the main thread
+* @param profile Local peer's profile*/
 function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
   if (!(this instanceof Vicinity)) return Vicinity(algOpts, debug, gossipUtil, isLogActivated, profile)
   this.isLogActivated = isLogActivated
@@ -177,9 +187,10 @@ function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
 /**
 * @memberof Vicinity
 * @const defaultOpts
-* @description Default configuration of this protocol. During the instantiation of a Cyclon object
-* (via the Factory object) if the user doesn't specify any option this object is taken into account.
-* @default */
+* @description Default values for the gossip attributes. During its instantiation, via the 
+* [GossipFactory]{@link module:src/services/GossipFactory} object, if the user doesn't specify
+* any attribute the algorithm will be initialized with the values in this object.
+* @default*/
 Vicinity.defaultOpts = {
   class: 'Vicinity',
   viewSize: 10,
@@ -191,14 +202,14 @@ Vicinity.defaultOpts = {
 /**
 * @memberof Vicinity
 * @method selectPeer
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description Select one peer ID from the view with the oldest age. For more details, look for
+* this method at the [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.*/
 Vicinity.prototype.selectPeer = function () { return this.gossipUtil.getOldestKey(this.view) }
 /**
 * @memberof Vicinity
 * @method setMediator
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description Sets an instance of the [GossipMediator]{@link module:src/controllers/GossipMediator} object
+* to comunicate the main thread with the gossip protocol.*/
 Vicinity.prototype.setMediator = function (mediator) {
   mediator.setDependencies(this.dependencies)
   this.gossipMediator = mediator
@@ -206,8 +217,8 @@ Vicinity.prototype.setMediator = function (mediator) {
 /**
 * @memberof Vicinity
 * @method initialize
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description For more details, look for this method at the 
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.*/
 Vicinity.prototype.initialize = function (keys) {
   if (keys.length > 0) {
     var i = 0
@@ -220,13 +231,16 @@ Vicinity.prototype.initialize = function (keys) {
 /**
 * @memberof Vicinity
 * @method selectItemsToSend
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details. Particularly, the selection of items is performed following one of the next
-* cases: i) if selection='random' items from GossipProtocol.view are chosen in a randomly way,
-* ii) if selection='biased' the most similar GossipProtocol.fanout items are chosen from
-* GossipProtocol.view and iii) if selection='agr-biased' the most similar GossipProtocol.fanout
-* items are chosen from the views Vicinity.rpsView and GossipProtocol.view ;see method
-* GossipProtocol.selectItemsToSend() for more information.*/
+* @description The selection of "this.viewSize" items is performed following one of the next
+* cases: i) if selection = random, items from the local peer's view are chosen in a randomly way,
+* ii) if selection = biased, the most similar items are chosen from the local peer's view and iii)
+* if selection = agr-biased, the most similar items are chosen from the merge of the peer sampling
+* view with the local peer's view. For more details, look for this method at the
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.
+* @param receiver The selection of items will be sent to this peer
+* @param gossMsgType Strting to define the type of gossip exchange, there are two possible values:
+* i) GOSSIP-PUSH means to send items to an external peer or ii) GOSSIP-PULL to keep items from an
+* external peer*/
 Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
   var dstPeer = receiver || this.selectPeer()
   if (!dstPeer) return
@@ -288,9 +302,9 @@ Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
 * @memberof Vicinity
 * @method doAgrBiasedSelection
 * @description When this selection is performed, items from the RPS layer are mixed with the
-* most similar ones (this items are obtained via the similarity function) in order to get
-* the new view of Vicinity. Once the merged is finished, the result view is sent to the main
-* thread (javascript main tread) for being send to another peer.
+* most similar ones (similar items are obtained via the similarity function) in order to get
+* the new view of the local peer. Once the merge is finished, the result view is sent to an
+* external peer.
 * @param msg This object contains a list of items from the RPS layer and the receiver of the
 * merged view.*/
 Vicinity.prototype.doAgrBiasedSelection = function (msg) {
@@ -317,8 +331,9 @@ Vicinity.prototype.doAgrBiasedSelection = function (msg) {
 /**
 * @memberof Vicinity
 * @method selectItemsToKeep
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description For more details, look for this method at the
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class
+* @param msg Items from an external peer.*/
 Vicinity.prototype.selectItemsToKeep = function (msg) {
   var mergedViews = this.gossipUtil.mergeViews(this.view, msg.payload)
   var msg1 = {
@@ -339,8 +354,8 @@ Vicinity.prototype.selectItemsToKeep = function (msg) {
 * @method doItemsToKeepWithDep
 * @description When this selection is performed, items from the RPS layer are mixed with the
 * most similar ones (this items are obtained via the similarity function) in order to get
-* the new view of Vicinity. Once the merged is finished, the view Vicinity.view is updated with
-* the merged view.
+* the new view of the local peer. Once the merge is finished, the view Vicinity.view is
+* updated with the merged view.
 * @param msg This object contains a list of items from the RPS layer */
 Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
   var keys = Object.keys(msg.result)
@@ -357,8 +372,8 @@ Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
 /**
 * @memberof Vicinity
 * @method increaseAge
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description For more details, look for this method at the
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.*/
 Vicinity.prototype.increaseAge = function () {
   var keys = Object.keys(this.view)
   for (var i = 0; i < keys.length; i++) this.view[ keys[i] ].age++
@@ -558,17 +573,26 @@ GossipMediator.prototype.postInMainThread = function (msg) { this.worker.postMes
 module.exports = GossipProtocol
 /**
 * @class GossipProtocol
-* @description Representation of one generic gossip protocol, every implementation must inherits
-* from this class, additionally every method
-* on this class must be overwritten otherwise an exception will be reached.
-* NOTE: WebGC in its version 0.4.1 uses web workers, the heritage of one gossip implementation just
+* @description Representation of a generic gossip-based protocol, any other implementation must inherits
+* from this class. This is a description the class's attributes: i) view: object to represent the negihbors
+* of the local peer, object's keys are the unique peer identifiers while its values are vectors with
+* two entries, the first one is the age of the entry (integer) and the second one is the neighbor's
+* profile (another object), ii) viewSize: size of the local peer's neighborhood, iii) loop: number of
+* the current gossip cycle, iv) gossipPeriod: every gossip cycle will ocurr in this number of seconds,
+* v) fanout: number of entries in the peer's view that will be exchange on every gossip cycle,
+* vi) peerId: string which identifies the local peer in an unique way, vii) algoId: string to identify
+* one instance of a gossip algorithm in an unique, viii) propagationPolicy: object to determine wheather
+* the algorithm push and/or pull data. Every method on this class must be overwritten otherwise an
+* exception will be reached.
+* 
+* NOTE: since its version 0.4.1, WebGC uses web workers. The heritage of one gossip implementation just
 * takes into account the attributes in this class and the overwriting of methods is not taken into
 * consideration in the context of web workers.
 * FIXME To allow the overwriting of methods with web workers.
-* @param opts Object with the settings of one gossip protocol
-* @param log Logger (see [LoggerForWebWorker]{@link module:src/utils#LoggerForWebWorker}) to monitor
-* the actions of one gossip protocol
-* @param gossipUtil Object with [gossip utilities]{@link module:src/utils#GossipUtil}
+* @param opts object with the attributes of the gossip algorithm
+* @param debug object to log the protocol's behavior
+* @param gossipUtil gossip utilites, see [gossip utilities]{@link module:src/utils#GossipUtil}
+* @param profile local peer's profile
 * @author Raziel Carvajal-Gomez <raziel.carvajal@gmail.com> */
 function GossipProtocol (opts, debug, gossipUtil, profile) {
   this.view = {}
@@ -590,45 +614,37 @@ function GossipProtocol (opts, debug, gossipUtil, profile) {
 /**
 * @memberof GossipProtocol
 * @method increaseAge
-* @description Increments by one the age field of each item in the view GossipProtocol.view.
-* @deprecated For version 0.4.1, see the NOTE at the top of this file*/
+* @description Increments by one the age of each view's item.
+* @deprecated see note on the top of this file*/
 GossipProtocol.prototype.increaseAge = function () { throw new Error(this.nonImpMsg) }
 
 /**
-* @description This method selects one remote peer identifier in GossipProtocol.view
-* @memberof GossipProtocol@method selectPeer
-* @returns String - ID of the remote peer.*/
+* @description This method selects one neighbor from the view. The selection depends on
+* gossip imeplementation.
+* @memberof GossipProtocol
+* @method selectPeer
+* @returns String Neighbor's peer identifier
+* @deprecated see note on the top of this file*/
 GossipProtocol.prototype.selectPeer = function () { throw new Error(this.nonImpMsg) }
 
 /**
 * @memberof GossipProtocol
 * @method selectItemsToSend
-* @description This method selects a subset of GossipProtocol.gossipLength identifiers from GossipProtocol.view
-* @param thisIs:String - The ID of the local peer.
-* @param dstPeer:String - The ID of the remote peer.
-* @param thread:String - Whether the selection is performed in the passive thread or in the active thread.
-* @returns Object - Subset of the local view.
-* @deprecated For version 0.4.1, see the NOTE at the top of this file*/
-GossipProtocol.prototype.selectItemsToSend = function (thread) { throw new Error(this.nonImpMsg) }
+* @description Selects a subset from the view. The selection depends on the gossip
+* imeplemetation.
+* @param receiver The gossip exchange will be perform with this neighbor
+* @param gossMsgType Whether it pulls or push the message
+* @deprecated See NOTE on the top of this file*/
+GossipProtocol.prototype.selectItemsToSend = function (receiver, gossMsgType) { throw new Error(this.nonImpMsg) }
 
 /**
 * @memberof GossipProtocol
 * @method selectItemsToKeep
-* @description This method merges the received set of items rcvCache with those in GossipProtocol.view
-* the size of the view is kept less than or equal to GossipProtocol.viewSize
-* @param thisId:String - The ID of the local peer.
-* @param rcvCache:String - The set of items to merge.
-* @deprecated For version 0.4.1, see the NOTE at the top of this file*/
-GossipProtocol.prototype.selectItemsToKeep = function (thisId, rcvCache) { throw new Error(this.nonImpMsg) }
-
-/**
-* @memberof GossipProtocol
-* @method getPlotInfo
-* @description Strictly talking this method doesn't belong to a gossip-based class but it is used
-* for getting data about the neighbours of each peer and to send them to a PeerJS plotter
-* @param peerId:String - Identifier of the local peer
-* @deprecated For version 0.4.1, see the NOTE at the top of this file*/
-GossipProtocol.prototype.getPlotInfo = function (peerId) { throw new Error(this.nonImpMsg) }
+* @description This method merges the items in msg with those from the peer's view, the final number
+* of items will not exced the viewSize attribute.
+* @param msg Items received from one neighbor
+* @deprecated See NOTE on the top of this file*/
+GossipProtocol.prototype.selectItemsToKeep = function (msg) { throw new Error(this.nonImpMsg) }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/superObjs/GossipProtocol.js","/../../src/superObjs")
 },{"_process":36,"buffer":29}],"/../../src/superObjs/ViewSelector.js":[function(require,module,exports){
@@ -874,8 +890,7 @@ Profile.prototype.setPayload = function (newPayload) {
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/utils/Profile.js","/../../src/utils")
 },{"_process":36,"buffer":29,"debug":2}],1:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var Coordinator = require('../../src/controllers/Coordinator.js')
-window['Coordinator'] = Coordinator
+window.Coordinator = require('../../src/controllers/Coordinator.js')
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/main.js","/")
 },{"../../src/controllers/Coordinator.js":20,"_process":36,"buffer":29}],2:[function(require,module,exports){
@@ -2475,7 +2490,11 @@ module.exports={
     "url": "https://github.com/theturtle32/WebSocket-Node/issues"
   },
   "_id": "websocket@1.0.21",
-  "_from": "websocket@~1.0.19"
+  "dist": {
+    "shasum": "bbe4330499651edfaa1fe4bfa8bf8f68b7fb252e"
+  },
+  "_from": "websocket@~1.0.19",
+  "_resolved": "https://registry.npmjs.org/websocket/-/websocket-1.0.21.tgz"
 }
 
 },{}],18:[function(require,module,exports){
@@ -2491,32 +2510,55 @@ exports.RTCSessionDescription = RTCSessionDescription;
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/wrtc/lib/browser.js","/../../node_modules/wrtc/lib")
 },{"_process":36,"buffer":29}],19:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+* @module src/controllers
+* @author Raziel Carvajal-Gomez raziel.carvajal@gmail.com*/
 module.exports = ConnectionManager
 var debug = typeof window === 'undefined' ? require('debug')('connnection_manager') : require('debug').log
 var Connection = require('../services/Connection')
-
+/**
+* @class ConnectionManager
+* @description Manage the connections with external peers from all the gossip protocols
+* running in the local peer.
+* @param maxNumOfCon Maximum number of connections*/
 function ConnectionManager (maxNumOfCon) {
   if (!(this instanceof ConnectionManager)) return new ConnectionManager(maxNumOfCon)
   this._cons = {}
   this._maxNumOfCon = maxNumOfCon
 }
-
+/**
+* @method newConnection
+* @description Creates a new connection.
+* @param receiver End point of the connection
+* @param initiator Says weather the local peer initiates or not the creation of the connection
+* @param viaSigSer Says weather the connection bootstraps or not via the signaling server*/
 ConnectionManager.prototype.newConnection = function (receiver, initiator, viaSigSer) {
   return {
     connection: new Connection(receiver, initiator, viaSigSer),
     conLimReached: Object.keys(this._cons).length === this._maxNumOfCon
   }
 }
-
+/**
+* @method get
+* @description Gets an instance of one connection.
+* @param id Connection ID, which coincides with the peer ID of the connection end point*/
 ConnectionManager.prototype.get = function (id) { return this._cons[id] !== 'undefined' ? this._cons[id] : null }
-
+/**
+* @method set
+* @description Replace the instance of one connection with a new one.
+* @param c New instance of one connection*/
 ConnectionManager.prototype.set = function (c) {
   if (!this._cons[c._receiver]) this._cons[c._receiver] = c
   else debug('Connection with: ' + c._receiver + ' already exists')
 }
-
+/**
+* @method get Connections
+* @description Gets an array of the current connection IDs.
+* @return Array Array of connection IDs*/
 ConnectionManager.prototype.getConnections = function () { return Object.keys(this._cons) || [] }
-
+/**
+* @method deleteOneCon
+* @description Delete one connection.*/
 ConnectionManager.prototype.deleteOneCon = function () {
   var keys = Object.keys(this._cons)
   debug('DelOneCon before: ' + JSON.stringify(keys))
@@ -2526,7 +2568,10 @@ ConnectionManager.prototype.deleteOneCon = function () {
   debug('DelOneCon after:' + JSON.stringify(Object.keys(this._cons)))
   return keys[0]
 }
-
+/**
+* @method deleteConnection
+* @description Delete one particular connection.
+* @param id Connection ID to delete*/
 ConnectionManager.prototype.deleteConnection = function (id) {
   debug('DelCon before: ' + JSON.stringify(Object.keys(this._cons)))
   this._cons[id].close()
@@ -2538,7 +2583,8 @@ ConnectionManager.prototype.deleteConnection = function (id) {
 },{"../services/Connection":22,"_process":36,"buffer":29,"debug":2}],20:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
-* @module src/controllers*/
+* @module src/controllers
+* @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
 module.exports = Coordinator
 var debug = typeof window === 'undefined' ? require('debug')('coordinator') : require('debug').log
 var its = require('its')
@@ -2554,31 +2600,22 @@ var ConnectionManager = require('../controllers/ConnectionManager')
 inherits(Coordinator, EventEmitter)
 /**
 * @class Coordinator
-* @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
-* @description This class coordinates the execution of a set of gossip-based protocols. The
-* protocols are described in a configuration object (see
-* [configurationObj]{@link module:src/confObjs.configurationObj}). In order to avoid
-* reinventing the wheel, Coordinator extends the [Peer]{@link http://peerjs.com/} class from PeerJS
-* (which provides a WebRTC wrapper with P2P communication functionalities like: send/receive
-* functions, serialization of objects, management of media and data connections, etc)
-* and manages every external connection with other peers. Moreover, this class acts as
-* an intermediary between any web application and the
-* [GossipMediator]{@link module:src/controllers.GossipMediator#setDependencies} class to decide what to do with
-* gossip messages for instance, if one gossip algorithm needs to a send message M to peer
-* P then the Coordinator is going to receive M (via the GossipMediator) to initiate what
-* it is necessarily for the connection (looking for a method for reaching P here there are two
-* possible cases to reach P, either the Coordinator contacts the
-* [brokering server]{@link https://github.com/peers/peerjs-server} or the Coordinator uses the
-* [LookupService]{@link module:src/services#LookupService}) and in that way sending M to P.
-* @param opts Property "peerJsOpts" of the configuration object (see
-* [configurationObj]{@link module:src/confObjs#configurationObj} for more details)
-* @param profile The content of a user's profile is application dependant, besides an especial
-* format is required for this object. The properties of the object must coincide with the
-* algorithms identifiers in the property "gossipAlgos" in
-* [configurationObj]{@link module:src/confObjs#configurationObj}
-* @param id Unique identifier of the peer, if this parameter is not specified one
-* random id will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
-* @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
+* @description This class coordinates the execution of a set of gossip-based protocols that
+* are defined in the configuration object, see
+* [configurationObj]{@link module:src/utils.configurationObj}). This class acts as
+* an intermediary between the web application and every gossip protocol that is controlled 
+* by one instance of the
+* [GossipMediator]{@link module:src/controllers.GossipMediator#setDependencies}, via message
+* passing. For instance, if the application requires to show the items in the view of
+* the protocol "cyclon1", the Coordinator sends the request to the GossipMediator instance
+* of "cyclon1". This class contains a group of methods, which actually form the API of WebGC, 
+* to enrich the user's application with a P2P gossip communication.
+* @param gossConfObj Configuration object of WebGC see the
+* [configurationObj]{@link module:src/utils.configurationObj} for more details.
+* @param id Unique identifier of the local peer, if this parameter is not specified one
+* random ID will be assigned
+* @param profile The content of a user's profile is application dependant, basically, 
+* any valid Javascript object is allowed*/
 function Coordinator (gossConfObj, id, profile) {
   if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, id, profile)
   EventEmitter.call(this)
@@ -2611,12 +2648,22 @@ function Coordinator (gossConfObj, id, profile) {
   this._routingTable = {}
   this._extendAttributes()
 }
+/**
+ * @method _extendAttributes
+ * @description
+ * @param
+ */
 Coordinator.prototype._extendAttributes = function() {
   this.protocols = {}
   for (var i = 0; i < this.algosNames.length; i ++) {
     this.protocols[this.algosNames[i]] = new GossipWrapper(this, this.algosNames[i], this._id)
   }
 }
+/**
+ * @method _delItemInViews
+ * @description
+ * @param
+ */
 Coordinator.prototype._delItemInViews = function (id) {
   for (var i = 0; i < this.algosNames.length; i++) {
     this.workers[this.algosNames[i]].postMessage({ header: 'delete', item: id })
@@ -2710,11 +2757,21 @@ Coordinator.prototype.bootstrap = function () {
   })
   this._sigSer.on('abort', function () { debug('Abort.sigSer was called') })
 }
+/**
+ * @method _bootGossipCycle
+ * @description
+ * @param
+ */
 Coordinator.prototype._bootGossipCycle = function (algoId, worker, period) {
   this._algosPool[algoId] = setInterval(function () {
     worker.postMessage({ header: 'gossipLoop' })
   }, period)
 }
+/**
+ * @method _initConnectionEvents
+ * @description
+ * @param
+ */
 Coordinator.prototype._initConnectionEvents = function (c) {
   if (!c) return
   var self = this
@@ -2935,6 +2992,11 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
       break
   }
 }
+/**
+ * @method _updRoutingTable
+ * @description
+ * @param
+ */
 Coordinator.prototype._updRoutingTable = function (view, emitter) {
   for (var i = 0; i < view.length; i++) {
     if (view[i] !== emitter) this._routingTable[view[i]] = emitter
@@ -2947,6 +3009,11 @@ Coordinator.prototype._updRoutingTable = function (view, emitter) {
 * application layer.
 * @param fn Reference to an external function*/
 Coordinator.prototype.setApplicationLevelFunction = function (fn) { this.appFn = fn }
+/**
+ * @method updateProfile
+ * @description
+ * @param
+ */
 Coordinator.prototype.updateProfile = function (newProfile) {
   for (var i = 0; i < this.algosNames.length; i ++) {
     this.workers[this.algosNames[i]].postMessage({ header: 'updateProfile', profile: newProfile })
@@ -3583,31 +3650,35 @@ var rootParent = {}
  * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
  * Opera 11.6+, iOS 4.2+.
  *
+ * Due to various browser bugs, sometimes the Object implementation will be used even
+ * when the browser supports typed arrays.
+ *
  * Note:
  *
- * - Implementation must support adding new properties to `Uint8Array` instances.
- *   Firefox 4-29 lacked support, fixed in Firefox 30+.
- *   See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
+ *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
+ *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
  *
- *  - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
+ *   - Safari 5-7 lacks support for changing the `Object.prototype.constructor` property
+ *     on objects.
  *
- *  - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
- *    incorrect length in some situations.
+ *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
  *
- * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they will
- * get the Object implementation, which is slower but will work correctly.
+ *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
+ *     incorrect length in some situations.
+
+ * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
+ * get the Object implementation, which is slower but behaves correctly.
  */
 Buffer.TYPED_ARRAY_SUPPORT = (function () {
-  function Foo () {}
+  function Bar () {}
   try {
-    var buf = new ArrayBuffer(0)
-    var arr = new Uint8Array(buf)
+    var arr = new Uint8Array(1)
     arr.foo = function () { return 42 }
-    arr.constructor = Foo
+    arr.constructor = Bar
     return arr.foo() === 42 && // typed array instances can be augmented
-        arr.constructor === Foo && // constructor can be set
+        arr.constructor === Bar && // constructor can be set
         typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
-        new Uint8Array(1).subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
+        arr.subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
   } catch (e) {
     return false
   }
@@ -3685,8 +3756,13 @@ function fromObject (that, object) {
     throw new TypeError('must start with number, buffer, array or string')
   }
 
-  if (typeof ArrayBuffer !== 'undefined' && object.buffer instanceof ArrayBuffer) {
-    return fromTypedArray(that, object)
+  if (typeof ArrayBuffer !== 'undefined') {
+    if (object.buffer instanceof ArrayBuffer) {
+      return fromTypedArray(that, object)
+    }
+    if (object instanceof ArrayBuffer) {
+      return fromArrayBuffer(that, object)
+    }
   }
 
   if (object.length) return fromArrayLike(that, object)
@@ -3719,6 +3795,18 @@ function fromTypedArray (that, array) {
   // of the old Buffer constructor.
   for (var i = 0; i < length; i += 1) {
     that[i] = array[i] & 255
+  }
+  return that
+}
+
+function fromArrayBuffer (that, array) {
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Return an augmented `Uint8Array` instance, for best performance
+    array.byteLength
+    that = Buffer._augment(new Uint8Array(array))
+  } else {
+    // Fallback: Return an object instance of the Buffer class
+    that = fromTypedArray(that, new Uint8Array(array))
   }
   return that
 }
@@ -3840,8 +3928,6 @@ Buffer.concat = function concat (list, length) {
 
   if (list.length === 0) {
     return new Buffer(0)
-  } else if (list.length === 1) {
-    return list[0]
   }
 
   var i
@@ -4016,13 +4102,13 @@ Buffer.prototype.indexOf = function indexOf (val, byteOffset) {
   throw new TypeError('val must be string, number or Buffer')
 }
 
-// `get` will be removed in Node 0.13+
+// `get` is deprecated
 Buffer.prototype.get = function get (offset) {
   console.log('.get() is deprecated. Access using array indexes instead.')
   return this.readUInt8(offset)
 }
 
-// `set` will be removed in Node 0.13+
+// `set` is deprecated
 Buffer.prototype.set = function set (v, offset) {
   console.log('.set() is deprecated. Access using array indexes instead.')
   return this.writeUInt8(v, offset)
@@ -4163,20 +4249,99 @@ function base64Slice (buf, start, end) {
 }
 
 function utf8Slice (buf, start, end) {
-  var res = ''
-  var tmp = ''
   end = Math.min(buf.length, end)
+  var res = []
 
-  for (var i = start; i < end; i++) {
-    if (buf[i] <= 0x7F) {
-      res += decodeUtf8Char(tmp) + String.fromCharCode(buf[i])
-      tmp = ''
-    } else {
-      tmp += '%' + buf[i].toString(16)
+  var i = start
+  while (i < end) {
+    var firstByte = buf[i]
+    var codePoint = null
+    var bytesPerSequence = (firstByte > 0xEF) ? 4
+      : (firstByte > 0xDF) ? 3
+      : (firstByte > 0xBF) ? 2
+      : 1
+
+    if (i + bytesPerSequence <= end) {
+      var secondByte, thirdByte, fourthByte, tempCodePoint
+
+      switch (bytesPerSequence) {
+        case 1:
+          if (firstByte < 0x80) {
+            codePoint = firstByte
+          }
+          break
+        case 2:
+          secondByte = buf[i + 1]
+          if ((secondByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F)
+            if (tempCodePoint > 0x7F) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 3:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F)
+            if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 4:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          fourthByte = buf[i + 3]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F)
+            if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
+              codePoint = tempCodePoint
+            }
+          }
+      }
     }
+
+    if (codePoint === null) {
+      // we did not generate a valid codePoint so insert a
+      // replacement char (U+FFFD) and advance only 1 byte
+      codePoint = 0xFFFD
+      bytesPerSequence = 1
+    } else if (codePoint > 0xFFFF) {
+      // encode to utf16 (surrogate pair dance)
+      codePoint -= 0x10000
+      res.push(codePoint >>> 10 & 0x3FF | 0xD800)
+      codePoint = 0xDC00 | codePoint & 0x3FF
+    }
+
+    res.push(codePoint)
+    i += bytesPerSequence
   }
 
-  return res + decodeUtf8Char(tmp)
+  return decodeCodePointsArray(res)
+}
+
+// Based on http://stackoverflow.com/a/22747272/680742, the browser with
+// the lowest limit is Chrome, with 0x10000 args.
+// We go 1 magnitude less, for safety
+var MAX_ARGUMENTS_LENGTH = 0x1000
+
+function decodeCodePointsArray (codePoints) {
+  var len = codePoints.length
+  if (len <= MAX_ARGUMENTS_LENGTH) {
+    return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
+  }
+
+  // Decode in chunks to avoid "call stack size exceeded".
+  var res = ''
+  var i = 0
+  while (i < len) {
+    res += String.fromCharCode.apply(
+      String,
+      codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH)
+    )
+  }
+  return res
 }
 
 function asciiSlice (buf, start, end) {
@@ -4711,9 +4876,16 @@ Buffer.prototype.copy = function copy (target, targetStart, start, end) {
   }
 
   var len = end - start
+  var i
 
-  if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
-    for (var i = 0; i < len; i++) {
+  if (this === target && start < targetStart && targetStart < end) {
+    // descending copy from end
+    for (i = len - 1; i >= 0; i--) {
+      target[i + targetStart] = this[i + start]
+    }
+  } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
+    // ascending copy from start
+    for (i = 0; i < len; i++) {
       target[i + targetStart] = this[i + start]
     }
   } else {
@@ -4789,7 +4961,7 @@ Buffer._augment = function _augment (arr) {
   // save reference to original Uint8Array set method before overwriting
   arr._set = arr.set
 
-  // deprecated, will be removed in node 0.13+
+  // deprecated
   arr.get = BP.get
   arr.set = BP.set
 
@@ -4845,7 +5017,7 @@ Buffer._augment = function _augment (arr) {
   return arr
 }
 
-var INVALID_BASE64_RE = /[^+\/0-9A-z\-]/g
+var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
 
 function base64clean (str) {
   // Node strips out invalid characters like \n and \t from the string, base64-js does not
@@ -4875,28 +5047,15 @@ function utf8ToBytes (string, units) {
   var length = string.length
   var leadSurrogate = null
   var bytes = []
-  var i = 0
 
-  for (; i < length; i++) {
+  for (var i = 0; i < length; i++) {
     codePoint = string.charCodeAt(i)
 
     // is surrogate component
     if (codePoint > 0xD7FF && codePoint < 0xE000) {
       // last char was a lead
-      if (leadSurrogate) {
-        // 2 leads in a row
-        if (codePoint < 0xDC00) {
-          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
-          leadSurrogate = codePoint
-          continue
-        } else {
-          // valid surrogate pair
-          codePoint = leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00 | 0x10000
-          leadSurrogate = null
-        }
-      } else {
+      if (!leadSurrogate) {
         // no lead yet
-
         if (codePoint > 0xDBFF) {
           // unexpected trail
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
@@ -4905,17 +5064,29 @@ function utf8ToBytes (string, units) {
           // unpaired lead
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
           continue
-        } else {
-          // valid lead
-          leadSurrogate = codePoint
-          continue
         }
+
+        // valid lead
+        leadSurrogate = codePoint
+
+        continue
       }
+
+      // 2 leads in a row
+      if (codePoint < 0xDC00) {
+        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+        leadSurrogate = codePoint
+        continue
+      }
+
+      // valid surrogate pair
+      codePoint = leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00 | 0x10000
     } else if (leadSurrogate) {
       // valid bmp char, but last char was a lead
       if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
-      leadSurrogate = null
     }
+
+    leadSurrogate = null
 
     // encode utf8
     if (codePoint < 0x80) {
@@ -4934,7 +5105,7 @@ function utf8ToBytes (string, units) {
         codePoint >> 0x6 & 0x3F | 0x80,
         codePoint & 0x3F | 0x80
       )
-    } else if (codePoint < 0x200000) {
+    } else if (codePoint < 0x110000) {
       if ((units -= 4) < 0) break
       bytes.push(
         codePoint >> 0x12 | 0xF0,
@@ -4985,14 +5156,6 @@ function blitBuffer (src, dst, offset, length) {
     dst[i + offset] = src[i]
   }
   return i
-}
-
-function decodeUtf8Char (str) {
-  try {
-    return decodeURIComponent(str)
-  } catch (err) {
-    return String.fromCharCode(0xFFFD) // UTF 8 invalid char
-  }
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer/index.js","/../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/buffer")
@@ -5622,7 +5785,9 @@ function drainQueue() {
         currentQueue = queue;
         queue = [];
         while (++queueIndex < len) {
-            currentQueue[queueIndex].run();
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
         }
         queueIndex = -1;
         len = queue.length;
@@ -5674,7 +5839,6 @@ process.binding = function (name) {
     throw new Error('process.binding is not supported');
 };
 
-// TODO(shtylman)
 process.cwd = function () { return '/' };
 process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
@@ -7610,7 +7774,7 @@ module.exports = nextTick;
 function nextTick(fn) {
   var args = new Array(arguments.length - 1);
   var i = 0;
-  while (i < arguments.length) {
+  while (i < args.length) {
     args[i++] = arguments[i];
   }
   process.nextTick(function afterTick() {

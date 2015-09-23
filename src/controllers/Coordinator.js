@@ -1,5 +1,6 @@
 /**
-* @module src/controllers*/
+* @module src/controllers
+* @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
 module.exports = Coordinator
 var debug = typeof window === 'undefined' ? require('debug')('coordinator') : require('debug').log
 var its = require('its')
@@ -15,31 +16,22 @@ var ConnectionManager = require('../controllers/ConnectionManager')
 inherits(Coordinator, EventEmitter)
 /**
 * @class Coordinator
-* @extends Peer See [Peer]{@link http://peerjs.com/docs/#api} class in PeerJS
-* @description This class coordinates the execution of a set of gossip-based protocols. The
-* protocols are described in a configuration object (see
-* [configurationObj]{@link module:src/confObjs.configurationObj}). In order to avoid
-* reinventing the wheel, Coordinator extends the [Peer]{@link http://peerjs.com/} class from PeerJS
-* (which provides a WebRTC wrapper with P2P communication functionalities like: send/receive
-* functions, serialization of objects, management of media and data connections, etc)
-* and manages every external connection with other peers. Moreover, this class acts as
-* an intermediary between any web application and the
-* [GossipMediator]{@link module:src/controllers.GossipMediator#setDependencies} class to decide what to do with
-* gossip messages for instance, if one gossip algorithm needs to a send message M to peer
-* P then the Coordinator is going to receive M (via the GossipMediator) to initiate what
-* it is necessarily for the connection (looking for a method for reaching P here there are two
-* possible cases to reach P, either the Coordinator contacts the
-* [brokering server]{@link https://github.com/peers/peerjs-server} or the Coordinator uses the
-* [LookupService]{@link module:src/services#LookupService}) and in that way sending M to P.
-* @param opts Property "peerJsOpts" of the configuration object (see
-* [configurationObj]{@link module:src/confObjs#configurationObj} for more details)
-* @param profile The content of a user's profile is application dependant, besides an especial
-* format is required for this object. The properties of the object must coincide with the
-* algorithms identifiers in the property "gossipAlgos" in
-* [configurationObj]{@link module:src/confObjs#configurationObj}
-* @param id Unique identifier of the peer, if this parameter is not specified one
-* random id will be created by the [brokering server]{@link https://github.com/peers/peerjs-server}
-* @author Raziel Carvajal-Gomez  <raziel.carvajal@gmail.com>*/
+* @description This class coordinates the execution of a set of gossip-based protocols that
+* are defined in the configuration object, see
+* [configurationObj]{@link module:src/utils.configurationObj}). This class acts as
+* an intermediary between the web application and every gossip protocol that is controlled 
+* by one instance of the
+* [GossipMediator]{@link module:src/controllers.GossipMediator#setDependencies}, via message
+* passing. For instance, if the application requires to show the items in the view of
+* the protocol "cyclon1", the Coordinator sends the request to the GossipMediator instance
+* of "cyclon1". This class contains a group of methods, which actually form the API of WebGC, 
+* to enrich the user's application with a P2P gossip communication.
+* @param gossConfObj Configuration object of WebGC see the
+* [configurationObj]{@link module:src/utils.configurationObj} for more details.
+* @param id Unique identifier of the local peer, if this parameter is not specified one
+* random ID will be assigned
+* @param profile The content of a user's profile is application dependant, basically, 
+* any valid Javascript object is allowed*/
 function Coordinator (gossConfObj, id, profile) {
   if (!(this instanceof Coordinator)) return new Coordinator(gossConfObj, id, profile)
   EventEmitter.call(this)
@@ -72,12 +64,22 @@ function Coordinator (gossConfObj, id, profile) {
   this._routingTable = {}
   this._extendAttributes()
 }
+/**
+ * @method _extendAttributes
+ * @description
+ * @param
+ */
 Coordinator.prototype._extendAttributes = function() {
   this.protocols = {}
   for (var i = 0; i < this.algosNames.length; i ++) {
     this.protocols[this.algosNames[i]] = new GossipWrapper(this, this.algosNames[i], this._id)
   }
 }
+/**
+ * @method _delItemInViews
+ * @description
+ * @param
+ */
 Coordinator.prototype._delItemInViews = function (id) {
   for (var i = 0; i < this.algosNames.length; i++) {
     this.workers[this.algosNames[i]].postMessage({ header: 'delete', item: id })
@@ -124,7 +126,6 @@ Coordinator.prototype.bootstrap = function () {
         var c = self._connectionManager.newConnection(respToBoot.peer, true, true).connection
         self._initConnectionEvents(c)
         self._connectionManager.set(c)
-        // firstView.push({ id: respToBoot.peer, profile: respToBoot.profile })
         firstView.push(respToBoot.peer)
       } else debug('I am the first peer in the overlay, eventually other peer will contact me')
       var worker, period
@@ -151,9 +152,7 @@ Coordinator.prototype.bootstrap = function () {
     var cO = self._connectionManager.newConnection(src, false, true)
     if (cO.conLimReached) {
       var toDel = self._connectionManager.deleteOneCon()
-      if (!self._usingSs) {
-        self._delItemInViews(toDel)
-      }
+      if (!self._usingSs) self._delItemInViews(toDel)
     }
     self._initConnectionEvents(cO.connection)
     self._connectionManager.set(cO.connection)
@@ -171,11 +170,21 @@ Coordinator.prototype.bootstrap = function () {
   })
   this._sigSer.on('abort', function () { debug('Abort.sigSer was called') })
 }
+/**
+ * @method _bootGossipCycle
+ * @description
+ * @param
+ */
 Coordinator.prototype._bootGossipCycle = function (algoId, worker, period) {
   this._algosPool[algoId] = setInterval(function () {
-    worker.postMessage({ header: 'gossipLoop' })
+    worker.postMessage({header: 'gossipLoop'})
   }, period)
 }
+/**
+ * @method _initConnectionEvents
+ * @description
+ * @param
+ */
 Coordinator.prototype._initConnectionEvents = function (c) {
   if (!c) return
   var self = this
@@ -250,11 +259,14 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
           worker.postMessage(msg)
         } else debug('there is not a worker for algorithm: ' + msg.emitter)
         break
-      case 'drawGraph':
-        if (typeof self.plotterObj !== 'undefined') {
-          self.plotterObj.buildGraph(msg.algoId, msg.graph, msg.view)
-        } else debug(msg)
-        break
+      // TODO this method must be implemented out of the Coordinator cause the draw of
+      // each gossip protocol must be performed by the Plotter obj; to do that, the
+      // main thread must ask the view of each protocol in a periodic way
+      // case 'drawGraph':
+      //   if (typeof self.plotterObj !== 'undefined') {
+      //     self.plotterObj.buildGraph(msg.algoId, msg.graph, msg.view)
+      //   } else debug(msg)
+      //   break
       case 'actCycLog':
         if (self.actCycHistory)
           self.actCycHistory[msg.algoId][msg.counter] = { algoId: msg.algoId, loop: msg.loop, offset: msg.offset }
@@ -297,8 +309,8 @@ Coordinator.prototype.getActiCycHistory = function () { return this.actCycHistor
 * @description Once this method is called every key of the objects "vieUpdHistory" and "actCycHistory"
 * points to an empty object*/
 Coordinator.prototype.emptyHistoryOfLogs = function () {
-  var keys = Object.keys(this.vieUpdHistory)
   var i
+  var keys = Object.keys(this.vieUpdHistory)
   for (i = 0; i < keys.length; i++) {
     delete this.vieUpdHistory[ keys[i] ]
     this.vieUpdHistory[ keys[i] ] = {}
@@ -396,18 +408,21 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
       break
   }
 }
+/**
+ * @method _updRoutingTable
+ * @description
+ * @param
+ */
 Coordinator.prototype._updRoutingTable = function (view, emitter) {
   for (var i = 0; i < view.length; i++) {
     if (view[i] !== emitter) this._routingTable[view[i]] = emitter
   }
 }
 /**
-* @memberof Coordinator
-* @method setApplicationLevelFunction
-* @description This method sets one function external to WebGC that normally belongs to the
-* application layer.
-* @param fn Reference to an external function*/
-Coordinator.prototype.setApplicationLevelFunction = function (fn) { this.appFn = fn }
+ * @method updateProfile
+ * @description
+ * @param
+ */
 Coordinator.prototype.updateProfile = function (newProfile) {
   for (var i = 0; i < this.algosNames.length; i ++) {
     this.workers[this.algosNames[i]].postMessage({ header: 'updateProfile', profile: newProfile })

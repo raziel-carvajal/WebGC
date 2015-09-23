@@ -34,9 +34,9 @@ function Vicinity (algOpts, debug, gossipUtil, isLogActivated, profile) {
 /**
 * @memberof Vicinity
 * @const defaultOpts
-* @description Default values for the gossip attributes. During its instantiation (through the 
-* [GossipFactory]{@link module:src/services/GossipFactory} object) if the user doesn't specify
-* any attribute, the algorithm will be initialized with the values in this object.
+* @description Default values for the gossip attributes. During its instantiation, via the 
+* [GossipFactory]{@link module:src/services/GossipFactory} object, if the user doesn't specify
+* any attribute the algorithm will be initialized with the values in this object.
 * @default*/
 Vicinity.defaultOpts = {
   class: 'Vicinity',
@@ -81,8 +81,13 @@ Vicinity.prototype.initialize = function (keys) {
 * @description The selection of "this.viewSize" items is performed following one of the next
 * cases: i) if selection = random, items from the local peer's view are chosen in a randomly way,
 * ii) if selection = biased, the most similar items are chosen from the local peer's view and iii)
-* if selection = agr-biased, the most similar fanout items are chosen from the peer sampling view
-* merged with the most fanout items in the peer's view .*/
+* if selection = agr-biased, the most similar items are chosen from the merge of the peer sampling
+* view with the local peer's view. For more details, look for this method at the
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.
+* @param receiver The selection of items will be sent to this peer
+* @param gossMsgType Strting to define the type of gossip exchange, there are two possible values:
+* i) GOSSIP-PUSH means to send items to an external peer or ii) GOSSIP-PULL to keep items from an
+* external peer*/
 Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
   var dstPeer = receiver || this.selectPeer()
   if (!dstPeer) return
@@ -145,8 +150,8 @@ Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
 * @method doAgrBiasedSelection
 * @description When this selection is performed, items from the RPS layer are mixed with the
 * most similar ones (similar items are obtained via the similarity function) in order to get
-* the new view of Vicinity. Once the merged is finished, the result view is sent to the main
-* thread (javascript main tread) for being send to another peer.
+* the new view of the local peer. Once the merge is finished, the result view is sent to an
+* external peer.
 * @param msg This object contains a list of items from the RPS layer and the receiver of the
 * merged view.*/
 Vicinity.prototype.doAgrBiasedSelection = function (msg) {
@@ -173,8 +178,9 @@ Vicinity.prototype.doAgrBiasedSelection = function (msg) {
 /**
 * @memberof Vicinity
 * @method selectItemsToKeep
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description For more details, look for this method at the
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class
+* @param msg Items from an external peer.*/
 Vicinity.prototype.selectItemsToKeep = function (msg) {
   var mergedViews = this.gossipUtil.mergeViews(this.view, msg.payload)
   var msg1 = {
@@ -195,8 +201,8 @@ Vicinity.prototype.selectItemsToKeep = function (msg) {
 * @method doItemsToKeepWithDep
 * @description When this selection is performed, items from the RPS layer are mixed with the
 * most similar ones (this items are obtained via the similarity function) in order to get
-* the new view of Vicinity. Once the merged is finished, the view Vicinity.view is updated with
-* the merged view.
+* the new view of the local peer. Once the merge is finished, the view Vicinity.view is
+* updated with the merged view.
 * @param msg This object contains a list of items from the RPS layer */
 Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
   var keys = Object.keys(msg.result)
@@ -213,8 +219,8 @@ Vicinity.prototype.doItemsToKeepWithDep = function (msg) {
 /**
 * @memberof Vicinity
 * @method increaseAge
-* @description Look for this method at [GossipProtocol]{@link module:src/superObjs#GossipProtocol}
-* for more details.*/
+* @description For more details, look for this method at the
+* [GossipProtocol]{@link module:src/superObjs#GossipProtocol} class.*/
 Vicinity.prototype.increaseAge = function () {
   var keys = Object.keys(this.view)
   for (var i = 0; i < keys.length; i++) this.view[ keys[i] ].age++
