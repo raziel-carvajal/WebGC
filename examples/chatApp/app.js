@@ -35,6 +35,27 @@
   //   $('#text').val('')
   //   $('#text').focus()
   // }
+  function resetProfile () {
+    if (listIndex !== 0) {
+      var profile = document.getElementById('topicsSection')
+      for (var i = 0; i < listIndex; i++) {
+        console.log("ListID: " + i)
+        profile.removeChild(document.getElementById('list' + listIndex))
+      }
+      listIndex = 0
+    }
+    var msg = 'Your profile was reseted. Please, choso other subjects of your interest and ' +
+      'click on the button <<Update Profile>>'
+    alert(msg)
+  }
+  function updateProfile () {
+    if (listIndex == 0) alert("Your profile can't be empty")
+    else {
+      var profile = []
+      for (var i = 0; i < listIndex; i++) profile.push(document.getElementById('list' + i).value)
+      mainObjs.coordi.updateProfile(profile)
+    }
+  }
   function addTopicList () {
     if (listIndex === topics.length) {
       alert('You can not chose another list, please, continue typing you peer ID')
@@ -155,6 +176,7 @@
           clearInterval(itPool)
           mainObjs.firstCall = true
         }
+        // if (algoId !== 'cyclon1')
       }
     })
     coordi.bootstrap()
@@ -180,8 +202,8 @@
   }
   function start () {
     var peerId = document.getElementById('user').value
-    if (peerId && peerId !== '') isPeeridValid(peerId)
-    else alert('Your PeerID could not be empty')
+    if (peerId && peerId !== '' && listIndex !== 0) isPeeridValid(peerId)
+    else alert("Your peer ID and profile cantn't be empty")
   }
   document.addEventListener('DOMContentLoaded', function (event) {
     console.log('Page was loaded')
@@ -191,4 +213,6 @@
   exports.start = start
   exports.addTopicList = addTopicList
   exports.launchPeer = launchPeer
+  exports.resetProfile = resetProfile
+  exports.updateProfile = updateProfile
 })(this)

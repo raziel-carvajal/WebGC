@@ -17,13 +17,22 @@
     <div id="form" class="formContainer">
       <h1><strong>WebGC Demo</strong></h1>
       <h2>
-        First, add topics in computer science with the plus button 
+        Firstly, chose your profile. Add subjects of your interest with the plus button 
         <button class="button" type="button" id="plusButton" onclick="addTopicList()"> + </button>
-        , then select the one of your interest</h2> 
+        and reset your profile with 
+        <button class="button" type="button" id="resetProfile" onclick="resetProfile()">Reset Profile</button>
       <h2 id="topicsSection"></h2>
       <h2>
-        Then, chose an identifier for your peer <input type="text" id="user" placeholder="Type your ID, here">
+        Secondly, chose an identifier for your peer
+        <input type="text" id="user" placeholder="Type your ID, here">
+        and start the application with: 
         <button class="button" type="button" id="start" onclick="start()">Start Application</button>
+      </h2>
+      <h2>
+          Finally, you can reset your profile with this button:                                                              
+          <button class="button" type="button" id="updateProfile" onclick="updateProfile()">Update Your Profile</button>     
+      </h2>
+      <h2>
         <label id="waitMsg">Application has initiated, performing connections with other peers!</label>
       </h2>
     </div>
@@ -32,17 +41,17 @@
       <div id="clusteringGraph" class="cluContainer"> <h1><strong>Clustering Overlay</strong></h1> </div>
     </div>
     <div id="chat" class="chatContainer">
-      <h1><strong>Peer connections</strong></h1>
+      <h1><strong>Chat with others with similar profiles</strong></h1>
+      <!--
       <div id="actions">
         <form id="send">
           <input type="text" id="text" placeholder="Enter message">
           <button class="button" type="button" onclick='sendInChat()'>Send to selected peers</button>
         </form>
       </div>
+      -->
       <div id="wrap">
-        <div id="connections">
-          <span class="filler">You have not yet made any connections.</span>
-        </div>
+        <div id="connections"><span class="filler">You have not yet made any connections.</span></div>
         <div class="clear"></div>
       </div>
     </div>
