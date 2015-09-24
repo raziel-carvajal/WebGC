@@ -17,22 +17,23 @@
     <div id="form" class="formContainer">
       <h1><strong>WebGC Demo</strong></h1>
       <h2>
-        Firstly, chose your profile. Add subjects of your interest with the plus button 
+        Firstly, chose your profile. Add subjects of your interest with the plus button
         <button class="button" type="button" id="plusButton" onclick="addTopicList()"> + </button>
-        and reset your profile with 
+        and reset your profile with
         <button class="button" type="button" id="resetProfile" onclick="resetProfile()">Reset Profile</button>
-      <h2 id="topicsSection"></h2>
+      </h2>
+      <div id="topicsSection"></div>
       <h2>
-        Secondly, chose an identifier for your peer
+        Secondly, chose an identifier for your peer 
         <input type="text" id="user" placeholder="Type your ID, here">
         and start the application with: 
         <button class="button" type="button" id="start" onclick="start()">Start Application</button>
       </h2>
       <h2>
-          Finally, you can reset your profile with this button:                                                              
-          <button class="button" type="button" id="updateProfile" onclick="updateProfile()">Update Your Profile</button>     
-      </h2>
-      <h2>
+        Finally, you can reset your profile with this button: 
+        <button class="button" type="button" id="updateProfile" onclick="updateProfile()">
+          Update Your Profile
+        </button>
         <label id="waitMsg">Application has initiated, performing connections with other peers!</label>
       </h2>
     </div>
@@ -42,18 +43,7 @@
     </div>
     <div id="chat" class="chatContainer">
       <h1><strong>Chat with others with similar profiles</strong></h1>
-      <!--
-      <div id="actions">
-        <form id="send">
-          <input type="text" id="text" placeholder="Enter message">
-          <button class="button" type="button" onclick='sendInChat()'>Send to selected peers</button>
-        </form>
-      </div>
-      -->
-      <div id="wrap">
-        <div id="connections"><span class="filler">You have not yet made any connections.</span></div>
-        <div class="clear"></div>
-      </div>
+      <div id="connections"><span class="filler">No connections with other peers</span></div>
     </div>
   </div>
 </body>

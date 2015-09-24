@@ -165,7 +165,12 @@ GossipMediator.prototype.listen = function () {
         self.algo.profile.setPayload(msg.profile)
         break
       case 'getNeighbourhood':
-        self.worker.postMessage({header: 'neigs', view: Object.keys(self.algo.view), algoId: self.algo.algoId})
+        self.worker.postMessage({
+          header: 'neigs',
+          view: Object.keys(self.algo.view),
+          algoId: self.algo.algoId,
+          loop: self.algo.loop
+        })
         break
       default:
         self.log.warn('header: ' + msg.header + ' is unknown')

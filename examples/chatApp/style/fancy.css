@@ -6,15 +6,35 @@ body,html {
   color: #444;
   line-height: 15px;
 }
+.textarea {
+  float: left;
+  height: 55px;
+  width: 190px;
+  overflow: scroll;
+  background-color: #fff;
+  border: 1px solid #ccc;
+}
+.conInput {
+  float: left;
+  height: 55px;
+  width: 190px;
+  background-color: #fff;
+}
+.conInput div {
+  margin: 5px 0;
+}
+.conInput.active {
+  border-color: #FF7500;
+}
 .connection {
   float: left;
-  height: 250px;
+  height: 350px;
   width: 200px;
   overflow: scroll;
   background-color: #fff;
   padding: 10px;
   margin: 5px;
-  border: 1px solid #ccc;
+  border: 2px solid #ccc;
 }
 .connection div {
   margin: 5px 0;
@@ -34,6 +54,10 @@ h2 {
   margin: 0 10px 0 10px;
   font-weight: 300;
 }
+.active label strong {
+  color: #FF7500;
+}
+
 .active h1 strong {
   color: #FF7500;
 }
@@ -101,6 +125,12 @@ button, input {
 }
 input:focus {
   outline: none;
+}
+.chatButton {
+  float: right;
+  background-color: #ddd;
+  border: 1px solid #ccc;
+  display: inline-block;
 }
 .button, button {
   cursor: pointer;

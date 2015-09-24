@@ -11,40 +11,49 @@
     'Internet of Things', 'P2P Systems', 'Cloud Computing', 'Big Data',
     'Gossiping', 'Optimization', 'Recommendation Systems'
   ]
-  // function writeDownInChat (msg) {
-  //   if (document.getElementById(msg.emitter)) {
-  //     $('#' + msg.emitter + '_msgs').append(
-  //       $('<div><span class="peer">' + msg.emitter + ': </span>' + msg.payload + '</div>')
-  //     )
-  //   } else addChatElement(msg.emitter, msg.payload, false)
-  // }
-  // function sendInChat () {
-  //   var activeCons = $('.active')
-  //   activeCons.each(function () {
-  //     var peerId = $(this).attr('id')
-  //     var txt = document.getElementById('text').value
-  //     var cons = mainObjs['controller'].connections[peerId]
-  //     for (var i = 0; i < cons.length; i++) {
-  //       if (cons[i].label === 'chat') {
-  //         cons[i].send({msg: txt})
-  //         $('#' + peerId).append('<div><span class="you">You: </span>' + txt + '</div>')
-  //         break
-  //       }
-  //     }
-  //   })
-  //   $('#text').val('')
-  //   $('#text').focus()
-  // }
+  function addOneChatBox (peerId) {
+    var chatbox, header, input
+    chatbox = $('<div></div>')
+      .addClass('connection')
+      .addClass('active')
+      .attr('id', peerId)
+    header = $('<label></label>').html('Chat with <strong>' + peerId + '</strong>')
+    input = $('<div></div>')
+      .addClass('conInput')
+      .addClass('active')
+    input.append($('<textarea></textarea>')
+      .addClass('textarea')
+      .attr('id', 'textArea' + peerId))
+    input.append($('<button>Send</button>')
+      .addClass('chatButton')
+      .attr('onclick', "sendMessageFromChatbox('" + peerId + "')"))
+    chatbox.append(header)
+    chatbox.append(input)
+    chatbox.append('<h1></h1>')
+    chatbox.append('<h1></h1>')
+    $('#connections').append(chatbox)
+  }
+  function addChatBoxes (neighbours) {
+    document.getElementById('chat').removeChild(document.getElementById('connections'))
+    $('#chat').append($('<div></div>').attr('id', 'connections'))
+    for (var i = 0; i < neighbours.length; i++) addOneChatBox(neighbours[i])
+  }
+  function sendMessageFromChatbox (peerId) {
+    var txtArea = document.getElementById('textArea' + peerId)
+    var msg = '' + txtArea.value
+    if (msg || msg !== '') {
+      mainObjs.coordi.protocols.vicinity1.sendTo(peerId, msg)
+      if ($('#' + peerId)) $('#' + peerId).append('<div><span class="you">You: </span>' + msg + '</div>')
+    }
+    txtArea.value = ''
+  }
   function resetProfile () {
     if (listIndex !== 0) {
-      var profile = document.getElementById('topicsSection')
-      for (var i = 0; i < listIndex; i++) {
-        console.log("ListID: " + i)
-        profile.removeChild(document.getElementById('list' + listIndex))
-      }
+      var topics = document.getElementById('topicsSection')
+      for (var i = 0; i < listIndex; i++) topics.removeChild(document.getElementById('list' + i))
       listIndex = 0
     }
-    var msg = 'Your profile was reseted. Please, choso other subjects of your interest and ' +
+    var msg = 'Your profile was reseted. Please, chose other subjects of your interest and ' +
       'click on the button <<Update Profile>>'
     alert(msg)
   }
@@ -70,27 +79,6 @@
     $('#topicsSection').append(list)
     listIndex++
   }
-  // function setObjsChatCo (c) {
-  //   var chatbox = $('<div></div>').addClass('connection').attr('id', c.peer)
-  //   var header = $('<h1></h1>').html('Chat with <strong>' + c.peer + '</strong>')
-  //   var messages = $('<div><em>Peer connected.</em></div>').addClass('messages')
-  //   chatbox.append(header)
-  //   chatbox.append(messages)
-  //   chatbox.on('click', function () {
-  //     if ($(this).attr('class').indexOf('active') === -1) $(this).addClass('active')
-  //     else $(this).removeClass('active')
-  //   })
-  //   $('.filler').hide()
-  //   $('#connections').append(chatbox)
-  //   c.on('data', function (data) {
-  //     console.info('MsgFromChatCon')
-  //     console.info(data)
-  //     $('#' + c.peer).append('<div><span class="peer">' + c.peer + '</span>: ' + data.msg + '</div>')
-  //   })
-  //   c.on('error', function (e) {
-  //     console.log('In chat connection with: ' + c.peer)
-  //   })
-  // }
   function getPeersInOverlay () {
     var host = configurationObj.signalingService.host
     var port = configurationObj.signalingService.port
@@ -160,23 +148,26 @@
     mainObjs['peerId'] = peerId
     mainObjs.firstCall = false
     document.getElementById('start').disabled = true
+    document.getElementById('updateProfile').disabled = false
     var profile = []
     for (var i = 0; i < listIndex; i++) profile.push(document.getElementById('list' + i).value)
     var coordi = new Coordinator(configurationObj, peerId, profile)
     mainObjs['coordi'] = coordi
     coordi.on('msgReception', function (emitter, data) {
-      // TODO print the message in the chat box of the emitter
+      if (!$('#' + emitter)) addOneChatBox(emitter)
+      $('#' + emitter).append('<div><span class="peer">' + emitter + ': </span>' + data + '</div>')
     })
-    coordi.on('neighbourhood', function (neighbours, algoId) {
+    coordi.on('neighbourhood', function (neighbours, algoId, loop) {
       if (neighbours.length !== 0) {
         var container = algoId === 'cyclon1' ? 'rpsGraph' : 'clusteringGraph'
-        mainObjs.plotter.buildGraph(container, mainObjs.overlay, neighbours)
+        mainObjs.plotter.buildGraph(container, mainObjs.overlay, neighbours, loop)
         if (!mainObjs.firstCall) {
           $('#waitMsg').hide()
           clearInterval(itPool)
           mainObjs.firstCall = true
+          $('.filler').hide()
         }
-        // if (algoId !== 'cyclon1')
+        if (algoId !== 'cyclon1') addChatBoxes(neighbours)
       }
     })
     coordi.bootstrap()
@@ -191,11 +182,13 @@
     var cycPeriod = configurationObj.gossipAlgos.cyclon1.gossipPeriod
     var vicPeriod = configurationObj.gossipAlgos.vicinity1.gossipPeriod
     var minPeriod = Math.min(cycPeriod, vicPeriod)
-    var minPeriod = cycPeriod
     window.setInterval(function () { getPeersInOverlay() }, minPeriod)
     window.setInterval(function () {
       mainObjs.coordi.protocols.cyclon1.getNeighbourhood()
     }, cycPeriod + 1000)
+    window.setTimeout(function () {
+      mainObjs.coordi.protocols.vicinity1.getNeighbourhood()
+    }, minPeriod + 1000)
     window.setInterval(function () {
       mainObjs.coordi.protocols.vicinity1.getNeighbourhood()
     }, vicPeriod + 1000)
@@ -207,6 +200,7 @@
   }
   document.addEventListener('DOMContentLoaded', function (event) {
     console.log('Page was loaded')
+    document.getElementById('updateProfile').disabled = true
     $('#user').focus()
     $('#waitMsg').hide()
   })
@@ -215,4 +209,5 @@
   exports.launchPeer = launchPeer
   exports.resetProfile = resetProfile
   exports.updateProfile = updateProfile
+  exports.sendMessageFromChatbox = sendMessageFromChatbox
 })(this)

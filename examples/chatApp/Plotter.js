@@ -41,12 +41,12 @@
     var i, nodeColor
     for (i = 0; i < view.length; i++) if (peers.indexOf(view[i], 0) === -1) toIgn.push(view[i])
     for (i = 0; i < peers.length; i++) {
-      nodeColor = view.indexOf(peers[i], 0) !== -1 || this.ref === peers[i] ? this.getColor(0) : this.getColor(1)
+      nodeColor = view.indexOf(peers[i], 0) !== -1 || this.ref === peers[i] ? this.getColor(2) : this.getColor(0)
       nodes.push({ 'data': { 'id': peers[i], 'name': peers[i], 'color': nodeColor } })
     }
     for (i = 0; i < view.length; i++) {
       if (toIgn.indexOf(view[i], 0) === -1) {
-      edges.push({ 'data': { 'source': this.ref, 'target': view[i], 'color': this.getColor(0) } })
+      edges.push({ 'data': { 'source': this.ref, 'target': view[i], 'color': this.getColor(2) } })
       }
     }
     return { 'nodes': nodes, 'edges': edges }
@@ -59,8 +59,8 @@
   * @param algoId Identifier of the gossip algorithm
   * @param nodes List of nodes that participate in the gossip overlay
   * @param view View of the local peer*/
-  Plotter.prototype.buildGraph = function (algoId, nodes, view) {
-    this.resetGraph(algoId)
+  Plotter.prototype.buildGraph = function (algoId, nodes, view, loop) {
+    this.resetGraph(algoId, loop)
     var eles = this.getGraphFormat(nodes, view)
     var layoutOpts = {
       name: 'circle',
@@ -107,7 +107,7 @@
   * method clean ups the graphs container (HTML tag) when a new graph is ready to
   * be included in the container.
   * @param algoId Identifier of the gossip algorithm*/
-  Plotter.prototype.resetGraph = function (algoId) {
+  Plotter.prototype.resetGraph = function (algoId, loop) {
     console.log('ALGO ID: ' + algoId)
     var gCont = document.getElementById('graphs')
     gCont.removeChild(document.getElementById(algoId))
@@ -115,31 +115,10 @@
     var sec, overlayName
     if (algoId === 'rpsGraph') {
       sec = $('<div></div>').addClass('rpsContainer').attr('id', algoId)
-      overlayName = 'RPS Overlay'
+      overlayName = 'RPS Overlay (loop: ' + loop + ')'
     } else if (algoId === 'clusteringGraph') {
       sec = $('<div></div>').addClass('cluContainer').attr('id', algoId)
-      overlayName = 'Clustering Overlay'
-      // var consAtChat = document.getElementById('connections').childNodes
-      // var peerIds = []
-      // var i
-      // for (i = 0; i < consAtChat.length; i++) {
-      //   if (consAtChat[i].getAttribute('id')) {
-      //     peerIds.push(consAtChat[i].getAttribute('id'))
-      //   }
-      // }
-      // gCont = document.getElementById('connections')
-      // for (i = 0; i < peerIds.length; i++) {
-      //   gCont.removeChild(document.getElementById(peerIds[i]))
-      // }
-      // $('.filler').show()
-      // for (i = 0; i < peerIds.length; i++) {
-      //   if (this.extraCons[peerIds[i]]) {
-      //     // DataConnection.close()
-      //     this.extraCons[peerIds[i]].close()
-      //     delete this.extraCons[peerIds[i]]
-      //   }
-      // }
-      // this.extraCons = {}
+      overlayName = 'Clustering Overlay (loop: ' + loop + ')'
     } else {
       console.log('ERROR: AlgoId is unknown, graph will not be deleted')
       return

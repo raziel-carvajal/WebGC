@@ -279,7 +279,7 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
         break
       case 'neigs':
         debug('Neighbourhood of thread ' + msg.algoId + ': ' + msg.view)
-        self.emit('neighbourhood', msg.view, msg.algoId)
+        self.emit('neighbourhood', msg.view, msg.algoId, msg.loop)
         break
       default:
         debug('message: ' + msg.header + ' is not recoginized')
