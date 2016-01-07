@@ -111,18 +111,18 @@ rm -fr $testDir peer_*
 mkdir $testDir
 cd $serverDir
 cd examples
-echo "Launching Singaling Service..."
-DEBUG=* node launch.js 9990 &> signalingServer.log &
-nodePid=$!
-sleep 2
-echo -e "\tDONE"
+#echo "Launching Singaling Service..."
+#DEBUG=* node launch.js 9990 &> signalingServer.log &
+#nodePid=$!
+#sleep 2
+#echo -e "\tDONE"
 echo "Opening browser windows (one of them represents one peer)..."
 declare -a chromePids
 cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   #generateProfile
   htmlFile=peer$COUNTER".html"
-  cat "index.html" | sed "s/#userProfile/\['uno','dos'\]/;s/#userId/peer$COUNTER/;" >$htmlFile
+  cat "index.html" | sed "s/#userProfile/\['Internet of Things', 'P2P Systems', 'Cloud Computing'\]/;s/#userId/peer$COUNTER/;" >$htmlFile
   "$chromeCommand" $chromeStr $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
   sleep 1
