@@ -7,16 +7,16 @@ var configurationObj = {
   gossipAlgos: {
     cyclon1: {
       class: 'Cyclon',
-      viewSize: 5,
-      fanout: 3,
+      viewSize: 3,
+      fanout: 2,
       gossipPeriod: 8000,
       propagationPolicy: { push: true, pull: true }
     },
     vicinity1: {
       class: 'Vicinity',
-      viewSize: 5,
-      fanout: 3,
-      gossipPeriod: 30000,
+      viewSize: 3,
+      fanout: 2,
+      gossipPeriod: 15000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'biased', // random OR biased OR agr-biased
       // implementation of the cosine similarity to compare two arrays

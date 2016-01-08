@@ -79,13 +79,16 @@ GossipMediator.prototype._doActiveThread = function () {
   this.algo.increaseAge()    
   if (this.algo.propagationPolicy.push) this.algo.selectItemsToSend(undefined, 'GOSSIP-PUSH')
   this.lastActCycTime = new Date()
-  var log = {
-    loop: this.algo.loop,
-    algoId: this.algo.algoId,
-    view: JSON.stringify(this.algo.view)
-  }
+  var log = 'CURRENT VIEW: ' + this.algo.algoId + '_' + this.algo.loop + '_' +
+    JSON.stringify(this.algo.view)
+  //var log = {
+  //  loop: this.algo.loop,
+  //  algoId: this.algo.algoId,
+  //  view: JSON.stringify(this.algo.view)
+  //}
   debug('posting log')
-  this.postInMainThread({ header: 'logInConsole', log: JSON.stringify(log) })
+  //this.postInMainThread({ header: 'logInConsole', log: JSON.stringify(log) })
+  this.postInMainThread({ header: 'logInConsole', 'log': log })
 }
 /**
 * @memberof GossipMediator

@@ -275,7 +275,7 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
         if (self.statsOpts.activated) self.vieUpdHistory[msg.trace.algoId][msg.counter] = msg.trace
         break
       case 'logInConsole':
-        debug('VIEW: ' + msg.log)
+        debug(msg.log)
         break
       case 'neigs':
         debug('Neighbourhood of thread ' + msg.algoId + ': ' + msg.view)
@@ -375,6 +375,8 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
       }
       break
     case 'GOSSIP-PUSH':
+      var incomingLog = 'INCOMING MSG: ' + data.algoId + '_' + emitter + '_' + data.receiver + '_' + data.payload
+      debug(incomingLog)
       this._updRoutingTable(Object.keys(data.payload), emitter)
       var worker = this.workers[data.algoId]
       var msg = {
