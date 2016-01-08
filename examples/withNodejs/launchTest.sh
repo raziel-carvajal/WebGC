@@ -32,11 +32,11 @@ mkdir logs
 cd $serverDir
 cd examples
 rm -f signlaing.log
-#echo "Launching signaling service"
-#DEBUG=* node launch.js 9990 &>signlaing.log &
-#sigServPid=$!
-#sleep 5
-#echo -e "\tDONE. Signaling service at process: "$sigServPid
+echo "Launching signaling service"
+DEBUG=* node launch.js 9990 &>signlaing.log &
+sigServPid=$!
+sleep 5
+echo -e "\tDONE. Signaling service at process: "$sigServPid
 cd $origin
 declare -a peerPids
 echo "Launching peers"

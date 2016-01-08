@@ -375,7 +375,8 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
       }
       break
     case 'GOSSIP-PUSH':
-      var incomingLog = 'INCOMING MSG: ' + data.algoId + '_' + emitter + '_' + data.receiver + '_' + data.payload
+      var incomingLog = 'INCOMING MSG: ' + data.algoId + '_' + emitter + '_' + data.receiver + '_' +
+        JSON.stringify(data.payload)
       debug(incomingLog)
       this._updRoutingTable(Object.keys(data.payload), emitter)
       var worker = this.workers[data.algoId]
