@@ -280,7 +280,7 @@ Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
       msg = {
         header: 'getDep',
         cluView: clone,
-        n: itmsNum,
+        n: this.fanout - 1,
         'newItem': newItem,
         receiver: dstPeer,
         emitter: this.algoId,
@@ -463,13 +463,16 @@ GossipMediator.prototype._doActiveThread = function () {
   this.algo.increaseAge()    
   if (this.algo.propagationPolicy.push) this.algo.selectItemsToSend(undefined, 'GOSSIP-PUSH')
   this.lastActCycTime = new Date()
-  var log = {
-    loop: this.algo.loop,
-    algoId: this.algo.algoId,
-    view: JSON.stringify(this.algo.view)
-  }
+  var log = 'CURRENT VIEW: ' + this.algo.algoId + '_' + this.algo.loop + '_' +
+    JSON.stringify(this.algo.view)
+  //var log = {
+  //  loop: this.algo.loop,
+  //  algoId: this.algo.algoId,
+  //  view: JSON.stringify(this.algo.view)
+  //}
   debug('posting log')
-  this.postInMainThread({ header: 'logInConsole', log: JSON.stringify(log) })
+  //this.postInMainThread({ header: 'logInConsole', log: JSON.stringify(log) })
+  this.postInMainThread({ header: 'logInConsole', 'log': log })
 }
 /**
 * @memberof GossipMediator
@@ -2864,7 +2867,7 @@ Coordinator.prototype.setWorkerEvents = function (worker, algoId) {
         if (self.statsOpts.activated) self.vieUpdHistory[msg.trace.algoId][msg.counter] = msg.trace
         break
       case 'logInConsole':
-        debug('VIEW: ' + msg.log)
+        debug(msg.log)
         break
       case 'neigs':
         debug('Neighbourhood of thread ' + msg.algoId + ': ' + msg.view)
@@ -2964,6 +2967,9 @@ Coordinator.prototype.handleIncomingData = function (data, emitter) {
       }
       break
     case 'GOSSIP-PUSH':
+      var incomingLog = 'INCOMING MSG: ' + data.algoId + '_' + emitter + '_' + data.receiver + '_' +
+        JSON.stringify(data.payload)
+      debug(incomingLog)
       this._updRoutingTable(Object.keys(data.payload), emitter)
       var worker = this.workers[data.algoId]
       var msg = {

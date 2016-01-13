@@ -127,7 +127,7 @@ Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
       msg = {
         header: 'getDep',
         cluView: clone,
-        n: itmsNum,
+        n: this.fanout - 1,
         'newItem': newItem,
         receiver: dstPeer,
         emitter: this.algoId,
