@@ -24,34 +24,17 @@ var configurationObj = {
       // value of each character. If the size of the vectors isn't the
       // same, the defficit is filled with zeros
       similarityFunction: function (a, b) {
-        function stringToNumber (s) {
-          var num = 0
-          for (var i = 0; i < s.length; i++) num += s.charCodeAt(i)
-          return num
-        }
         var maxLength = Math.max(a.length, b.length)
-        var a1 = []
-        var b1 = []
-        var sumAsqr = 0
-        var sumBsqr = 0
-        var sumProd = 0
+        console.log('SIMILA: ' + JSON.stringify(a) + '  ' + JSON.stringify(b))
+        var resu = 0
         for (var i = 0; i < maxLength; i++) {
-          if (i < a.length && i < b.length) {
-            a1[i] = stringToNumber(a[i])
-            b1[i] = stringToNumber(b[i])
-          } else if (i < a.length){
-            a1[i] = stringToNumber(a[i])
-            b1[i] = 1
-          } else {
-            a1[i] = 1
-            b1[i] = stringToNumber(b[i])
-          }
-          sumAsqr += a1[i] * a1[i]
-          sumBsqr += b1[i] * b1[i]
-          sumProd += a1[i] * b1[i]
+          if (typeof a[i] != undefined && typeof b[i] != undefined) {
+            if (a[i] == b[i]) resu += 1
+            else resu += 0.4
+          } else resu += 0.1
         }
-        if (sumAsqr === 0 || sumBsqr === 0) return sumProd
-        return sumProd / (Math.sqrt(sumAsqr) * Math.sqrt(sumBsqr))
+        console.log('SIMILA RESU: ' + resu)
+        return resu
       },
       dependencies: [
         { algoId: 'cyclon1', algoAttribute: 'view' }

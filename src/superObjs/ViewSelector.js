@@ -51,6 +51,7 @@ ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
     })
   }
   values.sort(function (a, b) { return a.v - b.v }).reverse()
+  console.log('EVALUATION: ' + JSON.stringify(values))
   var result = {}
   i = 0
   while (i < n && i < values.length) {

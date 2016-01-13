@@ -122,7 +122,7 @@ cd $origin
 for (( COUNTER=0; COUNTER<$peers; COUNTER++ )); do
   #generateProfile
   htmlFile=peer$COUNTER".html"
-  cat "index.html" | sed "s/#userProfile/\['Internet of Things', 'P2P Systems', 'Cloud Computing'\]/;s/#userId/peer$COUNTER/;" >$htmlFile
+  cat "index.html" | sed "s/#userProfile/\[1,2,3\]/;s/#userId/peer$COUNTER/;" >$htmlFile
   "$chromeCommand" $chromeStr $htmlFile >/dev/null &
   chromePids[$COUNTER]=$!
   sleep 1

@@ -710,6 +710,7 @@ ViewSelector.prototype.getNsimilarPeers = function (view, n, keys) {
     })
   }
   values.sort(function (a, b) { return a.v - b.v }).reverse()
+  console.log('EVALUATION: ' + JSON.stringify(values))
   var result = {}
   i = 0
   while (i < n && i < values.length) {
@@ -885,6 +886,7 @@ var debug = typeof window === 'undefined' ? require('debug')('profile') : requir
 
 function Profile (payload) {
   if (!(this instanceof Profile)) return new Profile(payload)
+  console.log('MY PROFILE IS: ' + JSON.stringify(payload))
   this._payload = payload
 }
 

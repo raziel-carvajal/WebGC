@@ -885,6 +885,7 @@ var debug = typeof window === 'undefined' ? require('debug')('profile') : requir
 
 function Profile (payload) {
   if (!(this instanceof Profile)) return new Profile(payload)
+  console.log('MY PROFILE IS: ' + JSON.stringify(payload))
   this._payload = payload
 }
 

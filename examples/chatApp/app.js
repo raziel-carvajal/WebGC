@@ -11,6 +11,8 @@
     'Internet of Things', 'P2P Systems', 'Cloud Computing', 'Big Data',
     'Gossiping', 'Optimization', 'Recommendation Systems'
   ]
+  var numTop = {}
+  for(var i = 0; i < topics.length; i++) numTop[ topics[i] ] = i + 0.1
   function addOneChatBox (peerId) {
     var chatbox, header, input
     chatbox = $('<div></div>')
@@ -153,7 +155,7 @@
     var element
     for (var i = 0; i < listIndex; i++) {
       element = document.getElementById('list' + i)
-      profile.push(element.options[element.selectedIndex].text)
+      profile.push(numTop[ element.options[element.selectedIndex].text ])
     }
     var coordi = new Coordinator(configurationObj, peerId, profile)
     mainObjs['coordi'] = coordi
