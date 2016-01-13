@@ -21,8 +21,8 @@ function Connection (receiver, initiator, usingSigSer) {
     'initiator': initiator,
     'config': { iceServers: [
         //{ url: 'stun:23.21.150.121'}, 
-        {url:'stun:stun.l.google.com:19302'},
-        {url:'stun:stun1.l.google.com:19302'},
+        {urls:'stun:stun.l.google.com:19302'},
+        {urls:'stun:stun1.l.google.com:19302'},
     ]},
     'wrtc': typeof window === 'undefined' ? wrtc : false
   })

@@ -150,7 +150,11 @@
     document.getElementById('start').disabled = true
     document.getElementById('updateProfile').disabled = false
     var profile = []
-    for (var i = 0; i < listIndex; i++) profile.push(document.getElementById('list' + i).value)
+    var element
+    for (var i = 0; i < listIndex; i++) {
+      element = document.getElementById('list' + i)
+      profile.push(element.options[element.selectedIndex].text)
+    }
     var coordi = new Coordinator(configurationObj, peerId, profile)
     mainObjs['coordi'] = coordi
     coordi.on('msgReception', function (emitter, data) {

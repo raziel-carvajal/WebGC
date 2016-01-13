@@ -128,7 +128,6 @@ Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
         header: 'getDep',
         cluView: clone,
         n: this.fanout - 1,
-        'newItem': newItem,
         receiver: dstPeer,
         emitter: this.algoId,
         callback: 'doAgrBiasedSelection',
