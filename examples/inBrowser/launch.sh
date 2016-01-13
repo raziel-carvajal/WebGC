@@ -111,11 +111,11 @@ rm -fr $testDir peer_*
 mkdir $testDir
 cd $serverDir
 cd examples
-#echo "Launching Singaling Service..."
-#DEBUG=* node launch.js 9990 &> signalingServer.log &
-#nodePid=$!
-#sleep 2
-#echo -e "\tDONE"
+echo "Launching Singaling Service..."
+DEBUG=* node launch.js 9990 &> signalingServer.log &
+nodePid=$!
+sleep 2
+echo -e "\tDONE"
 echo "Opening browser windows (one of them represents one peer)..."
 declare -a chromePids
 cd $origin

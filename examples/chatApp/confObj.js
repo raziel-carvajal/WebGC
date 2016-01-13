@@ -1,22 +1,22 @@
 var configurationObj = {
   signalingService: {
     //host: 'localhost',
-    host: '131.254.213.43',
+    //host: '131.254.213.43',
     port: 9990
   },
   gossipAlgos: {
     cyclon1: {
       class: 'Cyclon',
-      viewSize: 3,
-      fanout: 2,
-      gossipPeriod: 8000,
+      viewSize: 5,
+      fanout: 3,
+      gossipPeriod: 5000,
       propagationPolicy: { push: true, pull: true }
     },
     vicinity1: {
       class: 'Vicinity',
-      viewSize: 3,
-      fanout: 2,
-      gossipPeriod: 15000,
+      viewSize: 5,
+      fanout: 3,
+      gossipPeriod: 10000,
       propagationPolicy: { push: true, pull: true },
       selectionPolicy: 'biased', // random OR biased OR agr-biased
       // implementation of the cosine similarity to compare two arrays

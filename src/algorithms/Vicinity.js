@@ -127,7 +127,6 @@ Vicinity.prototype.selectItemsToSend = function (receiver, gossMsgType) {
       msg = {
         header: 'getDep',
         cluView: clone,
-        n: this.fanout - 1,
         receiver: dstPeer,
         emitter: this.algoId,
         callback: 'doAgrBiasedSelection',
@@ -162,7 +161,9 @@ Vicinity.prototype.doAgrBiasedSelection = function (msg) {
     result[ keys[i] ] = this.gossipUtil.newItem(itm.age, itm.data)
   }
   var mergedViews = this.gossipUtil.mergeViews(msg.cluView, result)
-  var similarNeig = this.selector.getClosestNeighbours(msg.n, mergedViews)
+  delete mergedViews[ this.peerId ]
+  var similarNeig = this.selector.getClosestNeighbours(this.fanout -1, mergedViews)
+  similarNeig[ this.peerId ] = this.gossipUtil.newItem(0, this.profile.getPayload())
   var payload = {
     service: msg.gossMsg,
     header: 'outgoingMsg',

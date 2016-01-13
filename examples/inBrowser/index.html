@@ -5,8 +5,8 @@
     <script>
       var confObj = {
         signalingService: {
-          //host: 'localhost',
-          host: '131.254.213.43',
+          host: 'localhost',
+          //host: '131.254.213.43',
           port: 9990
         },
         gossipAlgos: {
@@ -23,7 +23,7 @@
             fanout: 3,
             gossipPeriod: 10000,
             propagationPolicy: { push: true, pull: true },
-            selectionPolicy: 'biased', // random OR biased OR agr-biased
+            selectionPolicy: 'agr-biased', // random OR biased OR agr-biased
             // implementation of the cosine similarity
             // it is considered that: a.length = b.length
             similarityFunction: function (a, b) {
