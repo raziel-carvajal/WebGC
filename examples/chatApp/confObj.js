@@ -7,14 +7,14 @@ var configurationObj = {
   gossipAlgos: {
     cyclon1: {
       class: 'Cyclon',
-      viewSize: 5,
-      fanout: 3,
+      viewSize: 3,
+      fanout: 2,
       gossipPeriod: 5000,
       propagationPolicy: { push: true, pull: true }
     },
     vicinity1: {
       class: 'Vicinity',
-      viewSize: 5,
+      viewSize: 3,
       fanout: 3,
       gossipPeriod: 10000,
       propagationPolicy: { push: true, pull: true },
