@@ -11,6 +11,7 @@
     'Internet of Things', 'P2P Systems', 'Cloud Computing', 'Big Data',
     'Gossiping', 'Optimization', 'Recommendation Systems'
   ]
+  var urlMsg = false
   var PROFILE = []
   function addOneChatBox (peerId) {
     var chatbox, header, input
@@ -54,9 +55,9 @@
       for (var i = 0; i < listIndex; i++) topics.removeChild(document.getElementById('list' + i))
       listIndex = 0
     }
-    var msg = 'Your profile was reseted. Please, chose other subjects of your interest and ' +
-      'click on the button <<Update Profile>>'
-    alert(msg)
+    //var msg = 'Your profile was reseted. Please, chose other subjects of your interest and ' +
+    //  'click on the button <<Update Profile>>'
+    //alert(msg)
   }
   function updateProfile () {
     if (listIndex == 0) alert("Your profile can't be empty")
@@ -68,6 +69,16 @@
       }
       mainObjs.coordi.updateProfile(profile)
     }
+  }
+  function showProfile (prof) {
+    var list, listItem
+    for (var i = 0; i < prof.length; i++) {
+      list = $('<select></select>').attr('id', 'list' + i)
+      listItem = $('<option>' + prof[i] + '</option>').attr('value', 'v' + i)
+      list.append(listItem)
+      $('#topicsSection').append(list)
+    }
+    listIndex = prof.length
   }
   function addTopicList () {
     if (listIndex === topics.length) {
@@ -220,13 +231,19 @@
     var profileStr = map.profile.split('_')
     for (var i = 0; i < profileStr.length; i++) PROFILE.push(profileStr[i])
     console.log('Peer will start with the info at the URL')
+    document.getElementById('user').value = map.id
+    showProfile(PROFILE)
     isPeeridValid(map.id)
   }
-  function noValidUrlMsg(){ window.alert('The URL you typed is not valid to boot, fill the form') }
+  function noValidUrlMsg() {
+    if (!urlMsg)
+      window.alert('The URL you typed is not valid to boot, fill the form')
+    urlMsg = true
+  }
   document.addEventListener('DOMContentLoaded', function (event) {
     console.log('Page was loaded')
     var urlInfo = window.location.search.substring(1)
-    if (typeof urlInfo !== 'undefined') {
+    if (typeof urlInfo !== 'undefined' && urlInfo !== '') {
       var initMap = {}, entries = urlInfo.split('&'), key, value, ok = true
       for (var i = 0; i < entries.length; i++) {
         key = entries[i].split('=')[0]
