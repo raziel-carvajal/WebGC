@@ -11,6 +11,7 @@
     'Internet of Things', 'P2P Systems', 'Cloud Computing', 'Big Data',
     'Gossiping', 'Optimization', 'Recommendation Systems'
   ]
+  var PROFILE = []
   function addOneChatBox (peerId) {
     var chatbox, header, input
     chatbox = $('<div></div>')
@@ -152,12 +153,14 @@
     mainObjs.firstCall = false
     document.getElementById('start').disabled = true
     document.getElementById('updateProfile').disabled = false
-    var profile = [], element
-    for (var i = 0; i < listIndex; i++) {
-      element = document.getElementById('list' + i)
-      profile.push(element.options[element.selectedIndex].text)
+    if (PROFILE.length === 0) {
+      var element
+      for (var i = 0; i < listIndex; i++) {
+        element = document.getElementById('list' + i)
+        profile.push(element.options[element.selectedIndex].text)
+      }
     }
-    var coordi = new Coordinator(configurationObj, peerId, profile)
+    var coordi = new Coordinator(configurationObj, peerId, PROFILE)
     mainObjs['coordi'] = coordi
     coordi.on('msgReception', function (emitter, data) {
       if (!$('#' + emitter)) addOneChatBox(emitter)
@@ -204,11 +207,44 @@
     if (peerId && peerId !== '' && listIndex !== 0) isPeeridValid(peerId)
     else alert("Your peer ID and profile cantn't be empty")
   }
-  document.addEventListener('DOMContentLoaded', function (event) {
-    console.log('Page was loaded')
-    document.getElementById('updateProfile').disabled = true
+  function startWithForm () {
+    document.getElementById('start').disabled = false
+    document.getElementById('updateProfile').disabled = false
     $('#user').focus()
     $('#waitMsg').hide()
+  }
+  function startWithoutForm (map) {
+    document.getElementById('start').disabled = true
+    document.getElementById('updateProfile').disabled = false
+    $('#waitMsg').hide()
+    var profileStr = map.profile.split('_')
+    for (var i = 0; i < profileStr.length; i++) PROFILE.push(profileStr[i])
+    console.log('Peer will start with the info at the URL')
+    isPeeridValid(map.id)
+  }
+  function noValidUrlMsg(){ window.alert('The URL you typed is not valid to boot, fill the form') }
+  document.addEventListener('DOMContentLoaded', function (event) {
+    console.log('Page was loaded')
+    var urlInfo = window.location.search.substring(1)
+    if (typeof urlInfo !== 'undefined') {
+      var initMap = {}, entries = urlInfo.split('&'), key, value, ok = true
+      for (var i = 0; i < entries.length; i++) {
+        key = entries[i].split('=')[0]
+        value = entries[i].split('=')[1]
+        if (typeof value !== 'undefined' && typeof key !== 'undefined') initMap[key] = value
+        else {
+          ok = false
+          noValidUrlMsg()
+          break
+        }
+      }
+      if (!ok) startWithForm()
+      if (initMap['id'] && initMap['profile']) startWithoutForm(initMap)
+      else {
+        noValidUrlMsg()
+        startWithForm()
+      } 
+    } else startWithForm()
   })
   exports.start = start
   exports.addTopicList = addTopicList
