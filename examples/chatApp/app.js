@@ -11,8 +11,6 @@
     'Internet of Things', 'P2P Systems', 'Cloud Computing', 'Big Data',
     'Gossiping', 'Optimization', 'Recommendation Systems'
   ]
-  var numTop = {}
-  for(var i = 0; i < topics.length; i++) numTop[ topics[i] ] = i + 0.1
   function addOneChatBox (peerId) {
     var chatbox, header, input
     chatbox = $('<div></div>')
@@ -62,14 +60,17 @@
   function updateProfile () {
     if (listIndex == 0) alert("Your profile can't be empty")
     else {
-      var profile = []
-      for (var i = 0; i < listIndex; i++) profile.push(document.getElementById('list' + i).value)
+      var profile = [], element
+      for (var i = 0; i < listIndex; i++) {
+        element = document.getElementById('list' + i)
+        profile.push(element.options[element.selectedIndex].text)
+      }
       mainObjs.coordi.updateProfile(profile)
     }
   }
   function addTopicList () {
     if (listIndex === topics.length) {
-      alert('You can not chose another list, please, continue typing you peer ID')
+      alert('You can not chose another topic, please, continue typing you peer ID')
       return
     }
     var list = $('<select></select>').attr('id', 'list' + listIndex)
@@ -151,11 +152,10 @@
     mainObjs.firstCall = false
     document.getElementById('start').disabled = true
     document.getElementById('updateProfile').disabled = false
-    var profile = []
-    var element
+    var profile = [], element
     for (var i = 0; i < listIndex; i++) {
       element = document.getElementById('list' + i)
-      profile.push(numTop[ element.options[element.selectedIndex].text ])
+      profile.push(element.options[element.selectedIndex].text)
     }
     var coordi = new Coordinator(configurationObj, peerId, profile)
     mainObjs['coordi'] = coordi
