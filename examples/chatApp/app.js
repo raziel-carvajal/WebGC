@@ -168,7 +168,7 @@
       var element
       for (var i = 0; i < listIndex; i++) {
         element = document.getElementById('list' + i)
-        profile.push(element.options[element.selectedIndex].text)
+        PROFILE.push(element.options[element.selectedIndex].text)
       }
     }
     var coordi = new Coordinator(configurationObj, peerId, PROFILE)
