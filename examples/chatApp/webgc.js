@@ -3164,9 +3164,23 @@ function Connection (receiver, initiator, usingSigSer) {
   this._peer = new Peer({
     'initiator': initiator,
     'config': { iceServers: [
-        //{ url: 'stun:23.21.150.121'}, 
-        {urls:'stun:stun.l.google.com:19302'},
-        {urls:'stun:stun1.l.google.com:19302'},
+      {urls:'stun:stun01.sipphone.com'}
+//        {urls:'stun:stun.l.google.com:19302'},
+//        {urls:'stun:stun1.l.google.com:19302'},
+
+
+
+//        {
+//            urls: 'turn:192.158.29.39:3478?transport=tcp',
+//              credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
+//                username: '28224511:1379330808'
+//        }
+//
+
+
+
+
+
     ]},
     'wrtc': typeof window === 'undefined' ? wrtc : false
   })
