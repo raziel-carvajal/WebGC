@@ -8,7 +8,8 @@ if (inNodeJS) {
   // TODO test if Threads could be used to avoid writing files in the directory src/workers
   fs = require('fs')
   debug = require('debug')('factory')
-  Threads = require('webworker-threads')
+  //TODO packaging with browserify doesn't work if this package is used
+  //Threads = require('webworker-threads')
   Worker = Threads.Worker
 } else {
   debug = require('debug').log

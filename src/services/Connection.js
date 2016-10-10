@@ -17,6 +17,7 @@ function Connection (receiver, initiator, usingSigSer) {
   this._usingSigSer = usingSigSer
   this._isOpen = false
   this._msgsQueue = []
+  this._tries = 2
   this._peer = new Peer({
     'initiator': initiator,
     'config': { iceServers: [
@@ -61,11 +62,26 @@ function Connection (receiver, initiator, usingSigSer) {
 
 Connection.prototype.send = function (msg) {
   if (!this._isOpen) {
-    debug('Connection with peer: ' + this._receiver + "isn't open, enqueueing msg")
-    this._msgsQueue.push(msg)
+    //XXX buffer to send messages later is not working properly
+    ///debug('Connection with peer: ' + this._receiver + "isn't open, enqueueing msg")
+    ///this._msgsQueue.push(msg)
+    //If connection is close then the communication is aborted
+    if (this._tries > 0) {
+      debug('Connection with peer: ' + this._receiver + "isn't open, enqueueing msg")
+      this._msgsQueue.push(msg)
+    } else {
+      debug('Connection with peer: ' + this._receiver + "isn't open, removing connection")
+      this.emit('abort')
+    }
+    this._tries = this._tries - 1
   } else {
-    debug('Sending message to: ' + this._receiver)
-    this._peer.send(msg)
+    try {
+      debug('Sending message to: ' + this._receiver)
+      this._peer.send(msg)
+    } catch(e) {
+      debug('I can not communicate with peer: ' + this._receiver)
+      this._isOpen = false
+    }
   }
 }
 

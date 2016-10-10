@@ -211,6 +211,10 @@ Coordinator.prototype._initConnectionEvents = function (c) {
     }
   })
   c.on('msgReception', function (msg) { self.handleIncomingData(msg, c._receiver) })
+  c.on('abort', function() {
+    self._delItemInViews(c._receiver)
+    c.closeAndAnnounce()
+  })
 }
 /**
 * @memberof Coordinator

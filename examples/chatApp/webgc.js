@@ -2821,6 +2821,10 @@ Coordinator.prototype._initConnectionEvents = function (c) {
     }
   })
   c.on('msgReception', function (msg) { self.handleIncomingData(msg, c._receiver) })
+  c.on('abort', function() {
+    self._delItemInViews(c._receiver)
+    c.closeAndAnnounce()
+  })
 }
 /**
 * @memberof Coordinator
@@ -3161,6 +3165,7 @@ function Connection (receiver, initiator, usingSigSer) {
   this._usingSigSer = usingSigSer
   this._isOpen = false
   this._msgsQueue = []
+  this._tries = 2
   this._peer = new Peer({
     'initiator': initiator,
     'config': { iceServers: [
@@ -3205,11 +3210,26 @@ function Connection (receiver, initiator, usingSigSer) {
 
 Connection.prototype.send = function (msg) {
   if (!this._isOpen) {
-    debug('Connection with peer: ' + this._receiver + "isn't open, enqueueing msg")
-    this._msgsQueue.push(msg)
+    //XXX buffer to send messages later is not working properly
+    ///debug('Connection with peer: ' + this._receiver + "isn't open, enqueueing msg")
+    ///this._msgsQueue.push(msg)
+    //If connection is close then the communication is aborted
+    if (this._tries > 0) {
+      debug('Connection with peer: ' + this._receiver + "isn't open, enqueueing msg")
+      this._msgsQueue.push(msg)
+    } else {
+      debug('Connection with peer: ' + this._receiver + "isn't open, removing connection")
+      this.emit('abort')
+    }
+    this._tries = this._tries - 1
   } else {
-    debug('Sending message to: ' + this._receiver)
-    this._peer.send(msg)
+    try {
+      debug('Sending message to: ' + this._receiver)
+      this._peer.send(msg)
+    } catch(e) {
+      debug('I can not communicate with peer: ' + this._receiver)
+      this._isOpen = false
+    }
   }
 }
 
@@ -3236,7 +3256,8 @@ if (inNodeJS) {
   // TODO test if Threads could be used to avoid writing files in the directory src/workers
   fs = require('fs')
   debug = require('debug')('factory')
-  Threads = require('webworker-threads')
+  //TODO packaging with browserify doesn't work if this package is used
+  //Threads = require('webworker-threads')
   Worker = Threads.Worker
 } else {
   debug = require('debug').log
@@ -3449,7 +3470,7 @@ GossipFactory.prototype.searchFunctions = function (obj) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../src/services/GossipFactory.js","/../../src/services")
-},{"_process":36,"buffer":29,"debug":2,"fs":27,"its":7,"webworker-threads":27}],24:[function(require,module,exports){
+},{"_process":36,"buffer":29,"debug":2,"fs":27,"its":7}],24:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 module.exports = GossipWrapper
 var its = require('its')
