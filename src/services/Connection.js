@@ -70,7 +70,7 @@ Connection.prototype.send = function (msg) {
       debug('Connection with peer: ' + this._receiver + "isn't open, enqueueing msg")
       this._msgsQueue.push(msg)
     } else {
-      debug('Connection with peer: ' + this._receiver + "isn't open, removing connection")
+      debug('Connection with peer: ' + this._receiver + " isn't open, removing connection")
       this.emit('abort')
     }
     this._tries = this._tries - 1
