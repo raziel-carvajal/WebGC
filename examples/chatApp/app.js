@@ -13,22 +13,23 @@
   ]
   var urlMsg = false
   var PROFILE = []
+  var closestN = {}
   function addOneChatBox (peerId) {
     var chatbox, header, input
     chatbox = $('<div></div>')
       .addClass('connection')
       .addClass('active')
-      .attr('id', peerId)
-    header = $('<label></label>').html('Chat with <strong>' + peerId + '</strong>')
+      .attr('id', 'neigs')
+    header = $('<label></label>').html('Send a message to your closest neighbours: <strong>' + peerId + '</strong>')
     input = $('<div></div>')
       .addClass('conInput')
       .addClass('active')
     input.append($('<textarea></textarea>')
       .addClass('textarea')
-      .attr('id', 'textArea' + peerId))
-    input.append($('<button>Send</button>')
+      .attr('id', 'textAreaNeigs'))
+    input.append($('<button>Broadcast</button>')
       .addClass('chatButton')
-      .attr('onclick', "sendMessageFromChatbox('" + peerId + "')"))
+      .attr('onclick', "sendMessageFromChatbox()"))
     chatbox.append(header)
     chatbox.append(input)
     chatbox.append('<h1></h1>')
@@ -38,14 +39,19 @@
   function addChatBoxes (neighbours) {
     document.getElementById('chat').removeChild(document.getElementById('connections'))
     $('#chat').append($('<div></div>').attr('id', 'connections'))
-    for (var i = 0; i < neighbours.length; i++) addOneChatBox(neighbours[i])
+    closestN = neighbours
+    //for (var i = 0; i < neighbours.length; i++) addOneChatBox(neighbours[i])
+    var neigs = " - "
+    for (var i = 0; i < neighbours.length; i++) neigs += neighbours[i] + " - "
+    addOneChatBox(neigs)
   }
-  function sendMessageFromChatbox (peerId) {
-    var txtArea = document.getElementById('textArea' + peerId)
+  function sendMessageFromChatbox () {
+    var txtArea = document.getElementById('textAreaNeigs')
     var msg = '' + txtArea.value
     if (msg || msg !== '') {
-      mainObjs.coordi.protocols.vicinity1.sendTo(peerId, msg)
-      if ($('#' + peerId)) $('#' + peerId).append('<div><span class="you">You: </span>' + msg + '</div>')
+      for (var i = 0; i < closestN.length; i++)
+        mainObjs.coordi.protocols.vicinity1.sendTo(closestN[i], msg)
+      if ($('#neigs')) $('#neigs').append('<div><span class="you">You: </span>' + msg + '</div>')
     }
     txtArea.value = ''
   }
@@ -174,8 +180,9 @@
     var coordi = new Coordinator(configurationObj, peerId, PROFILE)
     mainObjs['coordi'] = coordi
     coordi.on('msgReception', function (emitter, data) {
-      if (!$('#' + emitter)) addOneChatBox(emitter)
-      $('#' + emitter).append('<div><span class="peer">' + emitter + ': </span>' + data + '</div>')
+      //if (!$('#neigs')) addOneChatBox(emitter)
+      if (!$('#neigs')) return
+      $('#neigs').append('<div><span class="peer">' + emitter + ': </span>' + data + '</div>')
     })
     coordi.on('neighbourhood', function (neighbours, algoId, loop) {
       if (neighbours.length !== 0) {

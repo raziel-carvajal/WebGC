@@ -8,28 +8,30 @@ body,html {
 }
 .textarea {
   float: left;
-  height: 55px;
-  width: 190px;
+  height: 100px;
+  width: 400px;
   overflow: scroll;
   background-color: #fff;
   border: 1px solid #ccc;
 }
 .conInput {
   float: left;
-  height: 55px;
-  width: 190px;
+  height: 100px;
+  width:  100px;
   background-color: #fff;
 }
 .conInput div {
   margin: 5px 0;
+  width: 100px;
 }
 .conInput.active {
   border-color: #FF7500;
+  width: 400px;
 }
 .connection {
   float: left;
-  height: 350px;
-  width: 200px;
+  height: 200px;
+  width: 800px;
   overflow: scroll;
   background-color: #fff;
   padding: 10px;
