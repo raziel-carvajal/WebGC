@@ -53,17 +53,17 @@ at the ```src``` directory. In order to generate a new documentation you must in
 through [Bower](http://bower.io/). **NOTE** dependencies for development are written in the file
 ```bower.json``` and there is one [Grunt](http://gruntjs.com/) task  for the generation doct at ```Gruntfile.js```
 
-#Compatibility
+# Compatibility
 This project is compatible with Linux based systems (tested in Ubuntu 14.10) and MacOS (OS X Yosemite version 10.10), the web browser Chrome (version 38 or higher) must be installed too. Do not hesitate to report any issue or comment with the project.
 
-#TODO
+# TODO
 - Take rid off PeerJS
 - <s>Launch WebGC on NodeJS</s>
 - <s>Take rid off the signaling server</s>
 
 
-#IDDN
+# IDDN
 `IDDN.FR.001.120008.000.S.P.2017.000.10600`
 
-#License
+# License
 [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.en.html)
