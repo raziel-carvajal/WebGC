@@ -16,10 +16,10 @@
     "tests"
   ],
   "dependencies": {
-    "cytoscape": "2.2.9",
+    "cytoscape": "~2.2.9",
     "jquery": "~2.1.4"
   },
   "devDependencies": {
-    "jsdoc3": "3.2.2"
+    "jsdoc3": "~3.2.2"
   }
 }
