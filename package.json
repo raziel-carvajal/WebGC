@@ -11,25 +11,25 @@
   "author": "Raziel Carvajal Gomez <raziel.carvajal@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "grunt": "~0.4.2",
-    "grunt-contrib-uglify": "~0.2.7",
-    "grunt-linter": "~0.3.2",
-    "grunt-shell": "~0.6.4",
-    "standard": "~4.3.2",
-    "browserify": "~10.2.4"
+    "grunt": "0.4.2",
+    "grunt-contrib-uglify": "0.2.7",
+    "grunt-linter": "0.3.2",
+    "grunt-shell": "0.6.4",
+    "standard": "4.3.2",
+    "browserify": "10.2.4"
   },
   "dependencies": {
-    "browserify-fs": "~1.0.0",
-    "debug": "~2.2.0",
-    "events": "~1.0.2",
-    "hat": "~0.0.3",
-    "inherits": "~2.0.1",
-    "its": "~1.0.2",
-    "simple-peer": "~5.11.2",
-    "websocket": "~1.0.19",
+    "browserify-fs": "1.0.0",
+    "debug": "2.2.0",
+    "events": "1.0.2",
+    "hat": "0.0.3",
+    "inherits": "2.0.1",
+    "its": "1.0.2",
+    "simple-peer": "5.11.2",
+    "websocket": "1.0.19",
     "webworker-threads": "^0.7.11",
-    "webworkify": "~1.0.2",
-    "wrtc": "~0.0.56",
-    "xhr2": "~0.1.2"
+    "webworkify": "1.0.2",
+    "wrtc": "0.0.56",
+    "xhr2": "0.1.2"
   }
 }
