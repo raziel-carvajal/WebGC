@@ -1,6 +1,5 @@
 var configurationObj = {
   signalingService: {
-    //host: 'localhost',
     host: '131.254.213.43',
     port: 9990
   },
