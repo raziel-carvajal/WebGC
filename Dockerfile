@@ -1,4 +1,4 @@
-FROM colthreepv/node-chrome:latest
+FROM node:6
 
 
 run npm install -g bower
@@ -19,8 +19,7 @@ add *.js ./
 add *.json ./
 run bower install --allow-root
 
-expose 5001
 
 CMD ["echo", "well done Y"]
 
-#CMD ["/examples/middleware2014/launch.sh", "5", "2", "://localhost:5012"]
+
