@@ -1,4 +1,5 @@
 FROM node:6
+<<<<<<< HEAD
 
 
 #============================================
@@ -22,6 +23,8 @@ ARG CHROME_DRIVER_VERSION=2.27 RUN wget -O /tmp/chromedriver.zip https://chromed
     chmod 755 /opt/selenium/chromedriver-$CHROME_DRIVER_VERSION && \
     ln -fs /opt/selenium/chromedriver-$CHROME_DRIVER_VERSION /usr/bin/chromedriver
 
+=======
+>>>>>>> 533fbf28bcce9cd938eb54899c7d9377b028c7b5
 
 
 run npm install -g bower
@@ -44,3 +47,8 @@ run bower install --allow-root
 
 
 CMD ["echo", "well done Y"]
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 533fbf28bcce9cd938eb54899c7d9377b028c7b5

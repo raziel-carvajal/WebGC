@@ -9,7 +9,7 @@ if (inNodeJS) {
   fs = require('fs')
   debug = require('debug')('factory')
   //TODO packaging with browserify doesn't work if this package is used
-  //Threads = require('webworker-threads')
+  Threads = require('webworker-threads')
   Worker = Threads.Worker
 } else {
   debug = require('debug').log
