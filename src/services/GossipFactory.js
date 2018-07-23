@@ -5,6 +5,7 @@ var inNodeJS = typeof window === 'undefined'
 var its = require('its')
 var debug, Worker, fs, Blob, Threads
 if (inNodeJS) {
+ 
   // TODO test if Threads could be used to avoid writing files in the directory src/workers
   fs = require('fs')
   debug = require('debug')('factory')
@@ -12,6 +13,7 @@ if (inNodeJS) {
   Threads = require('webworker-threads')
   Worker = Threads.Worker
 } else {
+
   debug = require('debug').log
   Worker = window.Worker
   if (typeof Worker === 'undefined') throw new Error('Your browser does not support web-workers')
