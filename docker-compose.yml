@@ -1,19 +1,14 @@
-version : '3'
+version : "3"
 
 services:
-  webgc-client:
-    image: azerty123/webgc
-    volumes:
-      - /home/mounir/workspace/webgc/examples/.middleware2014:/usr/webgc/examples/.middleware2014
-    ports:
-      - "80:5004"
+  client:
+    build: .
+ 
     links:
-      - webgc_server
+      - "server"
     
-  webgc_server:
-    image: azerty123/webgc_server
-    volumes: 
-       - /home/mounir/workspace/webgc-server:/usr/webgc_server
-       - /home/mounir/workspace/webgc/examples/.middleware2014/launch.sh:/usr/webgc_server
+  server:
+    build: ../WebGC-Server  
+     
     
   
