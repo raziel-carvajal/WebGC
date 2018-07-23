@@ -6,9 +6,13 @@ services:
  
     links:
       - "server"
+    ports:
+      - "9991:9990"
     
   server:
-    build: ../WebGC-Server  
+    build: ../WebGC-Server
+    ports:
+      - "9990:8080" 
      
     
   
