@@ -1,5 +1,8 @@
 var configurationObj = {
   signalingService: {
+    //host: 'localhost',
+    //port: 9990
+    /*For testing with docker container*/
     host: 'servertest',
     //host: '131.254.213.43', 
     port: 8080

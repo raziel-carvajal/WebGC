@@ -48,22 +48,9 @@ add *.js ./
 
 add *.json ./
 
+#run bower install --allow-root
+
 run npm install
-
-run bower install --allow-root
-
-run npm install debug 
-run npm install browserify-fs 
-run npm install events 
-run npm install hat 
-run npm install inherits 
-run npm install its 
-run npm install simple-peer
-run npm install websocket
-run npm install webworker-threads
-run npm install webworkify
-run npm install wrtc
-run npm install xhr2
 
 run apt-get install nano
 
