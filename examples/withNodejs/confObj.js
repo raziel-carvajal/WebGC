@@ -1,8 +1,8 @@
 var configurationObj = {
   signalingService: {
-    host: 'localhost',
+    host: 'servertest',
     //host: '131.254.213.43', 
-    port: 9990
+    port: 8080
   },
   gossipAlgos: {
     cyclon1: {
