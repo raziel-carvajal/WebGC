@@ -1,14 +1,21 @@
 version : "3"
 
 services:
+  server:
+    build: ../WebGC-Server
+    ports:
+      - "9990:8080" 
+
   client:
     build: .
- 
+    depends_on:
+      - server
     links:
-      - "server"
+      - server:servertest
+#    ports:
+#      - "9991:9990"
     
-  server:
-    build: ../WebGC-Server  
      
+#les deux conteneurs sur le meme network 
     
   

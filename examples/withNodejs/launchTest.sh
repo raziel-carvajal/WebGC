@@ -30,11 +30,11 @@ origin=`pwd`
 rm -fr ./logs
 mkdir logs
 cd $serverDir
-cd examples
+#cd examples
 rm -f signlaing.log
 echo "Launching signaling service"
-DEBUG=* node launch.js 9990 &>signlaing.log &
-sigServPid=$!
+#DEBUG=* node launch.js 9990 &>signlaing.log &
+#sigServPid=$!
 sleep 5
 echo -e "\tDONE. Signaling service at process: "$sigServPid
 cd $origin
@@ -57,7 +57,7 @@ done
 echo -e "\tDONE. All processes were killed"
 # rm -fr ./logs
 cd $serverDir
-cd examples
+#cd examples
 # rm -f signlaing.log
 cd $origin
 echo "END OF EXECUTION"
