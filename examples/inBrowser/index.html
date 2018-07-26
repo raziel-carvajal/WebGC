@@ -50,7 +50,7 @@
         usingSs: true
       }
       var peerId = '#userId'
-      var profile = #userProfile
+      var profile = 'undefined'
       var coordinator = new Coordinator(confObj, peerId, profile)
       coordinator.on('msgReception', function (emitter, data) {
         console.log('Message ' + data + ' received from peer: ' + emitter)
