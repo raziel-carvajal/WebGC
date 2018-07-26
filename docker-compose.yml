@@ -2,7 +2,8 @@ version : "3"
 
 services:
   server:
-    build: ../WebGC-Server
+#Should replace PWD of the server by your
+    build: ../webgc_Server
     ports:
       - "9990:8080" 
 
