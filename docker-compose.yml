@@ -14,7 +14,7 @@ services:
     links:
       - server:servertest
 #    ports:
-#      - "9991:9990"
+#      - "9991:9991"
     
      
 #les deux conteneurs sur le meme network 
