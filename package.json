@@ -6,7 +6,8 @@
     "example": "examples"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "node -e \"try { require('fs').symlinkSync(require('path').resolve('node_modules/@bower_components'), 'bower_components', 'junction') } catch (e) { }\""
   },
   "author": "Raziel Carvajal Gomez <raziel.carvajal@gmail.com>",
   "license": "MIT",
@@ -19,8 +20,9 @@
     "browserify": "10.2.4"
   },
   "dependencies": {
+    "bower": "^1.8.4",
     "browserify-fs": "1.0.0",
-    "debug": "2.2.0",
+    "debug": "^2.2.0",
     "events": "1.0.2",
     "hat": "0.0.3",
     "inherits": "2.0.1",
@@ -30,6 +32,12 @@
     "webworker-threads": "^0.7.16",
     "webworkify": "1.0.2",
     "wrtc": "^0.1.6",
-    "xhr2": "^0.1.2"
+    "xhr2": "^0.1.2",
+    "@bower_components/cytoscape": "cytoscape/cytoscape.js#~2.2.9",
+    "@bower_components/jquery": "jquery/jquery-dist#~2.1.4",
+    "@bower_components/jsdoc3": "jsdoc3/jsdoc#~3.2.2"
+  },
+  "engines": {
+    "yarn": ">= 1.0.0"
   }
 }

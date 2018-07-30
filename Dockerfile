@@ -73,6 +73,9 @@ run rm -rf bower_components
 # install dependencies with Yarn
 run yarn
 
+# remove bower.json if still exist
+# run rm -rf bower.json
+
 run bower-away
 
 #run npm install
