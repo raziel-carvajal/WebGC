@@ -12,7 +12,7 @@ WebGC is a front-end library but in order to execute all the examples in this re
 
 - To migrate away the project from bower to Yarn, please follow the next step:
 
-    - Install Yarn and add then bower-away  ``` npm install -g yarn  ```
+    - Install Yarn and add then bower-away  ``` npm install -g bower-away  ```
     - Install dependencies with Bower: ``` bower install ```
     - Update package.json:  ``` bower-away --diff ``` &&  ``` bower install --apply ```
     - Remove old components directory: ``` rm -rf bower_components ```
