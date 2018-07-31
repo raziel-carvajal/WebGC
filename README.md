@@ -10,6 +10,16 @@ WebGC is a front-end library but in order to execute all the examples in this re
 
 - type ``` bower install ``` in the main directory
 
+- To migrate away the project from bower to Yarn, please follow the next step:
+
+    - Install Yarn and add then bower-away  ``` npm install -g yarn  ```
+    - Install dependencies with Bower: ``` bower install ```
+    - Update package.json:  ``` bower-away --diff ``` &&  ``` bower install --apply ```
+    - Remove old components directory: ``` rm -rf bower_components ```
+    - Install dependencies with yarn: ``` yarn ```
+    - Remove bower.json: ``` rm -rf bower.json ```
+    - type ``` bower-away ```
+
 Now you are done with the front-end part; additionally you must clone the PeerJS-Server Gossip project as follows:
 
 - Clone PeerJS-Server Gossip typing: ``` git clone               
