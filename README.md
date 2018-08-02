@@ -6,11 +6,9 @@ WebGC is a Peer-to-Peer (P2P) library to coordinate the execution of gossip prot
 The last figure shows an overview of the WebGC architecture. Firstly, this library receives as input one configuration file (JSON object) to specify the protocols that will run on your web browser. Shortly afterwards, the ```GossipFactory``` creates one [Web Worker](http://www.w3schools.com/html/html5_webworkers.asp) and two main objects in the context of the worker: i) one gossip protocol defined in the configuration file and ii) one ```GossipMediator``` to exchange messages with the main thread of JavaScript; users can easily enrich WebGC with more protocols via the implementation of the ```GossipProtocol``` interface. Finally two additional services are provided: in one hand, the ```Bootstrap``` service allows peers to be included in the P2P overlay in case of having any peer on-line, in the other hand the ```LookupService``` replace the [brokering server](https://github.com/peers/peerjs-server) which it is used by PeerJS as intermediary to set WebRTC data connections between two peers.
 
 # Installation instructions
-WebGC is a front-end library but in order to execute all the examples in this repository, it is required to have the next programs installed: [NodeJS](http://nodejs.org/) (node is used generally in back-end applications and it is required for bootstrapping the communication with peers in PeerJS), [Bower](http://bower.io/), [NPM](https://www.npmjs.org/), the scripts of the examples requires Chrome (31 or higher) but WebGC is compatible with Firefox too, furthermore, peers running on Chrome can reach others running Firefox. Once you are done with the last requirements, do as follows:
+WebGC is a front-end library but in order to execute all the examples in this repository, it is required to have the next programs installed: [NodeJS](http://nodejs.org/) (node is used generally in back-end applications and it is required for bootstrapping the communication with peers in PeerJS), [Yarn](https://yarnpkg.com/en/docs/install#debian-stable), [NPM](https://www.npmjs.org/), the scripts of the examples requires Chrome (31 or higher) but WebGC is compatible with Firefox too, furthermore, peers running on Chrome can reach others running Firefox. Once you are done with the last requirements, do as follows:
 
-- type ``` bower install ``` in the main directory
-
-- To migrate away the project from bower to Yarn, please follow the next step:
+- To migrate away the project from bower(which used in the branch master) to Yarn, please follow the next step:
 
     - Install Yarn and add then bower-away  ``` npm install -g bower-away  ```
     - Install dependencies with Bower: ``` bower install ```
@@ -19,6 +17,9 @@ WebGC is a front-end library but in order to execute all the examples in this re
     - Install dependencies with yarn: ``` yarn ```
     - Remove bower.json: ``` rm -rf bower.json ```
     - type ``` bower-away ```
+
+- Or type ``` yarn ``` in the main directory if you are using the project from this branch
+
 
 Now you are done with the front-end part; additionally you must clone the PeerJS-Server Gossip project as follows:
 
