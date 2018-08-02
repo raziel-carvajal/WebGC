@@ -31,7 +31,7 @@ FROM node:6
 
 #==================
 
-run npm install -g bower
+#run npm install -g bower
 
 # Install yarn (instead of bower because it's recomended https://bower.io/blog/2017/how-to-migrate-away-from-bower/ )
 run apt-get update && apt-get install -y curl apt-transport-https && \
@@ -39,7 +39,7 @@ run apt-get update && apt-get install -y curl apt-transport-https && \
     echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
     apt-get update && apt-get install -y yarn
 
-run yarn global add bower-away 
+#run yarn global add bower-away 
 
 workdir /usr/webgc
 
@@ -61,14 +61,14 @@ add *.json ./
 #---------------------------------------------------------------
 
 # First We need to install dependencies with bower
-run bower install --allow-root
+#run bower install --allow-root
 
 # to update the package.json 
-run bower-away --diff && \
-    bower-away --apply
+#run bower-away --diff && \
+ #   bower-away --apply
 
 # Remove old components directory
-run rm -rf bower_components
+#run rm -rf bower_components
 
 # install dependencies with Yarn
 run yarn
@@ -76,7 +76,7 @@ run yarn
 # remove bower.json if still exist
 # run rm -rf bower.json
 
-run bower-away
+#run bower-away
 
 #run npm install
 
