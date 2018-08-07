@@ -24,7 +24,7 @@ add src ./src
 add pictures ./pictures
 add .gitignore ./
 add *.js ./
-add bower_components ./bower_components
+#add bower_components ./bower_components
 add *.json ./
 
 #---------------------------------------------------------------
@@ -43,6 +43,7 @@ add *.json ./
 
 # install dependencies with Yarn
 run yarn
+#add bower_components ./
 
 # remove bower.json if still exist
 # run rm -rf bower.json

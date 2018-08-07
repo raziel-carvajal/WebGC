@@ -56,12 +56,26 @@ Bootstrap.prototype.getPeerToBootstrap = function () {
       xhr.onerror()
       return
     }
+
     var resp = JSON.parse(xhr.responseText)
-    debug('Peer to boot is: ' + xhr.responseText)
+    debug('Peer to boot is: ' + xhr.responseText + 'resp: ' + resp)
     // when the peer to bootstrap isn't defined, it means that the local
     // peer is the first peer to contact the server which means that eventually
     // the local peer will be contacted by another peer
-    if (resp.peer !== 'undefined') its.string(resp.peer)
+    try{
+      its.string(resp.peer)
+    }
+    catch(error){
+      console.log('peer est de type null: peer:' + resp.peer)
+
+    }
+
+     // if (resp.peer !== 'undefined') its.string(resp.peer)
+
+    //if (resp.peer !== 'undefined') {
+    //        console.log('Expected <undefined>' + undefined)
+    //}
+
     // if (resp.peer !== 'undefined') {
     //   its.string(resp.peer)
     //   its.string(resp.profile)
@@ -78,6 +92,7 @@ Bootstrap.prototype.getPeerToBootstrap = function () {
     // }
     self.emit('boot', resp)
   }
+  
   xhr.onerror = function () {
     self._tries++
     debug('Error while getting first peer to bootstrap, scheduling another request')
